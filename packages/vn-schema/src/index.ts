@@ -11,6 +11,7 @@ export type {
   JumpNode,
   NarrationNode,
   NodeTarget,
+  NodeType,
   PlayAudioNode,
   SceneNode,
   SetVariableNode,
@@ -20,5 +21,5 @@ export type {
   VariableValue
 } from "./node";
 export type { ScriptFile } from "./script";
-export type { ValidationResult, VNProject } from "./project";
+export type { ValidationIssue, ValidationIssueLevel, ValidationResult, VNProject } from "./project";
 export { validateProject } from "./validateProject";

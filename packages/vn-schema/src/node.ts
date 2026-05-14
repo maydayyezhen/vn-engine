@@ -9,6 +9,20 @@ export interface NodeTarget {
 /** 变量值类型，第一阶段只支持 JSON 基础值。 */
 export type VariableValue = string | number | boolean | null;
 
+/** 剧情节点类型。 */
+export type NodeType =
+  | "dialogue"
+  | "narration"
+  | "choice"
+  | "scene"
+  | "showCharacter"
+  | "hideCharacter"
+  | "playAudio"
+  | "stopAudio"
+  | "setVariable"
+  | "condition"
+  | "jump";
+
 /** 变量比较运算符。 */
 export type ConditionOperator = "equals" | "notEquals" | "greaterThan" | "lessThan" | "exists";
 
@@ -92,6 +106,8 @@ export interface ShowCharacterNode {
   characterId: string;
   /** 立绘素材 id。 */
   assetId?: string;
+  /** 表情标识，第一阶段仅作为结构化数据保留。 */
+  expression?: string;
   /** 角色在画面中的位置。 */
   position?: "left" | "center" | "right";
 }

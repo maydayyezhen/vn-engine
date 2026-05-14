@@ -2,6 +2,21 @@ import type { AssetLibrary } from "./asset";
 import type { Character } from "./character";
 import type { ScriptFile } from "./script";
 
+/** 工程校验问题级别。 */
+export type ValidationIssueLevel = "error" | "warning";
+
+/** 工程校验问题，便于编辑器定位和展示。 */
+export interface ValidationIssue {
+  /** 问题级别。 */
+  level: ValidationIssueLevel;
+  /** 人类可读的问题说明。 */
+  message: string;
+  /** 关联脚本 id。 */
+  scriptId?: string;
+  /** 关联节点 id。 */
+  nodeId?: string;
+}
+
 /** 视觉小说工程根对象。 */
 export interface VNProject {
   /** 工程唯一标识。 */
@@ -24,8 +39,8 @@ export interface VNProject {
 export interface ValidationResult {
   /** 是否通过校验。 */
   valid: boolean;
-  /** 错误信息列表。 */
-  errors: string[];
-  /** 警告信息列表。 */
-  warnings: string[];
+  /** 错误问题列表。 */
+  errors: ValidationIssue[];
+  /** 警告问题列表。 */
+  warnings: ValidationIssue[];
 }

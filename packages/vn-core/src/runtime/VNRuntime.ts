@@ -23,7 +23,7 @@ export class VNRuntime {
   constructor(project: VNProject) {
     const validation = validateProject(project);
     if (!validation.valid) {
-      throw new Error(`工程校验失败：${validation.errors.join("; ")}`);
+      throw new Error(`工程校验失败：${validation.errors.map((issue) => issue.message).join("; ")}`);
     }
 
     this.project = project;
