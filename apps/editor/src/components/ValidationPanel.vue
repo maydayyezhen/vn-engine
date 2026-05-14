@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import type { ValidationResult } from "@vn-engine/vn-schema";
+import type { ValidationIssue, ValidationResult } from "@vn-engine/vn-schema";
 
 /** 组件属性。 */
 defineProps<{
   /** 当前工程校验结果。 */
   result: ValidationResult;
+}>();
+
+/** 组件事件。 */
+defineEmits<{
+  /** 定位校验问题。 */
+  locateIssue: [issue: ValidationIssue];
 }>();
 </script>
 
@@ -20,6 +26,8 @@ defineProps<{
         type="error"
         :closable="false"
         show-icon
+        class="validation-issue"
+        @click="$emit('locateIssue', issue)"
       >
         <template #default>
           <span v-if="issue.scriptId">脚本：{{ issue.scriptId }}</span>
@@ -35,6 +43,8 @@ defineProps<{
         type="warning"
         :closable="false"
         show-icon
+        class="validation-issue"
+        @click="$emit('locateIssue', issue)"
       />
     </div>
   </el-card>

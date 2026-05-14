@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import type { AssetType, VNProject } from "@vn-engine/vn-schema";
+import type { AssetType, ValidationIssue, VNProject } from "@vn-engine/vn-schema";
 import AssetLibraryPanel from "../components/AssetLibraryPanel.vue";
 import CharacterLibraryPanel from "../components/CharacterLibraryPanel.vue";
 import NodePropertyPanel from "../components/NodePropertyPanel.vue";
@@ -22,6 +22,7 @@ import {
 import { isDesktopRuntime } from "../desktop/isDesktopRuntime";
 import { editorStore, setActiveView, setDirty, setValidationResult, type EditorView } from "../stores/editorStore";
 import { currentNode, currentScript, projectStore, replaceProject, selectNode, selectScript, setProject } from "../stores/projectStore";
+import { canRedo, canUndo, popRedo, popUndo, pushHistory, resetHistory } from "../stores/historyStore";
 import { addAsset, createEmptyAsset } from "../services/assetEditService";
 import { loadDemoProject } from "../services/projectLoadService";
 import {
@@ -38,6 +39,16 @@ import {
   selectSafeNodeAfterDelete,
   validateCurrentProject
 } from "../services/scriptEditService";
+import { canMoveNodeDown, canMoveNodeUp, moveNodeDown, moveNodeUp } from "../services/nodeOrderService";
+import { copyNode, cutNode, hasClipboardNode, pasteNodeAfter } from "../services/nodeClipboardService";
+import { filterNodes, type NodeFilterType } from "../services/nodeSearchService";
+import {
+  createEditorScript,
+  deleteEditorScript,
+  renameEditorScript,
+  setEditorStartScript
+} from "../services/scriptManageService";
+import { createEditorShortcutHandler } from "../services/editorShortcutService";
 
 /** 预览面板组件实例。 */
 const previewPanelRef = ref<InstanceType<typeof PreviewPanel> | null>(null);
@@ -47,9 +58,39 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 const desktopMode = isDesktopRuntime();
 /** 当前打开的桌面工程根目录，仅用于 UI 展示。 */
 const desktopProjectRoot = ref<string | null>(null);
+/** 节点搜索关键字。 */
+const nodeSearchQuery = ref("");
+/** 节点类型筛选。 */
+const nodeFilterType = ref<NodeFilterType>("all");
+/** 是否存在可粘贴节点。 */
+const clipboardAvailable = ref(hasClipboardNode());
+/** 当前脚本筛选后的节点。 */
+const filteredNodes = computed(() => filterNodes(projectStore.project, currentScript.value?.nodes ?? [], {
+  query: nodeSearchQuery.value,
+  type: nodeFilterType.value
+}));
+/** 当前节点是否可上移。 */
+const selectedNodeCanMoveUp = computed(() => canMoveNodeUp(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId));
+/** 当前节点是否可下移。 */
+const selectedNodeCanMoveDown = computed(() => canMoveNodeDown(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId));
+
+/** 创建当前编辑历史快照。 */
+function createHistorySnapshot() {
+  return {
+    project: projectStore.project,
+    selectedScriptId: projectStore.selectedScriptId,
+    selectedNodeId: projectStore.selectedNodeId
+  };
+}
+
+/** 记录编辑前历史。 */
+function recordBeforeEdit(): void {
+  pushHistory(createHistorySnapshot());
+}
 
 /** 应用新的工程内存态。 */
-function applyProject(project: VNProject): void {
+function applyProject(project: VNProject, recordHistory = true): void {
+  if (recordHistory) recordBeforeEdit();
   setProject(project);
   setDirty(true);
   setValidationResult(validateCurrentProject(project));
@@ -58,6 +99,7 @@ function applyProject(project: VNProject): void {
 /** 应用导入、打开或重置后的工程。 */
 function loadProjectIntoEditor(project: VNProject, dirty: boolean): void {
   replaceProject(project);
+  resetHistory();
   setDirty(dirty);
   setValidationResult(validateCurrentProject(project));
   previewPanelRef.value?.restart();
@@ -94,6 +136,90 @@ function handleSelectNode(nodeId: string): void {
   selectNode(nodeId);
 }
 
+/** 恢复历史快照。 */
+function restoreHistorySnapshot(snapshot: ReturnType<typeof createHistorySnapshot>): void {
+  replaceProject(snapshot.project);
+  selectScript(snapshot.selectedScriptId);
+  selectNode(snapshot.selectedNodeId);
+  setDirty(true);
+  setValidationResult(validateCurrentProject(projectStore.project));
+  previewPanelRef.value?.restart();
+}
+
+/** 撤销编辑。 */
+function handleUndo(): void {
+  const snapshot = popUndo(createHistorySnapshot());
+  if (!snapshot) return;
+  restoreHistorySnapshot(snapshot);
+}
+
+/** 重做编辑。 */
+function handleRedo(): void {
+  const snapshot = popRedo(createHistorySnapshot());
+  if (!snapshot) return;
+  restoreHistorySnapshot(snapshot);
+}
+
+/** 新建脚本。 */
+async function handleCreateScript(): Promise<void> {
+  const result = await ElMessageBox.prompt("请输入脚本名称", "新建脚本", {
+    confirmButtonText: "新建",
+    cancelButtonText: "取消",
+    inputValue: "新脚本"
+  }).catch(() => null);
+  if (!result) return;
+  recordBeforeEdit();
+  const next = createEditorScript(projectStore.project, result.value);
+  setProject(next.project);
+  selectScript(next.scriptId);
+  selectNode(next.nodeId);
+  setDirty(true);
+  setValidationResult(validateCurrentProject(next.project));
+}
+
+/** 重命名脚本。 */
+async function handleRenameScript(scriptId: string): Promise<void> {
+  const script = projectStore.project.scripts.find((item) => item.id === scriptId);
+  if (!script) return;
+  const result = await ElMessageBox.prompt("请输入新的脚本显示名称", "重命名脚本", {
+    confirmButtonText: "保存",
+    cancelButtonText: "取消",
+    inputValue: script.name || script.id
+  }).catch(() => null);
+  if (!result) return;
+  applyProject(renameEditorScript(projectStore.project, scriptId, result.value));
+}
+
+/** 删除脚本。 */
+async function handleDeleteScript(scriptId: string): Promise<void> {
+  if (projectStore.project.scripts.length <= 1) {
+    ElMessage.warning("不能删除最后一个脚本。");
+    return;
+  }
+  try {
+    await ElMessageBox.confirm("删除脚本后，引用它的跳转会由校验面板提示。继续删除？", "删除脚本", {
+      confirmButtonText: "删除",
+      cancelButtonText: "取消",
+      type: "warning"
+    });
+  } catch {
+    return;
+  }
+  recordBeforeEdit();
+  const result = deleteEditorScript(projectStore.project, scriptId);
+  if (!result.changed) return;
+  setProject(result.project);
+  selectScript(result.scriptId);
+  selectNode(result.nodeId);
+  setDirty(true);
+  setValidationResult(validateCurrentProject(result.project));
+}
+
+/** 设置入口脚本。 */
+function handleSetStartScript(scriptId: string): void {
+  applyProject(setEditorStartScript(projectStore.project, scriptId));
+}
+
 /** 新增对话节点。 */
 function handleAddDialogue(): void {
   const currentNodeId = projectStore.selectedNodeId;
@@ -123,6 +249,50 @@ function handleDuplicateNode(): void {
   const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
   const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
   selectNode(script?.nodes[currentIndex + 1]?.id ?? currentNodeId);
+}
+
+/** 复制当前节点到内部剪贴板。 */
+function handleCopyNode(): void {
+  if (!copyNode(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId)) return;
+  clipboardAvailable.value = hasClipboardNode();
+  ElMessage.success("节点已复制。");
+}
+
+/** 剪切当前节点。 */
+function handleCutNode(): void {
+  recordBeforeEdit();
+  const result = cutNode(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId);
+  if (!result.ok) return;
+  setProject(result.project);
+  selectNode(result.selectedNodeId);
+  clipboardAvailable.value = hasClipboardNode();
+  setDirty(true);
+  setValidationResult(validateCurrentProject(result.project));
+}
+
+/** 粘贴节点到当前节点之后。 */
+function handlePasteNode(): void {
+  recordBeforeEdit();
+  const result = pasteNodeAfter(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId);
+  if (!result.ok) return;
+  setProject(result.project);
+  selectNode(result.nodeId);
+  setDirty(true);
+  setValidationResult(validateCurrentProject(result.project));
+}
+
+/** 上移当前节点。 */
+function handleMoveNodeUp(): void {
+  if (!projectStore.selectedNodeId) return;
+  applyProject(moveNodeUp(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId));
+  selectNode(projectStore.selectedNodeId);
+}
+
+/** 下移当前节点。 */
+function handleMoveNodeDown(): void {
+  if (!projectStore.selectedNodeId) return;
+  applyProject(moveNodeDown(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId));
+  selectNode(projectStore.selectedNodeId);
 }
 
 /** 删除当前节点。 */
@@ -156,6 +326,7 @@ async function handleImportFile(event: Event): Promise<void> {
   }
 
   replaceProject(result.project);
+  resetHistory();
   setValidationResult(result.validationResult);
   setDirty(false);
   previewPanelRef.value?.restart();
@@ -266,10 +437,50 @@ async function handleImportAssetFile(assetType: AssetType): Promise<void> {
   ElMessage.success("素材已复制到工程 assets 并登记。");
 }
 
+/** 定位校验问题到脚本和节点。 */
+function handleLocateValidationIssue(issue: ValidationIssue): void {
+  if (issue.scriptId && projectStore.project.scripts.some((script) => script.id === issue.scriptId)) {
+    selectScript(issue.scriptId);
+    setActiveView("script");
+  }
+  if (issue.nodeId) selectNode(issue.nodeId);
+}
+
+/** 聚焦节点搜索框。 */
+function focusNodeSearch(): void {
+  document.querySelector<HTMLInputElement>("#node-search-input")?.focus();
+}
+
+/** 保存快捷键入口。 */
+function handleShortcutSave(): void {
+  if (desktopMode) {
+    void handleSaveDesktopProject();
+  } else {
+    void handleExportProject();
+  }
+}
+
+/** 编辑器快捷键监听器。 */
+const shortcutHandler = createEditorShortcutHandler({
+  save: handleShortcutSave,
+  undo: handleUndo,
+  redo: handleRedo,
+  copy: handleCopyNode,
+  cut: handleCutNode,
+  paste: handlePasteNode,
+  deleteNode: handleDeleteNode,
+  focusSearch: focusNodeSearch
+});
+
 onMounted(async () => {
   setValidationResult(validateCurrentProject(projectStore.project));
   const rootResult = await getDesktopProjectRoot();
   if (rootResult.ok) desktopProjectRoot.value = rootResult.data ?? null;
+  window.addEventListener("keydown", shortcutHandler);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", shortcutHandler);
 });
 </script>
 
@@ -300,17 +511,40 @@ onMounted(async () => {
 
     <template v-if="editorStore.activeView === 'script'">
       <aside class="editor-panel editor-project-panel">
-        <ProjectTree :project="projectStore.project" :selected-script-id="projectStore.selectedScriptId" @select-script="handleSelectScript" />
+        <ProjectTree
+          :project="projectStore.project"
+          :selected-script-id="projectStore.selectedScriptId"
+          @select-script="handleSelectScript"
+          @create-script="handleCreateScript"
+          @rename-script="handleRenameScript"
+          @delete-script="handleDeleteScript"
+          @set-start-script="handleSetStartScript"
+        />
       </aside>
       <main class="editor-panel editor-node-panel">
         <StoryNodeList
-          :nodes="currentScript?.nodes ?? []"
+          :nodes="filteredNodes"
           :selected-node-id="projectStore.selectedNodeId"
+          :search-query="nodeSearchQuery"
+          :filter-type="nodeFilterType"
+          :can-undo="canUndo"
+          :can-redo="canRedo"
+          :can-paste="clipboardAvailable"
+          :can-move-up="selectedNodeCanMoveUp"
+          :can-move-down="selectedNodeCanMoveDown"
           @select-node="handleSelectNode"
           @add-dialogue="handleAddDialogue"
           @add-narration="handleAddNarration"
-          @duplicate-node="handleDuplicateNode"
+          @duplicate-node="handleCopyNode"
+          @cut-node="handleCutNode"
+          @paste-node="handlePasteNode"
           @delete-node="handleDeleteNode"
+          @move-node-up="handleMoveNodeUp"
+          @move-node-down="handleMoveNodeDown"
+          @undo="handleUndo"
+          @redo="handleRedo"
+          @update-search-query="nodeSearchQuery = $event"
+          @update-filter-type="nodeFilterType = $event"
         />
       </main>
       <aside class="editor-panel editor-property-panel">
@@ -324,7 +558,7 @@ onMounted(async () => {
       <footer class="editor-panel editor-footer-panel">
         <div class="footer-grid">
           <PreviewPanel ref="previewPanelRef" :project="projectStore.project" />
-          <ValidationPanel :result="editorStore.validationResult" />
+          <ValidationPanel :result="editorStore.validationResult" @locate-issue="handleLocateValidationIssue" />
         </div>
       </footer>
     </template>

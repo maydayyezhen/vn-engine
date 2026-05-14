@@ -12,7 +12,7 @@
     "generate:demo-audio": "node scripts/generate-demo-audio.mjs",
     "export:demo-web": "node scripts/export-demo-web-game.mjs",
     "build": "pnpm -r build",
-    "test": "pnpm --filter @vn-engine/vn-schema test && pnpm --filter @vn-engine/vn-core test && pnpm --filter @vn-engine/vn-project test && pnpm --filter @vn-engine/vn-renderer-pixi test && pnpm --filter @vn-engine/vn-audio test && pnpm --filter @vn-engine/vn-ui-runtime test && pnpm --filter @vn-engine/vn-export test && pnpm --filter @vn-engine/player test",
+    "test": "pnpm --filter @vn-engine/vn-schema test && pnpm --filter @vn-engine/vn-core test && pnpm --filter @vn-engine/vn-project test && pnpm --filter @vn-engine/vn-renderer-pixi test && pnpm --filter @vn-engine/vn-audio test && pnpm --filter @vn-engine/vn-ui-runtime test && pnpm --filter @vn-engine/vn-export test && pnpm --filter @vn-engine/player test && pnpm --filter @vn-engine/editor test",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {

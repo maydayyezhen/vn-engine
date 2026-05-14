@@ -38,3 +38,6 @@ interface ProjectBundle {
 `ProjectBundle.project` 会完整保留脚本、素材库、角色和角色表情映射。播放器导出的 Web 游戏包会把它放在 `game/project.bundle.json`，`apps/player` 启动时优先读取该文件。
 
 当前导入导出仍是 JSON 纯逻辑，不负责复制素材文件，也不是 Tauri 本地工程目录读写。后续桌面壳会复用本包逻辑，接入真实文件夹打开、保存和素材导入。
+## 脚本管理纯逻辑
+
+`vn-project` 现在提供多脚本编辑所需的纯逻辑辅助函数，包括创建安全脚本 id、创建脚本、确保项目至少有一个脚本、选择兜底脚本、重命名脚本、删除脚本和设置入口脚本。这些函数不依赖 Vue、Element Plus、DOM 或 Tauri，可同时供 Web 编辑器和桌面编辑器使用。

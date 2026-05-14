@@ -172,6 +172,54 @@ pre {
   gap: 12px;
 }
 
+.node-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.script-manage-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.script-manage-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  background: #ffffff;
+}
+
+.script-manage-item.active {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.script-manage-item strong,
+.script-manage-item small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.script-manage-item small {
+  margin-top: 3px;
+  color: #909399;
+}
+
+.validation-issue {
+  cursor: pointer;
+}
+
 .selected-node-row > td {
   background: #ecf5ff !important;
 }

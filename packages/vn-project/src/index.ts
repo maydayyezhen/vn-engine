@@ -23,6 +23,17 @@ export {
 } from "./projectPathPolicy";
 export { PROJECT_FORMAT, PROJECT_FORMAT_VERSION } from "./projectVersion";
 export { serializeProject } from "./serializeProject";
+export {
+  addScript,
+  createSafeScriptId,
+  createScriptFile,
+  deleteScript,
+  ensureProjectHasScript,
+  normalizeScriptNames,
+  renameScript,
+  selectFallbackScript,
+  setStartScript
+} from "./scriptManagement";
 export { splitProjectScripts, type ProjectScriptReference, type VNProjectMainFile } from "./splitProjectScripts";
 
 /** 本地工程文件清单，描述工程入口和脚本目录。 */

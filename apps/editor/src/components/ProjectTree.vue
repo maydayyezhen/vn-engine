@@ -28,6 +28,14 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** 选择脚本。 */
   selectScript: [scriptId: string];
+  /** 新建脚本。 */
+  createScript: [];
+  /** 重命名脚本。 */
+  renameScript: [scriptId: string];
+  /** 删除脚本。 */
+  deleteScript: [scriptId: string];
+  /** 设置入口脚本。 */
+  setStartScript: [scriptId: string];
 }>();
 
 /** Element Plus 树节点数据。 */
@@ -43,7 +51,7 @@ const treeData = computed<ProjectTreeNode[]>(() => [
         kind: "group",
         children: props.project.scripts.map((script) => ({
           key: `script:${script.id}`,
-          label: script.name,
+          label: `${script.name || script.id}${script.id === props.project.startScriptId ? " ★" : ""}`,
           kind: "script",
           scriptId: script.id
         }))
@@ -82,7 +90,31 @@ function handleNodeClick(node: ProjectTreeNode): void {
 
 <template>
   <el-card class="panel-card" shadow="never">
-    <template #header>项目资源</template>
+    <template #header>
+      <div class="panel-header">
+        <span>项目资源</span>
+        <el-button size="small" type="primary" @click="$emit('createScript')">新建脚本</el-button>
+      </div>
+    </template>
+    <div class="script-manage-list">
+      <div
+        v-for="script in project.scripts"
+        :key="script.id"
+        class="script-manage-item"
+        :class="{ active: script.id === selectedScriptId }"
+        @click="$emit('selectScript', script.id)"
+      >
+        <div>
+          <strong>{{ script.name || script.id }}</strong>
+          <small>{{ script.id }}<span v-if="script.id === project.startScriptId"> · 入口</span></small>
+        </div>
+        <el-button-group @click.stop>
+          <el-button size="small" @click="$emit('renameScript', script.id)">重命名</el-button>
+          <el-button size="small" :disabled="script.id === project.startScriptId" @click="$emit('setStartScript', script.id)">设入口</el-button>
+          <el-button size="small" type="danger" :disabled="project.scripts.length <= 1" @click="$emit('deleteScript', script.id)">删除</el-button>
+        </el-button-group>
+      </div>
+    </div>
     <el-tree
       :data="treeData"
       node-key="key"
