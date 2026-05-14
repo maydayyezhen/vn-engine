@@ -4,12 +4,9 @@ import type { RuntimeSnapshot, VNRuntime } from "@vn-engine/vn-core";
 import { VNRuntime as Runtime } from "@vn-engine/vn-core";
 import type { RuntimeSettings } from "@vn-engine/vn-ui-runtime";
 import { usePlayerAudio } from "./audio/usePlayerAudio";
-import AudioControlPanel from "./components/AudioControlPanel.vue";
-import DebugSnapshotPanel from "./components/DebugSnapshotPanel.vue";
 import GameStage from "./components/GameStage.vue";
 import HistoryPanel from "./components/HistoryPanel.vue";
 import PauseMenu from "./components/PauseMenu.vue";
-import PlayerControls from "./components/PlayerControls.vue";
 import RuntimeToolbar from "./components/RuntimeToolbar.vue";
 import SaveLoadPanel from "./components/SaveLoadPanel.vue";
 import SettingsPanel from "./components/SettingsPanel.vue";
@@ -41,10 +38,6 @@ const activePanel = ref<ActivePanel>(null);
 const savePanelMode = ref<"save" | "load">("load");
 /** 是否隐藏运行时 UI。 */
 const uiHidden = ref(false);
-/** 外部项目加载提示。 */
-const projectLoadMessage = ref<string | null>(null);
-/** 当前项目来源。 */
-const projectSource = ref<"external" | "demo">("demo");
 /** 当前项目 id。 */
 const projectId = computed(() => project.value.id);
 
@@ -67,6 +60,8 @@ const shellClass = computed(() => ({
   "is-title": gameMode.value === "title",
   "is-ui-hidden": uiHidden.value
 }));
+/** 舞台内对话/选项 UI 是否隐藏；选项和结局始终保留在舞台内。 */
+const stageRuntimeUiHidden = computed(() => uiHidden.value && snapshot.value.type !== "choices" && !snapshot.value.isEnded);
 
 /** 应用设置到音频管理器。 */
 function applyAudioSettings(settings: RuntimeSettings): void {
@@ -108,13 +103,10 @@ function choose(optionId: string): void {
   snapshot.value = runtime.value.choose(optionId);
 }
 
-/** 隐藏 UI 时点击舞台继续推进；遇到选项或结局时恢复 UI。 */
-function handleHiddenStageClick(): void {
-  if (gameMode.value !== "playing" || !uiHidden.value) return;
-  if (snapshot.value.type === "choices" || snapshot.value.isEnded) {
-    uiHidden.value = false;
-    return;
-  }
+/** 点击舞台推进剧情；选项和结局状态由舞台内 UI 处理。 */
+function handleStageClick(): void {
+  if (gameMode.value !== "playing" || activePanel.value) return;
+  if (snapshot.value.type === "choices" || snapshot.value.isEnded) return;
   next();
 }
 
@@ -203,9 +195,6 @@ watch(
   snapshot,
   (value) => {
     if (gameMode.value !== "playing") return;
-    if (uiHidden.value && (value.type === "choices" || value.isEnded)) {
-      uiHidden.value = false;
-    }
     playerHistory.pushSnapshot(value);
     skipRead.markRead(value);
   },
@@ -223,8 +212,6 @@ watch(
 onMounted(async () => {
   const result = await loadPlayerProject();
   project.value = result.project;
-  projectSource.value = result.source;
-  projectLoadMessage.value = result.message ?? null;
   runtime.value = new Runtime(project.value);
   snapshot.value = runtime.value.getSnapshot();
   applyAudioSettings(playerSettings.settings.value);
@@ -234,8 +221,8 @@ onMounted(async () => {
 <template>
   <main class="player-shell" :class="shellClass">
     <section class="player-main">
-      <div class="stage-frame" @click="handleHiddenStageClick">
-        <GameStage :project="project" :snapshot="snapshot" :ui-hidden="uiHidden || gameMode === 'title'" @choose="choose" />
+      <div class="stage-frame" @click="handleStageClick">
+        <GameStage :project="project" :snapshot="snapshot" :ui-hidden="stageRuntimeUiHidden || gameMode === 'title'" @choose="choose" />
         <RuntimeToolbar
           v-if="gameMode === 'playing' && !uiHidden"
           :auto-play-enabled="autoPlay.enabled.value"
@@ -249,41 +236,9 @@ onMounted(async () => {
           @skip-read="skipReadNodes"
           @hide-ui="uiHidden = true"
         />
-        <div v-if="gameMode === 'playing' && uiHidden" class="hidden-ui-hint">点击画面继续，遇到选项会自动显示 UI</div>
+        <div v-if="gameMode === 'playing' && uiHidden && snapshot.type !== 'choices'" class="hidden-ui-hint">点击画面继续，选项会在舞台中显示</div>
         <button v-if="gameMode === 'playing' && uiHidden" type="button" class="restore-ui-button" @click.stop="uiHidden = false">显示UI</button>
       </div>
-
-      <PlayerControls
-        v-if="gameMode === 'playing' && !uiHidden"
-        :snapshot="snapshot"
-        :auto-play-enabled="autoPlay.enabled.value"
-        @next="next"
-        @restart="restart"
-      />
-    </section>
-
-    <section v-if="gameMode === 'playing' && !uiHidden" class="side-panels">
-      <AudioControlPanel
-        :resources="playerAudio.resources.value"
-        :errors="playerAudio.errors.value"
-        :master-volume="playerSettings.settings.value.masterVolume"
-        :bgm-volume="playerSettings.settings.value.bgmVolume"
-        :sound-volume="playerSettings.settings.value.soundVolume"
-        :voice-volume="playerSettings.settings.value.voiceVolume"
-        :muted="playerSettings.settings.value.muted"
-        @update-master-volume="updateSettings({ masterVolume: $event })"
-        @update-bgm-volume="updateSettings({ bgmVolume: $event })"
-        @update-sound-volume="updateSettings({ soundVolume: $event })"
-        @update-voice-volume="updateSettings({ voiceVolume: $event })"
-        @update-muted="updateSettings({ muted: $event })"
-      />
-      <DebugSnapshotPanel
-        :snapshot="snapshot"
-        :audio-resources="playerAudio.resources.value"
-        :audio-errors="playerAudio.errors.value"
-        :project-source="projectSource"
-        :project-load-message="projectLoadMessage"
-      />
     </section>
 
     <StartMenu v-if="gameMode === 'title' && !activePanel" @start="startNewGame" @load="openLoadPanel" @settings="activePanel = 'settings'" />

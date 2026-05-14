@@ -36,16 +36,14 @@ pre {
 
 .player-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100vh;
   padding: 14px;
 }
 
 .player-main {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 12px;
+  grid-template-rows: minmax(0, 1fr);
   min-width: 0;
 }
 
@@ -62,7 +60,7 @@ pre {
 .pixi-stage-container {
   width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: calc(100vh - 104px);
+  max-height: calc(100vh - 28px);
 }
 
 .pixi-vn-canvas {
