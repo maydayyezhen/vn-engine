@@ -4,7 +4,6 @@
 
 body {
   margin: 0;
-  min-width: 1180px;
   overflow: hidden;
   background: #f4f6f8;
   font-family: Inter, "Microsoft YaHei", system-ui, sans-serif;
@@ -19,7 +18,7 @@ pre {
 .editor-page {
   display: grid;
   grid-template-columns: 260px minmax(440px, 1fr) 420px;
-  grid-template-rows: 64px minmax(0, 1fr) 300px;
+  grid-template-rows: 92px minmax(0, 1fr) 300px;
   gap: 12px;
   height: 100vh;
   width: 100vw;
@@ -65,34 +64,98 @@ pre {
 
 .toolbar-card .el-card__body {
   height: 100%;
-  padding: 12px 16px;
+  padding: 10px 14px;
 }
 
-.toolbar-content {
+.toolbar-shell {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
   height: 100%;
-}
-
-.toolbar-meta,
-.toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   min-width: 0;
 }
 
-.toolbar-meta span,
-.toolbar-meta strong {
+.toolbar-primary,
+.toolbar-secondary,
+.project-summary,
+.project-tags,
+.toolbar-command-groups {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.toolbar-primary {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.toolbar-secondary {
+  gap: 14px;
+  color: #606266;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.project-summary {
+  flex: 1 1 260px;
+  gap: 10px;
+}
+
+.project-name,
+.project-root,
+.toolbar-secondary span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.project-name {
+  max-width: 240px;
+  font-size: 16px;
+}
+
+.project-tags {
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.view-switcher {
+  flex: 0 0 auto;
+}
+
+.toolbar-command-groups {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.project-root {
+  flex: 1 1 auto;
+}
+
 .hidden-file-input {
   display: none;
+}
+
+@media (max-width: 1180px) {
+  .editor-page {
+    grid-template-rows: 124px minmax(0, 1fr) 300px;
+  }
+
+  .toolbar-primary {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .project-summary {
+    flex-basis: 100%;
+  }
+
+  .toolbar-command-groups {
+    margin-left: auto;
+  }
 }
 
 .panel-card,
