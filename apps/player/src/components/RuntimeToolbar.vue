@@ -21,7 +21,7 @@ defineEmits<{
 </script>
 
 <template>
-  <nav class="runtime-toolbar" aria-label="运行时工具栏">
+  <nav class="runtime-toolbar" aria-label="运行时工具栏" @click.stop>
     <button type="button" @click="$emit('save')">保存</button>
     <button type="button" @click="$emit('load')">读取</button>
     <button type="button" @click="$emit('history')">历史</button>
