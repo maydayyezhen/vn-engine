@@ -2,7 +2,7 @@ import type { StoryNode, VNProject } from "@vn-engine/vn-schema";
 import { getNodeSummary } from "./scriptEditService";
 
 /** 节点筛选类型。 */
-export type NodeFilterType = "all" | "dialogue" | "narration" | "choice" | "scene" | "camera" | "label" | "character" | "audio" | "variable" | "condition" | "jump";
+export type NodeFilterType = "all" | "dialogue" | "narration" | "choice" | "scene" | "camera" | "actionSequence" | "label" | "character" | "audio" | "variable" | "condition" | "jump";
 
 /** 节点搜索筛选参数。 */
 export interface NodeSearchOptions {
@@ -41,6 +41,7 @@ export function getNodeSearchText(project: VNProject, node: StoryNode): string {
     parts.push(...node.options.flatMap((option) => [option.id, option.text, option.target.scriptId, option.target.nodeId ?? "", option.target.label ?? ""]));
   }
   if (node.type === "label") parts.push(node.name, node.description ?? "");
+  if (node.type === "actionSequence") parts.push(node.name ?? "", ...node.actions.map((action) => `${action.id} ${action.type}`));
   return parts.join(" ").toLowerCase();
 }
 

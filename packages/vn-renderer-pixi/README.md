@@ -1,5 +1,16 @@
 # @vn-engine/vn-renderer-pixi
 
+## Action Sequence Rendering
+
+第十四轮新增动作序列播放支撑。`PixiVNRenderer` 会读取
+`RuntimeSnapshot.pendingActions`，交给 `ActionPlayer` 按顺序或 `parallel` 分组播放。
+渲染器只负责播放和在完成后触发 `onActionSequenceComplete` 回调，不直接调用
+`VNRuntime.next()`，剧情推进仍由播放器协调。
+
+当前动作序列复用已有背景层、角色层和镜头逻辑，支持 `wait`、背景切换、角色显示、
+隐藏、移动、表情切换、镜头动作，以及音频动作的状态联动。音频播放仍由
+`vn-audio` 根据运行时快照同步，Pixi 渲染层不直接播放音频。
+
 该包负责 PixiJS 渲染适配。它只接收 `RuntimeSnapshot` 和 `VNProject`，不直接解析原始剧本，不持有 `VNRuntime`，也不推进剧情。
 
 当前能力：

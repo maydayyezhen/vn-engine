@@ -4,6 +4,7 @@ import type {
   NodeTarget,
   StoryNode,
   VariableValue,
+  VNAction,
   VNVariableDefinition
 } from "./node";
 import type { ValidationIssue, ValidationResult, VNProject } from "./project";
@@ -22,6 +23,12 @@ const CONDITION_OPERATORS = ["eq", "ne", "gt", "gte", "lt", "lte", "contains", "
 const LEGACY_CONDITION_OPERATORS = ["equals", "notEquals", "greaterThan", "lessThan", "exists"] as const;
 /** 合法变量赋值运算符集合。 */
 const ASSIGN_OPERATORS = ["set", "add", "subtract"] as const;
+/** 鍚堟硶鍔ㄤ綔绫诲瀷闆嗗悎銆?*/
+const ACTION_TYPES = ["wait", "scene", "showCharacter", "hideCharacter", "moveCharacter", "changeExpression", "camera", "playAudio", "stopAudio", "parallel"] as const;
+/** 鍚堟硶鍔ㄤ綔缂撳姩绫诲瀷闆嗗悎銆?*/
+const ACTION_EASINGS = ["linear", "easeIn", "easeOut", "easeInOut"] as const;
+/** 鍚堟硶闊抽閫氶亾闆嗗悎銆?*/
+const AUDIO_CHANNELS = ["bgm", "sound", "voice", "sfx"] as const;
 /** 变量名格式。 */
 const VARIABLE_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
@@ -33,6 +40,11 @@ function createError(message: string, scriptId?: string, nodeId?: string): Valid
 /** 创建校验警告。 */
 function createWarning(message: string, scriptId?: string, nodeId?: string): ValidationIssue {
   return { level: "warning", message, scriptId, nodeId };
+}
+
+/** 鍒涘缓鍙畾浣嶅埌鍔ㄤ綔鐨勬牎楠岄棶棰樸€?*/
+function createActionIssue(level: ValidationIssue["level"], message: string, scriptId: string, nodeId: string, actionId: string): ValidationIssue {
+  return { level, message, scriptId, nodeId, actionId };
 }
 
 /** 判断字符串是否属于白名单。 */
@@ -148,6 +160,103 @@ function validatePresentationNode(node: StoryNode, scriptId: string, errors: Val
 }
 
 /** 收集节点中的跳转目标。 */
+/** 鏍￠獙鍔ㄤ綔 duration 鑼冨洿銆?*/
+function validateActionDuration(action: VNAction, errors: ValidationIssue[], scriptId: string, nodeId: string): void {
+  const duration = action.durationMs ?? (action.type === "wait" ? 500 : 300);
+  if (!Number.isFinite(duration) || duration < 0 || duration > 10000) {
+    errors.push(createActionIssue("error", `动作 ${action.id} 的 durationMs 必须在 0 到 10000 毫秒之间。`, scriptId, nodeId, action.id));
+  }
+}
+
+/** 鏍￠獙鍔ㄤ綔涓殑瑙掕壊琛ㄦ儏寮曠敤銆?*/
+function validateActionExpression(project: VNProject, characterId: string, expressionId: string | undefined, action: VNAction, errors: ValidationIssue[], scriptId: string, nodeId: string): void {
+  const character = project.characters.find((item) => item.id === characterId);
+  if (!character) {
+    errors.push(createActionIssue("error", `动作 ${action.id} 引用的角色不存在：${characterId}`, scriptId, nodeId, action.id));
+    return;
+  }
+  if (expressionId && !(character.expressions ?? []).some((expression) => expression.id === expressionId)) {
+    errors.push(createActionIssue("error", `动作 ${action.id} 引用的表情不存在：${characterId}.${expressionId}`, scriptId, nodeId, action.id));
+  }
+}
+
+/** 鏍￠獙鍔ㄤ綔浣嶇疆鍜屾樉绀哄弬鏁般€?*/
+function validateActionDisplayFields(action: VNAction, errors: ValidationIssue[], warnings: ValidationIssue[], scriptId: string, nodeId: string): void {
+  if ("position" in action && action.position !== undefined && !isOneOf(action.position, CHARACTER_POSITIONS)) {
+    errors.push(createActionIssue("error", `动作 ${action.id} 的角色位置非法：${String(action.position)}`, scriptId, nodeId, action.id));
+  }
+  if ("position" in action && action.position === "custom" && (action.x === undefined || action.y === undefined)) {
+    warnings.push(createActionIssue("warning", `动作 ${action.id} 使用 custom 位置时建议同时填写 x 和 y。`, scriptId, nodeId, action.id));
+  }
+  if ("scale" in action && action.scale !== undefined && (!Number.isFinite(action.scale) || action.scale <= 0)) {
+    errors.push(createActionIssue("error", `动作 ${action.id} 的 scale 必须大于 0。`, scriptId, nodeId, action.id));
+  }
+  if ("opacity" in action && action.opacity !== undefined && (!Number.isFinite(action.opacity) || action.opacity < 0 || action.opacity > 1)) {
+    errors.push(createActionIssue("error", `动作 ${action.id} 的 opacity 必须在 0 到 1 之间。`, scriptId, nodeId, action.id));
+  }
+}
+
+/** 鏍￠獙鍔ㄤ綔搴忓垪涓殑鍗曚釜鍔ㄤ綔銆?*/
+function validateAction(project: VNProject, action: VNAction, actionIds: Set<string>, errors: ValidationIssue[], warnings: ValidationIssue[], scriptId: string, nodeId: string, depth = 0): void {
+  if (actionIds.has(action.id)) errors.push(createActionIssue("error", `动作 id 重复：${action.id}`, scriptId, nodeId, action.id));
+  actionIds.add(action.id);
+  if (!isOneOf(action.type, ACTION_TYPES)) {
+    errors.push(createActionIssue("error", `动作类型非法：${String(action.type)}`, scriptId, nodeId, action.id));
+    return;
+  }
+  if (action.easing !== undefined && !isOneOf(action.easing, ACTION_EASINGS)) {
+    errors.push(createActionIssue("error", `动作 ${action.id} 的 easing 非法：${String(action.easing)}`, scriptId, nodeId, action.id));
+  }
+  validateActionDuration(action, errors, scriptId, nodeId);
+  validateActionDisplayFields(action, errors, warnings, scriptId, nodeId);
+
+  if (action.type === "scene" && !hasAssetOfType(project, action.backgroundAssetId, "background")) {
+    errors.push(createActionIssue("error", `scene 动作引用的背景素材不存在或类型不正确：${action.backgroundAssetId}`, scriptId, nodeId, action.id));
+  }
+  if (action.type === "showCharacter") {
+    validateActionExpression(project, action.characterId, action.expression, action, errors, scriptId, nodeId);
+    if (action.enterEffect !== undefined && !isOneOf(action.enterEffect, ENTER_EFFECTS)) {
+      errors.push(createActionIssue("error", `showCharacter 动作入场效果非法：${String(action.enterEffect)}`, scriptId, nodeId, action.id));
+    }
+  }
+  if (action.type === "hideCharacter") {
+    validateActionExpression(project, action.characterId, undefined, action, errors, scriptId, nodeId);
+    if (action.exitEffect !== undefined && !isOneOf(action.exitEffect, EXIT_EFFECTS)) {
+      errors.push(createActionIssue("error", `hideCharacter 动作退场效果非法：${String(action.exitEffect)}`, scriptId, nodeId, action.id));
+    }
+  }
+  if (action.type === "moveCharacter") validateActionExpression(project, action.characterId, undefined, action, errors, scriptId, nodeId);
+  if (action.type === "changeExpression") validateActionExpression(project, action.characterId, action.expression, action, errors, scriptId, nodeId);
+  if (action.type === "camera" && action.zoom !== undefined && (!Number.isFinite(action.zoom) || action.zoom <= 0 || action.zoom > 5)) {
+    errors.push(createActionIssue("error", "camera 动作 zoom 必须大于 0 且不超过 5。", scriptId, nodeId, action.id));
+  }
+  if (action.type === "camera" && action.shakeIntensity !== undefined && (!Number.isFinite(action.shakeIntensity) || action.shakeIntensity < 0 || action.shakeIntensity > 100)) {
+    warnings.push(createActionIssue("warning", "camera 动作 shakeIntensity 建议保持在 0 到 100 之间。", scriptId, nodeId, action.id));
+  }
+  if (action.type === "playAudio") {
+    if (!isOneOf(action.channel, AUDIO_CHANNELS)) errors.push(createActionIssue("error", `playAudio 动作通道非法：${String(action.channel)}`, scriptId, nodeId, action.id));
+    if (!isAudioAsset(findAsset(project, action.assetId))) errors.push(createActionIssue("error", `playAudio 动作引用的音频素材不存在或类型不正确：${action.assetId}`, scriptId, nodeId, action.id));
+  }
+  if (action.type === "stopAudio" && action.channel !== undefined && !isOneOf(action.channel, AUDIO_CHANNELS)) {
+    errors.push(createActionIssue("error", `stopAudio 动作通道非法：${String(action.channel)}`, scriptId, nodeId, action.id));
+  }
+  if (action.type === "parallel") {
+    if (!Array.isArray(action.actions) || action.actions.length === 0) errors.push(createActionIssue("error", "parallel 动作不能为空。", scriptId, nodeId, action.id));
+    if (depth >= 3) warnings.push(createActionIssue("warning", "parallel 动作嵌套较深，后续维护成本可能较高。", scriptId, nodeId, action.id));
+    for (const child of action.actions ?? []) validateAction(project, child, actionIds, errors, warnings, scriptId, nodeId, depth + 1);
+  }
+}
+
+/** 鏍￠獙鍔ㄤ綔搴忓垪鑺傜偣銆?*/
+function validateActionSequenceNode(project: VNProject, node: Extract<StoryNode, { type: "actionSequence" }>, errors: ValidationIssue[], warnings: ValidationIssue[], scriptId: string): void {
+  if (!Array.isArray(node.actions) || node.actions.length === 0) {
+    warnings.push(createWarning("ActionSequenceNode 当前没有动作。", scriptId, node.id));
+    return;
+  }
+  const actionIds = new Set<string>();
+  for (const action of node.actions) validateAction(project, action, actionIds, errors, warnings, scriptId, node.id);
+}
+
 function collectTargets(node: StoryNode): NodeTarget[] {
   if (node.type === "jump") return [node.target];
   if (node.type === "choice") return node.options.map((option) => option.target);
@@ -329,6 +438,7 @@ export function validateProject(project: VNProject): ValidationResult {
       }
 
       if (node.type === "setVariable") validateSetVariableNode(node, variables, errors, script.id);
+      if (node.type === "actionSequence") validateActionSequenceNode(project, node, errors, warnings, script.id);
 
       if (node.type === "choice") {
         for (const option of node.options) {

@@ -198,3 +198,82 @@ describe("validateProject logic fields", () => {
     expect(validateProject(project).valid).toBe(true);
   });
 });
+
+describe("validateProject action sequence fields", () => {
+  it("合法 ActionSequenceNode 可以通过校验", () => {
+    expect(validateProject(createProject()).valid).toBe(true);
+  });
+
+  it("重复 actionId 会报错", () => {
+    const project = createProject();
+    const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
+    if (sequence?.type === "actionSequence") sequence.actions[1].id = sequence.actions[0].id;
+    expect(validateProject(project).errors.some((error) => error.actionId === "action-bg-fade")).toBe(true);
+  });
+
+  it("非法动作类型会报错", () => {
+    const project = createProject();
+    const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
+    if (sequence?.type === "actionSequence") sequence.actions[0].type = "bad" as never;
+    expect(validateProject(project).errors.some((error) => error.message.includes("动作类型非法"))).toBe(true);
+  });
+
+  it("非法 duration 会报错", () => {
+    const project = createProject();
+    const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
+    if (sequence?.type === "actionSequence") sequence.actions[0].durationMs = 20000;
+    expect(validateProject(project).errors.some((error) => error.message.includes("durationMs"))).toBe(true);
+  });
+
+  it("scene 动作引用不存在背景会报错", () => {
+    const project = createProject();
+    const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
+    const scene = sequence?.type === "actionSequence" ? sequence.actions.find((action) => action.type === "scene") : undefined;
+    if (scene?.type === "scene") scene.backgroundAssetId = "missing-background";
+    expect(validateProject(project).errors.some((error) => error.actionId === scene?.id)).toBe(true);
+  });
+
+  it("showCharacter 引用不存在角色会报错", () => {
+    const project = createProject();
+    const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
+    const show = sequence?.type === "actionSequence" ? sequence.actions.find((action) => action.type === "showCharacter") : undefined;
+    if (show?.type === "showCharacter") show.characterId = "missing-character";
+    expect(validateProject(project).errors.some((error) => error.actionId === show?.id)).toBe(true);
+  });
+
+  it("changeExpression 引用不存在表情会报错", () => {
+    const project = createProject();
+    const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
+    const change = sequence?.type === "actionSequence" ? sequence.actions.find((action) => action.type === "changeExpression") : undefined;
+    if (change?.type === "changeExpression") change.expression = "missing-expression";
+    expect(validateProject(project).errors.some((error) => error.actionId === change?.id)).toBe(true);
+  });
+
+  it("playAudio 引用不存在音频会报错", () => {
+    const project = createProject();
+    const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
+    const audio = sequence?.type === "actionSequence" ? sequence.actions.find((action) => action.type === "playAudio") : undefined;
+    if (audio?.type === "playAudio") audio.assetId = "missing-audio";
+    expect(validateProject(project).errors.some((error) => error.actionId === audio?.id)).toBe(true);
+  });
+
+  it("parallel 空子动作会报错", () => {
+    const project = createProject();
+    const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
+    const parallel = sequence?.type === "actionSequence" ? sequence.actions.find((action) => action.type === "parallel") : undefined;
+    if (parallel?.type === "parallel") parallel.actions = [];
+    expect(validateProject(project).errors.some((error) => error.actionId === parallel?.id)).toBe(true);
+  });
+
+  it("custom 位置缺少 x/y 会给 warning", () => {
+    const project = createProject();
+    const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
+    const show = sequence?.type === "actionSequence" ? sequence.actions.find((action) => action.type === "showCharacter") : undefined;
+    if (show?.type === "showCharacter") {
+      show.position = "custom";
+      delete show.x;
+      delete show.y;
+    }
+    expect(validateProject(project).warnings.some((warning) => warning.actionId === show?.id)).toBe(true);
+  });
+});

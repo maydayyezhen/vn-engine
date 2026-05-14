@@ -33,6 +33,7 @@ import {
   readProjectJsonFile
 } from "../services/projectImportExportService";
 import {
+  addActionSequenceNodeAfter,
   addCameraNodeAfter,
   addDialogueNodeAfter,
   addLabelNodeAfter,
@@ -255,6 +256,16 @@ function handleAddCamera(): void {
 }
 
 /** 新增标签节点。 */
+/** 新增动作序列节点。 */
+function handleAddActionSequence(): void {
+  const currentNodeId = projectStore.selectedNodeId;
+  const nextProject = addActionSequenceNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
+  applyProject(nextProject);
+  const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
+  const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
+  selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
+}
+
 function handleAddLabel(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addLabelNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
@@ -572,6 +583,7 @@ onBeforeUnmount(() => {
           @add-dialogue="handleAddDialogue"
           @add-narration="handleAddNarration"
           @add-camera="handleAddCamera"
+          @add-action-sequence="handleAddActionSequence"
           @add-label="handleAddLabel"
           @duplicate-node="handleCopyNode"
           @cut-node="handleCutNode"

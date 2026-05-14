@@ -27,3 +27,6 @@
 ## 剧情逻辑结构
 
 `vn-schema` 现在定义项目级变量 `VNVariableDefinition`、增强版 `SetVariableNode`、结构化 `ConditionExpression`、`LabelNode` 和支持标签的 `NodeTarget`。`validateProject` 会检查变量名、默认值类型、未定义变量引用、条件值类型、标签重复和跳转目标断链。
+## 动作序列结构
+
+`vn-schema` 现在定义 `ActionSequenceNode` 和 `VNAction`。动作类型包括 `wait`、`scene`、`showCharacter`、`hideCharacter`、`moveCharacter`、`changeExpression`、`camera`、`playAudio`、`stopAudio` 和 `parallel`。`validateProject` 会检查动作 id 重复、非法动作类型、异常 duration、资源引用、角色/表情引用、音频通道、空 parallel 和 custom 位置缺少坐标等问题。校验项在可定位时会附带 `scriptId`、`nodeId` 和 `actionId`。

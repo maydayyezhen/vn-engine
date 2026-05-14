@@ -85,7 +85,15 @@ function startNewGame(): void {
 /** 推进剧情。 */
 function next(): void {
   if (gameMode.value !== "playing") return;
+  if (snapshot.value.isWaitingForActionCompletion) return;
   if (snapshot.value.type === "choices" || snapshot.value.isEnded) return;
+  snapshot.value = runtime.value.next();
+}
+
+/** 渲染器通知动作序列完成后继续推进剧情。 */
+function handleActionSequenceComplete(): void {
+  if (gameMode.value !== "playing") return;
+  if (!snapshot.value.isWaitingForActionCompletion) return;
   snapshot.value = runtime.value.next();
 }
 
@@ -102,6 +110,7 @@ function choose(optionId: string): void {
 /** 点击舞台推进剧情；选项和结局状态由舞台内 UI 处理。 */
 function handleStageClick(): void {
   if (gameMode.value !== "playing" || activePanel.value) return;
+  if (snapshot.value.isWaitingForActionCompletion) return;
   if (snapshot.value.type === "choices" || snapshot.value.isEnded) return;
   next();
 }
@@ -236,7 +245,13 @@ onMounted(async () => {
   <main class="player-shell" :class="shellClass">
     <section class="player-main">
       <div class="stage-frame" @click="handleStageClick">
-        <GameStage :project="project" :snapshot="snapshot" :ui-hidden="gameMode === 'title'" @choose="choose" />
+        <GameStage
+          :project="project"
+          :snapshot="snapshot"
+          :ui-hidden="gameMode === 'title'"
+          @choose="choose"
+          @action-sequence-complete="handleActionSequenceComplete"
+        />
         <RuntimeToolbar
           v-if="gameMode === 'playing'"
           :auto-play-enabled="autoPlay.enabled.value"

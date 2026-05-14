@@ -25,6 +25,8 @@ export interface PixiVNRendererOptions {
   height?: number;
   /** 玩家点击选项时触发的回调。 */
   onChoose?: (optionId: string) => void;
+  /** 动作序列播放完成时触发的回调。 */
+  onActionSequenceComplete?: () => void;
 }
 
 /** 单次渲染附加选项。 */

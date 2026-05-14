@@ -1,5 +1,17 @@
 # @vn-engine/vn-core
 
+## ActionSequenceNode
+
+第十四轮新增 `ActionSequenceNode` 解释能力。`vn-core` 会按结构化 `VNAction`
+计算演出后的最终运行时状态，并在 `RuntimeSnapshot.pendingActions` 中输出动作效果队列。
+播放器或编辑器画面预览可以把这些效果交给渲染层播放；核心包本身不依赖 PixiJS、DOM
+或音频 API。
+
+当前支持的动作包括 `wait`、`scene`、`showCharacter`、`hideCharacter`、
+`moveCharacter`、`changeExpression`、`camera`、`playAudio`、`stopAudio` 和
+`parallel`。`waitForCompletion=true` 时，快照会标记
+`isWaitingForActionCompletion=true`，由上层播放器等待渲染完成回调后再调用 `next()`。
+
 该包实现最小视觉小说运行时解释器。它只读取 `VNProject` 数据并产出 `RuntimeSnapshot`，不依赖 Vue、DOM、PixiJS、Tauri 或 Element Plus。
 ## 演出状态
 

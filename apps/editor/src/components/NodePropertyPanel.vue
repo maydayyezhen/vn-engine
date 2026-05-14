@@ -12,6 +12,7 @@ import {
 import { updateChoiceOption, updateConditionNode, updateNode, type StoryNodePatch } from "../services/scriptEditService";
 import ConditionEditor from "./condition/ConditionEditor.vue";
 import TargetSelector from "./target/TargetSelector.vue";
+import ActionSequenceEditor from "./action/ActionSequenceEditor.vue";
 import { createDefaultVariableValue, findVariable } from "../services/variableEditService";
 
 /** 组件属性。 */
@@ -392,6 +393,10 @@ function getMissingResourceWarning(): string {
         <el-form-item label="durationMs">
           <el-input-number :model-value="node.durationMs ?? 300" :min="0" :max="5000" @update:model-value="(value: number | undefined) => applyPatch({ durationMs: value ?? 300 })" />
         </el-form-item>
+      </template>
+
+      <template v-else-if="node.type === 'actionSequence'">
+        <ActionSequenceEditor :project="project" :node="node" @update-node="applyPatch" />
       </template>
 
       <template v-else-if="node.type === 'playAudio'">

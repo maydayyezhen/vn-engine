@@ -42,6 +42,7 @@ export function getNodeSummary(node: StoryNode): string {
   if (node.type === "showCharacter") return `${node.characterId} ${node.expression ?? ""} ${node.position ?? ""}`.trim();
   if (node.type === "hideCharacter") return node.characterId;
   if (node.type === "camera") return `zoom ${node.zoom ?? 1} offset ${node.offsetX ?? 0},${node.offsetY ?? 0}`;
+  if (node.type === "actionSequence") return `${node.name ?? "动作序列"} / ${node.actions.length} actions`;
   if (node.type === "label") return `#${node.name}`;
   if (node.type === "jump") return `${node.target.scriptId}:${node.target.label ? `#${node.target.label}` : node.target.nodeId ?? ""}`;
   if (node.type === "setVariable") return `${node.variableName ?? node.name ?? ""} ${node.operator ?? "set"} ${String(node.value)}`;
@@ -102,6 +103,19 @@ export function addCameraNodeAfter(project: VNProject, scriptId: string, afterNo
     shake: false,
     shakeIntensity: 0,
     durationMs: 300
+  };
+  return insertNodeAfter(project, scriptId, afterNodeId, node);
+}
+
+/** 在当前节点后新增动作序列节点。 */
+export function addActionSequenceNodeAfter(project: VNProject, scriptId: string, afterNodeId: string | null): VNProject {
+  const node: StoryNode = {
+    id: createNodeId("actionSequence"),
+    type: "actionSequence",
+    name: "新的动作序列",
+    actions: [],
+    autoNext: true,
+    waitForCompletion: true
   };
   return insertNodeAfter(project, scriptId, afterNodeId, node);
 }

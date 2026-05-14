@@ -1,5 +1,14 @@
 # apps/player
 
+## Action Sequence Playback
+
+第十四轮播放器支持 `ActionSequenceNode`。播放器继续由 `vn-core` 推进剧情；
+当快照包含 `pendingActions` 且标记 `isWaitingForActionCompletion` 时，播放器禁用下一步，
+把动作交给 `vn-renderer-pixi` 播放，并在渲染器发出完成回调后再调用 `VNRuntime.next()`。
+
+动作序列中的音频动作仍通过 `RuntimeSnapshot.audio` 交给 `vn-audio` 同步。存档读档恢复的是
+动作执行后的静态背景、角色、镜头和音频状态，不保存动画播放到一半的帧状态。
+
 最小 Web 播放器。当前使用 Vue3 + Vite + TypeScript 承载 PixiJS 舞台，通过 `@vn-engine/vn-core` 驱动剧情，通过 `@vn-engine/vn-renderer-pixi` 渲染画面，通过 `@vn-engine/vn-audio` 同步音频播放。
 
 当前能力：

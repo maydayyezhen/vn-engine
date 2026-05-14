@@ -4,6 +4,10 @@ export { BackgroundLayer } from "./layers/BackgroundLayer";
 export { CharacterLayer } from "./layers/CharacterLayer";
 export { ChoiceLayer } from "./layers/ChoiceLayer";
 export { DialogueLayer } from "./layers/DialogueLayer";
+export { ActionPlayer } from "./actions/ActionPlayer";
+export { applyActionEasing, normalizeActionEasing } from "./actions/actionEasing";
+export { buildActionTimeline, getActionTimelineDuration, normalizeActionEffect } from "./actions/actionTimeline";
+export type { ActionTimelineStep } from "./actions/actionTimeline";
 export { createPlaceholderTexture } from "./utils/createPlaceholderTexture";
 export {
   resolveRenderResources,

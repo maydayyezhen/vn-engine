@@ -63,7 +63,7 @@ const displayedAudio = computed(() =>
 async function ensureVisualRenderer(): Promise<PixiVNRenderer | null> {
   if (!visualContainerRef.value) return null;
   if (!visualRenderer.value) {
-    const renderer = new PixiVNRenderer({ width: 640, height: 360 });
+    const renderer = new PixiVNRenderer({ width: 640, height: 360, onActionSequenceComplete: handleVisualActionSequenceComplete });
     await renderer.mount(visualContainerRef.value);
     visualRenderer.value = renderer;
   }
@@ -95,7 +95,14 @@ function restart(): void {
 
 /** 推进预览。 */
 function next(): void {
-  if (!runtime.value || !snapshot.value || snapshot.value.type === "choices" || snapshot.value.isEnded) return;
+  if (!runtime.value || !snapshot.value || snapshot.value.isWaitingForActionCompletion || snapshot.value.type === "choices" || snapshot.value.isEnded) return;
+  snapshot.value = nextPreview(runtime.value);
+  void renderVisualPreview();
+}
+
+/** 画面预览动作序列完成后继续推进。 */
+function handleVisualActionSequenceComplete(): void {
+  if (!runtime.value || !snapshot.value?.isWaitingForActionCompletion) return;
   snapshot.value = nextPreview(runtime.value);
   void renderVisualPreview();
 }
@@ -156,7 +163,9 @@ defineExpose({
     <div v-else-if="snapshot && previewMode === 'visual'" class="visual-preview-panel">
       <div ref="visualContainerRef" class="editor-visual-stage"></div>
       <div class="visual-preview-controls">
-        <el-button size="small" :disabled="snapshot.type === 'choices' || snapshot.isEnded" @click="next">下一步</el-button>
+        <el-button size="small" :disabled="snapshot.isWaitingForActionCompletion || snapshot.type === 'choices' || snapshot.isEnded" @click="next">
+          {{ snapshot.isWaitingForActionCompletion ? "演出中" : "下一步" }}
+        </el-button>
         <template v-if="snapshot.type === 'choices'">
           <el-button v-for="choice in snapshot.choices" :key="choice.id" size="small" @click="choose(choice.id)">
             {{ choice.text }}
@@ -198,7 +207,12 @@ defineExpose({
             {{ choice.text }}
           </el-button>
         </div>
-        <el-button size="small" :disabled="snapshot.type === 'choices' || snapshot.isEnded" @click="next">下一步</el-button>
+        <div class="preview-meta">
+          pendingActions：{{ snapshot.pendingActions.length }}
+        </div>
+        <el-button size="small" :disabled="snapshot.isWaitingForActionCompletion || snapshot.type === 'choices' || snapshot.isEnded" @click="next">
+          {{ snapshot.isWaitingForActionCompletion ? "演出中" : "下一步" }}
+        </el-button>
       </div>
       <el-descriptions :column="1" border size="small">
         <el-descriptions-item label="脚本">{{ snapshot.currentScriptId }}</el-descriptions-item>

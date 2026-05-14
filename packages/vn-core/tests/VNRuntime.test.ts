@@ -151,7 +151,9 @@ describe("VNRuntime", () => {
 
   it("demo 的留下分支可以完整抵达结束状态", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
-    expect(runtime.start().currentNodeId).toBe("narration-intro");
+    expect(runtime.start().currentNodeId).toBe("action-sequence-intro");
+    expect(runtime.getSnapshot().isWaitingForActionCompletion).toBe(true);
+    expect(runtime.next().currentNodeId).toBe("narration-intro");
     expect(runtime.next().currentNodeId).toBe("dialogue-greeting");
     expect(runtime.next().type).toBe("choices");
     expect(runtime.choose("stay").currentNodeId).toBe("ending-a");
@@ -166,6 +168,7 @@ describe("VNRuntime", () => {
     runtime.start();
     runtime.next();
     runtime.next();
+    runtime.next();
     expect(runtime.choose("leave").currentNodeId).toBe("ending-b");
     expect(runtime.next().currentNodeId).toBe("final-end");
     const ended = runtime.next();
@@ -175,6 +178,7 @@ describe("VNRuntime", () => {
   it("getState 和 loadState 可以恢复脚本、节点、变量、背景、角色、音频状态", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
     runtime.start();
+    runtime.next();
     runtime.next();
     runtime.next();
     const choiceSnapshot = runtime.choose("stay");
@@ -222,7 +226,7 @@ describe("VNRuntime", () => {
     expect(snapshot.background).toMatchObject({
       assetId: "bg-classroom",
       transition: "fade",
-      transitionDurationMs: 600
+      transitionDurationMs: 300
     });
   });
 
@@ -237,13 +241,14 @@ describe("VNRuntime", () => {
       zIndex: 2,
       flipX: false,
       enterEffect: "fadeIn",
-      transitionDurationMs: 400
+      transitionDurationMs: 200
     });
   });
 
   it("HideCharacterNode 会生成退场 pendingEffects", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
     runtime.start();
+    runtime.next();
     runtime.next();
     runtime.next();
     runtime.choose("stay");
@@ -259,6 +264,7 @@ describe("VNRuntime", () => {
   it("CameraNode 会更新镜头状态并可被 getState/loadState 恢复", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
     runtime.start();
+    runtime.next();
     runtime.next();
     const choices = runtime.next();
     expect(choices.camera.zoom).toBe(1.04);
@@ -370,5 +376,40 @@ describe("VNRuntime", () => {
     const choiceRuntime = new VNRuntime(project);
     choiceRuntime.start();
     expect(choiceRuntime.choose("go").currentNodeId).toBe("text");
+  });
+
+  it("ActionSequenceNode 会应用 scene、showCharacter、moveCharacter、changeExpression、camera 和 audio 动作", () => {
+    const runtime = new VNRuntime(createDemoProjectFromScriptFile());
+    const snapshot = runtime.start();
+    expect(snapshot.type).toBe("action");
+    expect(snapshot.isWaitingForActionCompletion).toBe(true);
+    expect(snapshot.pendingActions.map((action) => action.actionType)).toContain("wait");
+    expect(snapshot.backgroundAssetId).toBe("bg-classroom");
+    expect(snapshot.characters[0]).toMatchObject({
+      characterId: "lincheng",
+      expression: "smile",
+      position: "center",
+      scale: 1.05
+    });
+    expect(snapshot.camera.zoom).toBe(1.03);
+    expect(snapshot.audio.voice).toBe("voice-lincheng-001");
+    expect(snapshot.debugLog.some((event) => event.type === "action")).toBe(true);
+  });
+
+  it("ActionSequenceNode 完成后 next 会进入下一个可展示节点", () => {
+    const runtime = new VNRuntime(createDemoProjectFromScriptFile());
+    runtime.start();
+    const snapshot = runtime.next();
+    expect(snapshot.currentNodeId).toBe("narration-intro");
+  });
+
+  it("getState/loadState 可以恢复动作序列后的静态状态", () => {
+    const runtime = new VNRuntime(createDemoProjectFromScriptFile());
+    runtime.start();
+    const restored = new VNRuntime(createDemoProjectFromScriptFile());
+    const snapshot = restored.loadState(runtime.getState());
+    expect(snapshot.characters[0]?.expression).toBe("smile");
+    expect(snapshot.camera.zoom).toBe(1.03);
+    expect(snapshot.audio.voice).toBe("voice-lincheng-001");
   });
 });

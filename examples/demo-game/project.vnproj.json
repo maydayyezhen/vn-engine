@@ -112,6 +112,91 @@
           "flipX": false
         },
         {
+          "id": "action-sequence-intro",
+          "type": "actionSequence",
+          "name": "intro-presentation",
+          "waitForCompletion": true,
+          "autoNext": true,
+          "actions": [
+            {
+              "id": "action-bg-fade",
+              "type": "scene",
+              "backgroundAssetId": "bg-classroom",
+              "transition": "fade",
+              "durationMs": 300,
+              "easing": "linear"
+            },
+            {
+              "id": "action-show-lincheng",
+              "type": "showCharacter",
+              "characterId": "lincheng",
+              "expression": "normal",
+              "position": "left",
+              "scale": 1,
+              "opacity": 1,
+              "zIndex": 1,
+              "flipX": false,
+              "enterEffect": "fadeIn",
+              "durationMs": 300,
+              "easing": "easeOut"
+            },
+            {
+              "id": "action-wait",
+              "type": "wait",
+              "durationMs": 250,
+              "easing": "linear"
+            },
+            {
+              "id": "action-parallel-focus",
+              "type": "parallel",
+              "durationMs": 500,
+              "easing": "easeInOut",
+              "actions": [
+                {
+                  "id": "action-move-lincheng",
+                  "type": "moveCharacter",
+                  "characterId": "lincheng",
+                  "position": "center",
+                  "scale": 1.05,
+                  "opacity": 1,
+                  "zIndex": 2,
+                  "flipX": false,
+                  "durationMs": 500,
+                  "easing": "easeInOut"
+                },
+                {
+                  "id": "action-camera-focus",
+                  "type": "camera",
+                  "zoom": 1.03,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "shake": false,
+                  "shakeIntensity": 0,
+                  "durationMs": 500,
+                  "easing": "easeOut"
+                }
+              ]
+            },
+            {
+              "id": "action-change-smile",
+              "type": "changeExpression",
+              "characterId": "lincheng",
+              "expression": "smile",
+              "durationMs": 200,
+              "easing": "linear"
+            },
+            {
+              "id": "action-play-voice",
+              "type": "playAudio",
+              "channel": "voice",
+              "assetId": "voice-lincheng-001",
+              "loop": false,
+              "durationMs": 0,
+              "easing": "linear"
+            }
+          ]
+        },
+        {
           "id": "narration-intro",
           "type": "narration",
           "text": "这是一个用于验证视觉小说运行时的测试故事。",

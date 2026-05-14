@@ -1,8 +1,8 @@
 import type { ChoiceOption, VariableValue } from "@vn-engine/vn-schema";
-import type { RuntimeAudioState, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeEffect } from "./RuntimeState";
+import type { RuntimeActionEffect, RuntimeAudioState, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeEffect } from "./RuntimeState";
 
 /** 运行时快照类型，用于告诉 UI 当前应该展示什么。 */
-export type RuntimeSnapshotType = "dialogue" | "choices" | "ended";
+export type RuntimeSnapshotType = "dialogue" | "choices" | "action" | "ended";
 
 /** 提供给播放器或编辑器预览的只读运行时快照。 */
 export interface RuntimeSnapshot {
@@ -22,6 +22,8 @@ export interface RuntimeSnapshot {
   camera: RuntimeCameraState;
   /** 待渲染的一次性演出效果。 */
   pendingEffects: RuntimeEffect[];
+  /** 等待渲染器播放的动作序列效果。 */
+  pendingActions: RuntimeActionEffect[];
   /** 当前说话人显示名称或角色 id，旁白为空。 */
   speaker: string | null;
   /** 当前文本内容。 */
@@ -38,6 +40,8 @@ export interface RuntimeSnapshot {
   variables: Record<string, VariableValue>;
   /** 最近运行时调试日志。 */
   debugLog: RuntimeDebugEvent[];
+  /** 是否正在等待动作序列播放完成。 */
+  isWaitingForActionCompletion: boolean;
   /** 当前音频状态。 */
   audio: RuntimeAudioState;
   /** 剧情是否已经结束。 */

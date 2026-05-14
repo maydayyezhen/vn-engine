@@ -206,6 +206,35 @@ pre {
   border-bottom: 1px solid #eef1f5;
 }
 
+.action-sequence-editor,
+.action-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-toolbar {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+}
+
+.action-item {
+  margin-bottom: 8px;
+}
+
+.action-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.muted {
+  color: #8a8f98;
+  font-size: 12px;
+}
+
 .preview-actions {
   display: flex;
   align-items: center;

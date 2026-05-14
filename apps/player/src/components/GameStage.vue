@@ -19,6 +19,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** 玩家选择某个选项。 */
   choose: [optionId: string];
+  /** 动作序列播放完成。 */
+  actionSequenceComplete: [];
 }>();
 
 /** PixiJS 挂载容器。 */
@@ -28,7 +30,10 @@ const mounted = ref(false);
 /** 容器尺寸观察器。 */
 let resizeObserver: ResizeObserver | null = null;
 
-const pixi = usePixiVNRenderer(createChoiceBridge((optionId) => emit("choose", optionId)));
+const pixi = usePixiVNRenderer(
+  createChoiceBridge((optionId) => emit("choose", optionId)),
+  () => emit("actionSequenceComplete")
+);
 
 /** 渲染当前快照。 */
 async function renderCurrent(): Promise<void> {

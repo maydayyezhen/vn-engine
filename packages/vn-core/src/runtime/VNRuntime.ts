@@ -1,10 +1,10 @@
-import type { ChoiceOption, NodeTarget, SetVariableNode, ShowCharacterNode, StoryNode, VariableValue, VNProject } from "@vn-engine/vn-schema";
+import type { ActionSequenceNode, ChoiceOption, MoveCharacterAction, NodeTarget, SetVariableNode, ShowCharacterAction, ShowCharacterNode, StoryNode, VariableValue, VNAction, VNProject } from "@vn-engine/vn-schema";
 import { validateProject } from "@vn-engine/vn-schema";
 import { ConditionEvaluator } from "../condition/ConditionEvaluator";
 import { findNodeByIndex, findNodeIndex, findScript } from "../utils/runtimeLookup";
 import { resolveRuntimeTarget } from "../utils/targetResolver";
 import { VariableStore } from "../variable/VariableStore";
-import type { RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeState } from "./RuntimeState";
+import type { RuntimeActionEffect, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeState } from "./RuntimeState";
 import type { RuntimeSnapshot } from "./RuntimeSnapshot";
 
 /** 最小视觉小说运行时解释器。 */
@@ -45,6 +45,7 @@ export class VNRuntime {
   /** 推进到下一个剧情节点。 */
   next(): RuntimeSnapshot {
     if (this.state.isEnded || this.state.isWaitingChoice) return this.getSnapshot();
+    this.state.isWaitingForActionCompletion = false;
     this.state.currentNodeIndex += 1;
     return this.processCurrentNode();
   }
@@ -119,10 +120,12 @@ export class VNRuntime {
       characters: [],
       camera: this.createDefaultCameraState(),
       pendingEffects: [],
+      pendingActions: [],
       audio: {},
       variables: this.createDefaultVariables(),
       debugLog: [],
       isWaitingChoice: false,
+      isWaitingForActionCompletion: false,
       isEnded: false
     };
   }
@@ -141,6 +144,10 @@ export class VNRuntime {
       if (node.type === "dialogue") return this.showDialogue(node.characterId, node.text, node.textSpeed, node.autoNext, node.waitForClick);
       if (node.type === "narration") return this.showDialogue(null, node.text, node.textSpeed, node.autoNext, node.waitForClick);
       if (node.type === "choice") return this.showChoices(node);
+      if (node.type === "actionSequence") {
+        const shouldWait = this.applyActionSequence(node);
+        if (shouldWait) return this.showActionSequence(node);
+      }
       this.applyAutoNode(node);
     }
     return this.getSnapshot();
@@ -154,6 +161,130 @@ export class VNRuntime {
   }
 
   /** 处理自动推进节点。 */
+  /** 执行动作序列并返回是否需要等待渲染器完成。 */
+  private applyActionSequence(node: ActionSequenceNode): boolean {
+    this.addDebugEvent("action", `动作序列开始：${node.name ?? node.id}`, this.state.currentScriptId, node.id);
+    this.state.pendingActions = [];
+    for (const action of node.actions) this.applyAction(action);
+    this.state.variables = this.variables.snapshot();
+    const shouldWait = node.waitForCompletion ?? true;
+    this.state.isWaitingForActionCompletion = shouldWait;
+    this.addDebugEvent("action", `动作序列已应用：${node.name ?? node.id}`, this.state.currentScriptId, node.id);
+    return shouldWait;
+  }
+
+  /** 应用单个动作对最终运行时状态的影响。 */
+  private applyAction(action: VNAction, parallelGroupId?: string): void {
+    if (action.type !== "parallel") this.state.pendingActions.push(this.createRuntimeActionEffect(action, parallelGroupId));
+    if (action.type === "wait") return;
+    if (action.type === "scene") {
+      this.state.backgroundAssetId = action.backgroundAssetId;
+      this.state.background = {
+        assetId: action.backgroundAssetId,
+        transition: action.transition ?? "none",
+        transitionDurationMs: action.durationMs ?? 300
+      };
+      return;
+    }
+    if (action.type === "showCharacter") {
+      this.showCharacter(this.actionToShowCharacterNode(action));
+      return;
+    }
+    if (action.type === "hideCharacter") {
+      this.hideCharacter(action.characterId, action.exitEffect ?? "none", action.durationMs ?? 300);
+      return;
+    }
+    if (action.type === "moveCharacter") {
+      this.moveCharacter(action);
+      return;
+    }
+    if (action.type === "changeExpression") {
+      this.changeCharacterExpression(action.characterId, action.expression, action.durationMs ?? 300);
+      return;
+    }
+    if (action.type === "camera") {
+      this.state.camera = {
+        zoom: action.zoom ?? this.state.camera.zoom,
+        offsetX: action.offsetX ?? this.state.camera.offsetX,
+        offsetY: action.offsetY ?? this.state.camera.offsetY,
+        shake: action.shake ?? this.state.camera.shake,
+        shakeIntensity: action.shakeIntensity ?? this.state.camera.shakeIntensity,
+        durationMs: action.durationMs ?? 300
+      };
+      return;
+    }
+    if (action.type === "playAudio") {
+      this.state.audio[action.channel] = action.assetId;
+      return;
+    }
+    if (action.type === "stopAudio") {
+      if (action.channel) delete this.state.audio[action.channel];
+      else this.state.audio = {};
+      return;
+    }
+    if (action.type === "parallel") {
+      for (const child of action.actions) this.applyAction(child, action.id);
+    }
+  }
+
+  /** 创建供渲染器播放的动作效果快照。 */
+  private createRuntimeActionEffect(action: VNAction, parallelGroupId?: string): RuntimeActionEffect {
+    const { id, type, durationMs, easing, ...payload } = action;
+    return {
+      actionId: id,
+      actionType: type,
+      durationMs: durationMs ?? (type === "wait" ? 500 : 300),
+      easing: easing ?? "linear",
+      parallelGroupId,
+      payload: { ...payload }
+    };
+  }
+
+  /** 将角色显示动作转换成既有角色显示节点形状。 */
+  private actionToShowCharacterNode(action: ShowCharacterAction): ShowCharacterNode {
+    return {
+      id: action.id,
+      type: "showCharacter",
+      characterId: action.characterId,
+      expression: action.expression,
+      position: action.position,
+      x: action.x,
+      y: action.y,
+      scale: action.scale,
+      opacity: action.opacity,
+      zIndex: action.zIndex,
+      flipX: action.flipX,
+      enterEffect: action.enterEffect,
+      transitionDurationMs: action.durationMs
+    };
+  }
+
+  /** 移动或更新已显示角色的显示参数。 */
+  private moveCharacter(action: MoveCharacterAction): void {
+    this.state.characters = this.state.characters.map((character) =>
+      character.characterId === action.characterId
+        ? {
+            ...character,
+            position: action.position ?? character.position,
+            x: action.x ?? character.x,
+            y: action.y ?? character.y,
+            scale: action.scale ?? character.scale,
+            opacity: action.opacity ?? character.opacity,
+            zIndex: action.zIndex ?? character.zIndex,
+            flipX: action.flipX ?? character.flipX,
+            transitionDurationMs: action.durationMs ?? character.transitionDurationMs
+          }
+        : character
+    );
+  }
+
+  /** 切换已显示角色的表情。 */
+  private changeCharacterExpression(characterId: string, expression: string, durationMs: number): void {
+    this.state.characters = this.state.characters.map((character) =>
+      character.characterId === characterId ? { ...character, expression, transitionDurationMs: durationMs } : character
+    );
+  }
+
   private applyAutoNode(node: StoryNode): void {
     if (node.type === "jump") {
       this.applyJump(node.target);
@@ -311,6 +442,14 @@ export class VNRuntime {
   }
 
   /** 创建对话快照。 */
+  /** 创建动作序列等待快照。 */
+  private showActionSequence(node: ActionSequenceNode): RuntimeSnapshot {
+    this.state.isWaitingChoice = false;
+    this.state.variables = this.variables.snapshot();
+    this.snapshot = this.createSnapshot("action", null, node.name ?? "演出中", []);
+    return this.getSnapshot();
+  }
+
   private showDialogue(speaker: string | null, text: string, textSpeed?: number, autoNext?: boolean, waitForClick?: boolean): RuntimeSnapshot {
     this.state.isWaitingChoice = false;
     this.state.variables = this.variables.snapshot();
@@ -349,6 +488,10 @@ export class VNRuntime {
       ...effect,
       character: effect.character ? { ...effect.character } : undefined
     }));
+    const pendingActions = this.state.pendingActions.map((action) => ({
+      ...action,
+      payload: { ...action.payload }
+    }));
     const snapshot: RuntimeSnapshot = {
       type,
       currentScriptId: this.state.currentScriptId,
@@ -358,15 +501,18 @@ export class VNRuntime {
       characters: this.state.characters.map((item) => ({ ...item })),
       camera: { ...this.state.camera },
       pendingEffects,
+      pendingActions,
       speaker,
       text,
       choices: choices.map((choice) => ({ ...choice, setVariables: { ...choice.setVariables }, target: { ...choice.target } })),
       variables: this.variables.snapshot(),
       debugLog: this.state.debugLog.map((event) => ({ ...event })),
       audio: { ...this.state.audio },
+      isWaitingForActionCompletion: this.state.isWaitingForActionCompletion,
       isEnded: this.state.isEnded
     };
     this.state.pendingEffects = [];
+    this.state.pendingActions = [];
     return snapshot;
   }
 
@@ -380,6 +526,10 @@ export class VNRuntime {
       pendingEffects: (state.pendingEffects ?? []).map((effect) => ({
         ...effect,
         character: effect.character ? { ...effect.character } : undefined
+      })),
+      pendingActions: (state.pendingActions ?? []).map((action) => ({
+        ...action,
+        payload: { ...action.payload }
       })),
       audio: { ...state.audio },
       variables: { ...state.variables },
@@ -397,6 +547,10 @@ export class VNRuntime {
       pendingEffects: snapshot.pendingEffects.map((effect) => ({
         ...effect,
         character: effect.character ? { ...effect.character } : undefined
+      })),
+      pendingActions: (snapshot.pendingActions ?? []).map((action) => ({
+        ...action,
+        payload: { ...action.payload }
       })),
       choices: snapshot.choices.map((choice) => ({ ...choice, setVariables: { ...choice.setVariables }, target: { ...choice.target } })),
       variables: { ...snapshot.variables },

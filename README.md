@@ -165,3 +165,6 @@ pnpm build
 ## 第十三轮：剧情逻辑与变量系统增强
 
 当前支持项目级变量定义、增强版 `SetVariableNode`、结构化 `ConditionExpression`、`LabelNode`、节点或标签跳转目标，以及运行时逻辑调试日志。编辑器新增变量管理、条件编辑、目标选择和预览日志显示；播放器调试面板也能显示最近变量、条件和跳转日志。
+## 第十四轮：演出时间轴与动作序列
+
+当前支持 `ActionSequenceNode`，可在一个节点中保存顺序动作和 `parallel` 并行动作组。动作类型包括 `wait`、`scene`、`showCharacter`、`hideCharacter`、`moveCharacter`、`changeExpression`、`camera`、`playAudio`、`stopAudio`。`vn-core` 负责计算动作后的最终运行时状态并输出 `pendingActions`，`vn-renderer-pixi` 负责等待动作序列并通知完成，`apps/player` 收到完成回调后再推进剧情。当前仍不是复杂关键帧时间轴或曲线编辑器。

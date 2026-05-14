@@ -35,6 +35,7 @@ export type NodeType =
   | "showCharacter"
   | "hideCharacter"
   | "camera"
+  | "actionSequence"
   | "label"
   | "playAudio"
   | "stopAudio"
@@ -56,6 +57,175 @@ export type CharacterPosition = "left" | "center" | "right" | "custom";
 
 /** 音频通道类型，保留 sfx 作为旧数据兼容别名。 */
 export type StoryAudioChannel = "bgm" | "sound" | "voice" | "sfx";
+
+/** 演出动作缓动类型，第一阶段主要作为可序列化配置保存。 */
+export type VNEasing = "linear" | "easeIn" | "easeOut" | "easeInOut";
+
+/** 演出动作类型。 */
+export type VNActionType =
+  | "wait"
+  | "scene"
+  | "showCharacter"
+  | "hideCharacter"
+  | "moveCharacter"
+  | "changeExpression"
+  | "camera"
+  | "playAudio"
+  | "stopAudio"
+  | "parallel";
+
+/** 演出动作基础字段。 */
+export interface BaseVNAction {
+  /** 动作在当前动作序列内的唯一 id。 */
+  id: string;
+  /** 动作类型。 */
+  type: VNActionType;
+  /** 动作持续时间，单位毫秒。 */
+  durationMs?: number;
+  /** 动作缓动类型。 */
+  easing?: VNEasing;
+}
+
+/** 等待动作。 */
+export interface WaitAction extends BaseVNAction {
+  /** 动作类型。 */
+  type: "wait";
+}
+
+/** 背景切换动作。 */
+export interface SceneAction extends BaseVNAction {
+  /** 动作类型。 */
+  type: "scene";
+  /** 背景素材 id。 */
+  backgroundAssetId: string;
+  /** 背景转场类型。 */
+  transition?: TransitionType;
+}
+
+/** 角色显示动作。 */
+export interface ShowCharacterAction extends BaseVNAction {
+  /** 动作类型。 */
+  type: "showCharacter";
+  /** 角色 id。 */
+  characterId: string;
+  /** 表情 id。 */
+  expression?: string;
+  /** 角色位置。 */
+  position?: CharacterPosition;
+  /** 自定义横坐标。 */
+  x?: number;
+  /** 自定义纵坐标。 */
+  y?: number;
+  /** 缩放。 */
+  scale?: number;
+  /** 透明度。 */
+  opacity?: number;
+  /** 层级。 */
+  zIndex?: number;
+  /** 是否水平翻转。 */
+  flipX?: boolean;
+  /** 入场效果。 */
+  enterEffect?: CharacterEnterEffect;
+}
+
+/** 角色隐藏动作。 */
+export interface HideCharacterAction extends BaseVNAction {
+  /** 动作类型。 */
+  type: "hideCharacter";
+  /** 角色 id。 */
+  characterId: string;
+  /** 退场效果。 */
+  exitEffect?: CharacterExitEffect;
+}
+
+/** 角色移动或显示参数变更动作。 */
+export interface MoveCharacterAction extends BaseVNAction {
+  /** 动作类型。 */
+  type: "moveCharacter";
+  /** 角色 id。 */
+  characterId: string;
+  /** 角色位置。 */
+  position?: CharacterPosition;
+  /** 自定义横坐标。 */
+  x?: number;
+  /** 自定义纵坐标。 */
+  y?: number;
+  /** 缩放。 */
+  scale?: number;
+  /** 透明度。 */
+  opacity?: number;
+  /** 层级。 */
+  zIndex?: number;
+  /** 是否水平翻转。 */
+  flipX?: boolean;
+}
+
+/** 角色表情切换动作。 */
+export interface ChangeExpressionAction extends BaseVNAction {
+  /** 动作类型。 */
+  type: "changeExpression";
+  /** 角色 id。 */
+  characterId: string;
+  /** 表情 id。 */
+  expression: string;
+}
+
+/** 镜头动作。 */
+export interface CameraAction extends BaseVNAction {
+  /** 动作类型。 */
+  type: "camera";
+  /** 画面缩放。 */
+  zoom?: number;
+  /** 横向偏移。 */
+  offsetX?: number;
+  /** 纵向偏移。 */
+  offsetY?: number;
+  /** 是否震动。 */
+  shake?: boolean;
+  /** 震动强度。 */
+  shakeIntensity?: number;
+}
+
+/** 音频播放动作。 */
+export interface PlayAudioAction extends BaseVNAction {
+  /** 动作类型。 */
+  type: "playAudio";
+  /** 音频通道。 */
+  channel: StoryAudioChannel;
+  /** 音频素材 id。 */
+  assetId: string;
+  /** 是否循环。 */
+  loop?: boolean;
+}
+
+/** 音频停止动作。 */
+export interface StopAudioAction extends BaseVNAction {
+  /** 动作类型。 */
+  type: "stopAudio";
+  /** 要停止的通道；为空时表示停止全部。 */
+  channel?: StoryAudioChannel;
+}
+
+/** 并行动作组。 */
+export interface ParallelAction extends BaseVNAction {
+  /** 动作类型。 */
+  type: "parallel";
+  /** 同时执行的子动作列表。 */
+  actions: VNAction[];
+}
+
+/** 可序列化演出动作联合类型。 */
+export type VNAction =
+  | WaitAction
+  | SceneAction
+  | ShowCharacterAction
+  | HideCharacterAction
+  | MoveCharacterAction
+  | ChangeExpressionAction
+  | CameraAction
+  | PlayAudioAction
+  | StopAudioAction
+  | ParallelAction;
 
 /** 旧版条件分支比较运算符。 */
 export type LegacyConditionOperator = "equals" | "notEquals" | "greaterThan" | "lessThan" | "exists";
@@ -255,6 +425,22 @@ export interface CameraNode {
 }
 
 /** 播放音频节点。 */
+/** 动作序列节点，用结构化动作描述一段可等待完成的演出。 */
+export interface ActionSequenceNode {
+  /** 节点类型。 */
+  type: "actionSequence";
+  /** 节点唯一标识。 */
+  id: string;
+  /** 动作序列显示名称。 */
+  name?: string;
+  /** 顺序执行的动作列表。 */
+  actions: VNAction[];
+  /** 动作完成后是否自动进入后续剧情。 */
+  autoNext?: boolean;
+  /** 是否等待渲染器播放完成后再推进。 */
+  waitForCompletion?: boolean;
+}
+
 export interface PlayAudioNode {
   /** 节点类型。 */
   type: "playAudio";
@@ -346,6 +532,7 @@ export type StoryNode =
   | ShowCharacterNode
   | HideCharacterNode
   | CameraNode
+  | ActionSequenceNode
   | LabelNode
   | PlayAudioNode
   | StopAudioNode

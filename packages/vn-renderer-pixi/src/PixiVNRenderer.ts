@@ -7,6 +7,7 @@ import { CharacterLayer } from "./layers/CharacterLayer";
 import { ChoiceLayer } from "./layers/ChoiceLayer";
 import { DialogueLayer } from "./layers/DialogueLayer";
 import type { PixiVNRendererOptions, PixiVNRenderOptions, VNRenderSize } from "./types";
+import { ActionPlayer } from "./actions/ActionPlayer";
 import { normalizeCameraState } from "./utils/presentationLayout";
 import { resolveRenderResources } from "./utils/resolveRenderResources";
 
@@ -34,6 +35,8 @@ export class PixiVNRenderer {
   private choiceLayer: ChoiceLayer | null = null;
   /** 镜头动画编号，用于让旧震动动画失效。 */
   private cameraAnimationToken = 0;
+  /** 动作序列播放协调器。 */
+  private readonly actionPlayer = new ActionPlayer();
 
   /** 创建 PixiJS 视觉小说渲染器。 */
   constructor(private readonly options: PixiVNRendererOptions = {}) {
@@ -89,6 +92,11 @@ export class PixiVNRenderer {
       this.dialogueLayer.render(snapshot, project, this.size);
       this.choiceLayer.render(snapshot.type === "choices" ? snapshot.choices : [], this.size);
     }
+    if (snapshot.pendingActions?.length) {
+      void this.actionPlayer.play(snapshot.pendingActions).then(() => {
+        this.options.onActionSequenceComplete?.();
+      });
+    }
   }
 
   /** 调整舞台尺寸。 */
@@ -109,6 +117,7 @@ export class PixiVNRenderer {
   }
 
   destroy(): void {
+    this.actionPlayer.destroy();
     this.assetLoader.clear();
     this.root.removeChildren();
     this.app?.destroy(true, { children: true, texture: false });

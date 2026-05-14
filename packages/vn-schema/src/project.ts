@@ -16,6 +16,8 @@ export interface ValidationIssue {
   scriptId?: string;
   /** 关联节点 id。 */
   nodeId?: string;
+  /** 关联动作 id。 */
+  actionId?: string;
 }
 
 /** 视觉小说工程根对象。 */

@@ -1,4 +1,4 @@
-import type { CharacterEnterEffect, CharacterExitEffect, CharacterPosition, TransitionType, VariableValue } from "@vn-engine/vn-schema";
+import type { CharacterEnterEffect, CharacterExitEffect, CharacterPosition, TransitionType, VariableValue, VNEasing, VNActionType } from "@vn-engine/vn-schema";
 
 /** 当前背景显示状态。 */
 export interface RuntimeBackgroundState {
@@ -38,6 +38,22 @@ export interface RuntimeEffect {
   transitionDurationMs: number;
   /** 退场前角色显示状态。 */
   character?: RuntimeCharacterDisplay;
+}
+
+/** 等待渲染器播放的动作效果。 */
+export interface RuntimeActionEffect {
+  /** 动作 id。 */
+  actionId: string;
+  /** 动作类型。 */
+  actionType: VNActionType;
+  /** 动作持续时间，单位毫秒。 */
+  durationMs: number;
+  /** 动作缓动。 */
+  easing: VNEasing;
+  /** 是否属于并行动作组。 */
+  parallelGroupId?: string;
+  /** 动作参数快照。 */
+  payload: Record<string, unknown>;
 }
 
 /** 当前显示的角色状态。 */
@@ -87,7 +103,7 @@ export interface RuntimeDebugEvent {
   /** 调试事件唯一标识。 */
   id: string;
   /** 调试事件类型。 */
-  type: "jump" | "condition" | "variable" | "error";
+  type: "jump" | "condition" | "variable" | "action" | "error";
   /** 可读事件消息。 */
   message: string;
   /** 关联脚本 id。 */
@@ -116,6 +132,8 @@ export interface RuntimeState {
   camera: RuntimeCameraState;
   /** 待渲染的一次性演出效果。 */
   pendingEffects: RuntimeEffect[];
+  /** 等待渲染器播放的动作序列效果。 */
+  pendingActions: RuntimeActionEffect[];
   /** 当前音频状态。 */
   audio: RuntimeAudioState;
   /** 当前变量表。 */
@@ -124,6 +142,8 @@ export interface RuntimeState {
   debugLog: RuntimeDebugEvent[];
   /** 运行时是否正在等待玩家选择。 */
   isWaitingChoice: boolean;
+  /** 是否正在等待动作序列播放完成。 */
+  isWaitingForActionCompletion: boolean;
   /** 剧情是否已经结束。 */
   isEnded: boolean;
 }
