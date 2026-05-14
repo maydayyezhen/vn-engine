@@ -1,0 +1,39 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 1024px;
+  background: #f4f6f8;
+  font-family: Inter, "Microsoft YaHei", system-ui, sans-serif;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.editor-page {
+  height: 100vh;
+}
+
+.editor-aside,
+.editor-main,
+.editor-footer {
+  padding: 12px;
+}
+
+.panel-card,
+.preview-card {
+  height: 100%;
+  border-radius: 8px;
+}
+
+.preview-content {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  height: 100%;
+}

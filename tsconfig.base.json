@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "jsx": "preserve",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@vn-engine/vn-schema": ["packages/vn-schema/src/index.ts"],
+      "@vn-engine/vn-core": ["packages/vn-core/src/index.ts"],
+      "@vn-engine/vn-renderer-pixi": ["packages/vn-renderer-pixi/src/index.ts"],
+      "@vn-engine/vn-project": ["packages/vn-project/src/index.ts"],
+      "@vn-engine/vn-audio": ["packages/vn-audio/src/index.ts"],
+      "@vn-engine/vn-ui-runtime": ["packages/vn-ui-runtime/src/index.ts"],
+      "@vn-engine/vn-compiler": ["packages/vn-compiler/src/index.ts"]
+    }
+  }
+}

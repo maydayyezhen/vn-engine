@@ -1,0 +1,128 @@
+{
+  "id": "start",
+  "name": "开场",
+  "nodes": [
+    {
+      "id": "scene-classroom",
+      "type": "scene",
+      "backgroundAssetId": "bg-classroom"
+    },
+    {
+      "id": "play-bgm",
+      "type": "playAudio",
+      "channel": "bgm",
+      "assetId": "bgm-test",
+      "loop": true
+    },
+    {
+      "id": "show-lincheng",
+      "type": "showCharacter",
+      "characterId": "lincheng",
+      "assetId": "lincheng-normal",
+      "position": "center"
+    },
+    {
+      "id": "narration-intro",
+      "type": "narration",
+      "text": "这是一个用于验证视觉小说运行时的测试故事。"
+    },
+    {
+      "id": "dialogue-greeting",
+      "type": "dialogue",
+      "characterId": "lincheng",
+      "text": "你终于来了。我有些话想对你说。"
+    },
+    {
+      "id": "choice-stay-or-leave",
+      "type": "choice",
+      "prompt": "你要怎么做？",
+      "options": [
+        {
+          "id": "stay",
+          "text": "留下来听她说",
+          "setVariables": {
+            "stay": true
+          },
+          "target": {
+            "scriptId": "start",
+            "nodeId": "condition-stay"
+          }
+        },
+        {
+          "id": "leave",
+          "text": "转身离开",
+          "setVariables": {
+            "stay": false
+          },
+          "target": {
+            "scriptId": "start",
+            "nodeId": "condition-stay"
+          }
+        }
+      ]
+    },
+    {
+      "id": "condition-stay",
+      "type": "condition",
+      "branches": [
+        {
+          "id": "branch-stay",
+          "variable": "stay",
+          "operator": "equals",
+          "value": true,
+          "target": {
+            "scriptId": "start",
+            "nodeId": "ending-a"
+          }
+        }
+      ],
+      "fallbackTarget": {
+        "scriptId": "start",
+        "nodeId": "ending-b"
+      }
+    },
+    {
+      "id": "ending-a",
+      "type": "narration",
+      "text": "你留下来听她说完，窗外的阳光也变得温柔。"
+    },
+    {
+      "id": "hide-lincheng-a",
+      "type": "hideCharacter",
+      "characterId": "lincheng"
+    },
+    {
+      "id": "stop-bgm-a",
+      "type": "stopAudio",
+      "channel": "bgm"
+    },
+    {
+      "id": "jump-final-a",
+      "type": "jump",
+      "target": {
+        "scriptId": "start",
+        "nodeId": "final-end"
+      }
+    },
+    {
+      "id": "ending-b",
+      "type": "narration",
+      "text": "你安静地离开教室，走廊里只剩下逐渐远去的脚步声。"
+    },
+    {
+      "id": "hide-lincheng-b",
+      "type": "hideCharacter",
+      "characterId": "lincheng"
+    },
+    {
+      "id": "stop-bgm-b",
+      "type": "stopAudio",
+      "channel": "bgm"
+    },
+    {
+      "id": "final-end",
+      "type": "narration",
+      "text": "测试故事到这里结束。"
+    }
+  ]
+}

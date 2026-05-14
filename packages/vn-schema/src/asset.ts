@@ -1,0 +1,22 @@
+/** 素材类型，用于区分图片、音频等资源。 */
+export type AssetType = "background" | "character" | "bgm" | "sfx" | "voice" | "other";
+
+/** 视觉小说工程中的单个素材条目。 */
+export interface AssetItem {
+  /** 素材唯一标识。 */
+  id: string;
+  /** 素材显示名称。 */
+  name: string;
+  /** 素材类型。 */
+  type: AssetType;
+  /** 素材相对工程根目录的路径。 */
+  path: string;
+  /** 素材备注。 */
+  note?: string;
+}
+
+/** 视觉小说工程的素材库。 */
+export interface AssetLibrary {
+  /** 工程内全部素材列表。 */
+  items: AssetItem[];
+}
