@@ -1,5 +1,10 @@
-/** 运行时 UI 包的第一阶段占位信息。 */
-export interface RuntimeUiPlaceholder {
-  /** 包名。 */
-  name: string;
-}
+export type { SaveSlot } from "./save/SaveSlot";
+export type { SaveData, SaveStorageAdapter } from "./save/SaveData";
+export { SaveStorage } from "./save/SaveStorage";
+export { createSavePreview } from "./save/createSavePreview";
+export type { HistoryEntry } from "./history/HistoryEntry";
+export { HistoryManager } from "./history/HistoryManager";
+export type { RuntimeSettings } from "./settings/RuntimeSettings";
+export { defaultRuntimeSettings } from "./settings/defaultSettings";
+export { SettingsStorage } from "./settings/SettingsStorage";
+export { AutoPlayController } from "./autoplay/AutoPlayController";

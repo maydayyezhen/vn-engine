@@ -13,6 +13,7 @@ export {
 } from "./utils/resolveRenderResources";
 export type {
   PixiVNRendererOptions,
+  PixiVNRenderOptions,
   ResolvedAudioResource,
   ResolvedBackgroundResource,
   ResolvedCharacterResource,

@@ -41,6 +41,22 @@
 
 项目 JSON 只保存素材元数据，不保存图片、音频、视频二进制，也不使用 base64 内嵌素材。
 
+## 运行时存档格式
+
+播放器运行时存档不写入 `project.vnproj.json`。当前 Web demo 使用浏览器 `localStorage` 保存 `SaveSlot`：
+
+- `slotId`：槽位 id。
+- `title`：存档标题。
+- `savedAt`：保存时间。
+- `previewText`：列表预览文本。
+- `speakerName`：可选说话人。
+- `backgroundAssetId`：保存时背景素材 id。
+- `currentScriptId`：保存时脚本 id。
+- `currentNodeId`：保存时节点 id。
+- `state`：`VNRuntime.getState()` 返回的运行时状态。
+
+存档只保存运行时状态和预览信息，不保存完整 `VNProject`，也不保存图片、音频二进制。当前默认 demo 项目不变；后续正式项目可扩展项目 id、版本和兼容性校验。
+
 ## Web Demo 素材路径
 
 当前还没有接 Tauri 文件系统，播放器 demo 的可访问素材放在：

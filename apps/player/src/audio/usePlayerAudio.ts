@@ -1,5 +1,6 @@
 import { onBeforeUnmount, ref, watch, type Ref } from "vue";
 import { AudioManager, resolveAudioState, syncAudioState, type AudioPlaybackError, type AudioResolvedResource } from "@vn-engine/vn-audio";
+import type { AudioChannel } from "@vn-engine/vn-audio";
 import type { RuntimeSnapshot } from "@vn-engine/vn-core";
 import type { VNProject } from "@vn-engine/vn-schema";
 
@@ -29,6 +30,11 @@ export function usePlayerAudio(project: VNProject, snapshot: Ref<RuntimeSnapshot
     audioManager.setMasterVolume(value);
   }
 
+  /** 设置指定音频通道音量。 */
+  function setChannelVolume(channel: AudioChannel, value: number): void {
+    audioManager.setVolume(channel, value);
+  }
+
   /** 设置静音状态。 */
   function setMuted(value: boolean): void {
     muted.value = value;
@@ -55,6 +61,7 @@ export function usePlayerAudio(project: VNProject, snapshot: Ref<RuntimeSnapshot
     muted,
     sync,
     setMasterVolume,
+    setChannelVolume,
     setMuted,
     stopAll
   };

@@ -11,6 +11,8 @@ const props = defineProps<{
   project: VNProject;
   /** 当前运行时快照。 */
   snapshot: RuntimeSnapshot;
+  /** 是否隐藏运行时对话和选项 UI。 */
+  uiHidden?: boolean;
 }>();
 
 /** 组件事件。 */
@@ -31,7 +33,7 @@ const pixi = usePixiVNRenderer(createChoiceBridge((optionId) => emit("choose", o
 /** 渲染当前快照。 */
 async function renderCurrent(): Promise<void> {
   if (!mounted.value) return;
-  await pixi.render(props.snapshot, props.project);
+  await pixi.render(props.snapshot, props.project, { hideRuntimeUi: props.uiHidden });
 }
 
 /** 按 16:9 约束计算舞台尺寸。 */
@@ -57,7 +59,7 @@ onMounted(async () => {
 });
 
 watch(
-  () => [props.snapshot, props.project] as const,
+  () => [props.snapshot, props.project, props.uiHidden] as const,
   () => {
     void renderCurrent();
   }

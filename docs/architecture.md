@@ -12,7 +12,7 @@
 - `packages/vn-project` 提供项目序列化、反序列化和深拷贝。
 - `packages/vn-renderer-pixi` 接收 `RuntimeSnapshot` 和 `VNProject`，负责 PixiJS 画面渲染。
 - `packages/vn-audio` 接收 `RuntimeSnapshot` 和 `VNProject`，负责浏览器端音频播放同步。
-- `packages/vn-ui-runtime` 未来沉淀运行时 UI 逻辑。
+- `packages/vn-ui-runtime` 沉淀运行时 UI 纯逻辑，包括存档、历史、设置和自动播放控制。
 - `packages/vn-compiler` 未来可选实现脚本文法转换。
 
 ## 为什么 schema、core、renderer、audio、editor 要分离
@@ -30,6 +30,14 @@
 ## 为什么 renderer 不负责音频
 
 `vn-renderer-pixi` 只负责画面。音频不应该塞进 Pixi 渲染层，否则画面生命周期、音频策略和剧情推进会耦合。当前由 `apps/player` 同时把快照交给 renderer 和 audio manager。
+
+## 为什么运行时 UI 逻辑独立为 vn-ui-runtime
+
+存档、历史记录、设置和自动播放属于播放器运行时体验，但不应该直接写死在 Vue 组件里。`vn-ui-runtime` 提供纯 TypeScript 工具：存档槽结构、存档存储、历史管理、设置读写和自动播放控制。`apps/player` 只负责把这些逻辑接到 Vue 状态、`localStorage`、`VNRuntime` 和音频管理器。
+
+## localStorage 的边界
+
+当前播放器的存档、设置和已读记录使用浏览器 `localStorage`，用于 Web demo 阶段验证运行时 UI 闭环。它不替代未来 Tauri 本地工程文件系统，也不会把存档写入项目 JSON。后续桌面阶段再处理项目目录、素材复制、导出包和更完整的存档位置。
 
 ## 为什么编辑器只是修改数据
 

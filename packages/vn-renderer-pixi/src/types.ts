@@ -19,6 +19,12 @@ export interface PixiVNRendererOptions {
   onChoose?: (optionId: string) => void;
 }
 
+/** 单次渲染附加选项。 */
+export interface PixiVNRenderOptions {
+  /** 是否隐藏对话框和选项层。 */
+  hideRuntimeUi?: boolean;
+}
+
 /** 解析后的背景资源。 */
 export interface ResolvedBackgroundResource {
   /** 背景素材 id。 */

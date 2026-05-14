@@ -6,7 +6,7 @@ import { BackgroundLayer } from "./layers/BackgroundLayer";
 import { CharacterLayer } from "./layers/CharacterLayer";
 import { ChoiceLayer } from "./layers/ChoiceLayer";
 import { DialogueLayer } from "./layers/DialogueLayer";
-import type { PixiVNRendererOptions, VNRenderSize } from "./types";
+import type { PixiVNRendererOptions, PixiVNRenderOptions, VNRenderSize } from "./types";
 import { resolveRenderResources } from "./utils/resolveRenderResources";
 
 /** PixiJS 视觉小说最小渲染器。 */
@@ -67,14 +67,18 @@ export class PixiVNRenderer {
   }
 
   /** 根据运行时快照和工程数据渲染画面。 */
-  async render(snapshot: RuntimeSnapshot, project: VNProject): Promise<void> {
+  async render(snapshot: RuntimeSnapshot, project: VNProject, renderOptions: PixiVNRenderOptions = {}): Promise<void> {
     if (!this.app || !this.backgroundLayer || !this.characterLayer || !this.dialogueLayer || !this.choiceLayer) return;
     const resources = resolveRenderResources(project, snapshot);
 
     await this.backgroundLayer.render(resources.background, this.size);
     await this.characterLayer.render(resources.characters, this.size);
-    this.dialogueLayer.render(snapshot, project, this.size);
-    this.choiceLayer.render(snapshot.type === "choices" ? snapshot.choices : [], this.size);
+    this.dialogueLayer.container.visible = !renderOptions.hideRuntimeUi;
+    this.choiceLayer.container.visible = !renderOptions.hideRuntimeUi;
+    if (!renderOptions.hideRuntimeUi) {
+      this.dialogueLayer.render(snapshot, project, this.size);
+      this.choiceLayer.render(snapshot.type === "choices" ? snapshot.choices : [], this.size);
+    }
   }
 
   /** 调整舞台尺寸。 */

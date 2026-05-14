@@ -192,4 +192,19 @@ describe("VNRuntime", () => {
     expect(restoredSnapshot.audio.bgm).toBe("bgm-main-theme");
     expect(restoredSnapshot.audio.voice).toBeUndefined();
   });
+
+  it("loadState 后 getSnapshot 可以恢复当前对话文本和画面状态", () => {
+    const runtime = new VNRuntime(createDemoProjectFromScriptFile());
+    const beforeSave = runtime.start();
+    const state = runtime.getState();
+
+    const restored = new VNRuntime(createDemoProjectFromScriptFile());
+    restored.loadState(state);
+    const snapshot = restored.getSnapshot();
+
+    expect(snapshot.text).toBe(beforeSave.text);
+    expect(snapshot.backgroundAssetId).toBe(beforeSave.backgroundAssetId);
+    expect(snapshot.characters).toEqual(beforeSave.characters);
+    expect(snapshot.audio).toEqual(beforeSave.audio);
+  });
 });

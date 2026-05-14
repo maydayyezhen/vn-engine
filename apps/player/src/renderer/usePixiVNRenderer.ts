@@ -1,5 +1,6 @@
 import { shallowRef } from "vue";
 import { PixiVNRenderer } from "@vn-engine/vn-renderer-pixi";
+import type { PixiVNRenderOptions } from "@vn-engine/vn-renderer-pixi";
 import type { RuntimeSnapshot } from "@vn-engine/vn-core";
 import type { VNProject } from "@vn-engine/vn-schema";
 
@@ -15,8 +16,8 @@ export function usePixiVNRenderer(onChoose: (optionId: string) => void) {
   }
 
   /** 渲染当前快照。 */
-  async function render(snapshot: RuntimeSnapshot, project: VNProject): Promise<void> {
-    await renderer.value?.render(snapshot, project);
+  async function render(snapshot: RuntimeSnapshot, project: VNProject, options?: PixiVNRenderOptions): Promise<void> {
+    await renderer.value?.render(snapshot, project, options);
   }
 
   /** 调整渲染尺寸。 */

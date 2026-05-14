@@ -1,0 +1,231 @@
+.stage-frame {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.runtime-toolbar {
+  position: absolute;
+  z-index: 10;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(9, 15, 24, 0.64);
+  backdrop-filter: blur(8px);
+}
+
+.runtime-toolbar button,
+.restore-ui-button {
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+.runtime-toolbar button.active {
+  background: #b7792e;
+}
+
+.restore-ui-button {
+  position: absolute;
+  z-index: 12;
+  top: 12px;
+  right: 12px;
+  background: rgba(15, 23, 34, 0.72);
+}
+
+.runtime-overlay {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 8, 14, 0.58);
+  backdrop-filter: blur(4px);
+}
+
+.menu-card,
+.panel-card {
+  width: min(760px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: #eef5ff;
+  background: rgba(18, 28, 42, 0.92);
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.4);
+}
+
+.menu-card {
+  padding: 32px;
+}
+
+.title-card {
+  width: min(560px, 100%);
+  text-align: center;
+}
+
+.menu-kicker {
+  margin: 0 0 10px;
+  color: #aebbd0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.menu-card h1,
+.menu-card h2,
+.panel-card h2 {
+  margin: 0 0 22px;
+}
+
+.menu-card h1 {
+  font-size: 42px;
+}
+
+.menu-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.menu-actions button {
+  width: 100%;
+  min-height: 42px;
+}
+
+.panel-card {
+  padding: 18px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.panel-header h2 {
+  margin: 0;
+}
+
+.panel-header > div {
+  display: flex;
+  gap: 8px;
+}
+
+.save-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.save-slot,
+.history-entry {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.save-slot h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.save-slot time {
+  display: block;
+  margin-bottom: 8px;
+  color: #aebbd0;
+  font-size: 12px;
+}
+
+.save-slot p,
+.history-entry p,
+.empty-panel {
+  margin: 0;
+  color: #dce7f5;
+  line-height: 1.6;
+}
+
+.empty-slot {
+  color: #9aa8bc;
+}
+
+.slot-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.slot-actions button {
+  flex: 1;
+  padding: 7px 8px;
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-entry strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #f7d27a;
+}
+
+.settings-panel {
+  width: min(640px, 100%);
+}
+
+.setting-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 58px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.setting-row input {
+  width: 100%;
+}
+
+.setting-row input[type="number"] {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.setting-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px 92px;
+}
+
+.player-shell.is-title,
+.player-shell.is-ui-hidden {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 760px) {
+  .save-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .setting-row {
+    grid-template-columns: 1fr;
+  }
+
+  .setting-check {
+    margin-left: 0;
+  }
+}
