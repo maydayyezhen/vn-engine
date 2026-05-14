@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CharacterEnterEffect, CharacterExitEffect, CharacterPosition, ConditionBranch, NodeTarget, PlayAudioNode, StoryNode, TransitionType, VariableValue, VNProject } from "@vn-engine/vn-schema";
+import type { CharacterEnterEffect, CharacterExitEffect, CharacterPosition, ConditionBranch, ConditionExpression, NodeTarget, PlayAudioNode, StoryNode, TransitionType, VariableValue, VNProject } from "@vn-engine/vn-schema";
 import {
   findAssetById,
   findCharacterById,
@@ -10,6 +10,9 @@ import {
   getExpressionOptions
 } from "../services/resourceLookupService";
 import { updateChoiceOption, updateConditionNode, updateNode, type StoryNodePatch } from "../services/scriptEditService";
+import ConditionEditor from "./condition/ConditionEditor.vue";
+import TargetSelector from "./target/TargetSelector.vue";
+import { createDefaultVariableValue, findVariable } from "../services/variableEditService";
 
 /** 组件属性。 */
 const props = defineProps<{
@@ -25,6 +28,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** 工程发生变化。 */
   projectChange: [project: VNProject];
+  /** 定位跳转目标。 */
+  locateTarget: [target: NodeTarget];
 }>();
 
 /** 条件运算符选项。 */
@@ -81,13 +86,13 @@ function getJumpTargetScriptId(): string {
 
 /** 获取跳转节点的目标节点 id。 */
 function getJumpTargetNodeId(): string {
-  return props.node?.type === "jump" ? props.node.target.nodeId : "";
+  return props.node?.type === "jump" ? props.node.target.nodeId ?? "" : "";
 }
 
 /** 更新跳转目标脚本。 */
 function updateJumpTargetScript(scriptId: string): void {
   if (!props.node || props.node.type !== "jump") return;
-  applyPatch({ target: createTarget(scriptId, props.node.target.nodeId) });
+  applyPatch({ target: createTarget(scriptId, props.node.target.nodeId ?? "") });
 }
 
 /** 更新跳转目标节点。 */
@@ -98,7 +103,7 @@ function updateJumpTargetNode(nodeId: string): void {
 
 /** 获取条件 true 分支。 */
 function getConditionBranch(): ConditionBranch | undefined {
-  return props.node?.type === "condition" ? props.node.branches[0] : undefined;
+  return props.node?.type === "condition" ? props.node.branches?.[0] : undefined;
 }
 
 /** 获取条件 false 分支。 */
@@ -141,11 +146,56 @@ function updateOptionTarget(optionId: string, field: keyof NodeTarget, value: st
   applyPatch(nextNode);
 }
 
+/** 更新选项跳转目标。 */
+function updateOptionFullTarget(optionId: string, target: NodeTarget): void {
+  if (!props.node || props.node.type !== "choice") return;
+  const nextNode = updateChoiceOption(props.node, optionId, { target });
+  applyPatch(nextNode);
+}
+
 /** 更新条件节点。 */
 function applyConditionPatch(patch: Parameters<typeof updateConditionNode>[1]): void {
   if (!props.node || props.node.type !== "condition") return;
   const nextNode = updateConditionNode(props.node, patch);
   applyPatch(nextNode);
+}
+
+/** 更新结构化条件表达式。 */
+function updateConditionExpression(condition: ConditionExpression): void {
+  if (!props.node || props.node.type !== "condition") return;
+  applyPatch({ condition });
+}
+
+/** 获取条件 true 目标。 */
+function getConditionTrueTarget(): NodeTarget | undefined {
+  if (props.node?.type !== "condition") return undefined;
+  return props.node.trueTarget ?? props.node.branches?.[0]?.target;
+}
+
+/** 获取条件 false 目标。 */
+function getConditionFalseTarget(): NodeTarget | undefined {
+  if (props.node?.type !== "condition") return undefined;
+  return props.node.falseTarget ?? props.node.fallbackTarget;
+}
+
+/** 获取变量赋值节点变量名。 */
+function getSetVariableName(): string {
+  return props.node?.type === "setVariable" ? props.node.variableName ?? props.node.name ?? "" : "";
+}
+
+/** 更新变量赋值节点变量名，并按变量类型补默认值。 */
+function updateSetVariableName(variableName: string): void {
+  const variable = findVariable(props.project, variableName);
+  applyPatch({ variableName, name: variableName, value: variable ? createDefaultVariableValue(variable.type) : "" });
+}
+
+/** 更新变量赋值节点的值。 */
+function updateSetVariableValue(value: string | number | boolean): void {
+  if (!props.node || props.node.type !== "setVariable") return;
+  const variable = findVariable(props.project, getSetVariableName());
+  if (variable?.type === "boolean") applyPatch({ value: Boolean(value) });
+  else if (variable?.type === "number") applyPatch({ value: Number(value) });
+  else applyPatch({ value: String(value) });
 }
 
 /** 更新角色显示节点的角色，并同步默认表情素材。 */
@@ -240,20 +290,9 @@ function getMissingResourceWarning(): string {
           <el-form-item :label="`选项文本：${option.id}`">
             <el-input :model-value="option.text" @update:model-value="(value: string) => updateOptionText(option.id, value)" />
           </el-form-item>
-          <el-form-item label="targetScriptId">
-            <el-select :model-value="option.target.scriptId" @update:model-value="(value: string) => updateOptionTarget(option.id, 'scriptId', value)">
-              <el-option v-for="script in project.scripts" :key="script.id" :label="script.name" :value="script.id" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="targetNodeId">
-            <el-select :model-value="option.target.nodeId" @update:model-value="(value: string) => updateOptionTarget(option.id, 'nodeId', value)">
-              <el-option
-                v-for="targetNode in project.scripts.find((script) => script.id === option.target.scriptId)?.nodes ?? []"
-                :key="targetNode.id"
-                :label="`${targetNode.id} (${targetNode.type})`"
-                :value="targetNode.id"
-              />
-            </el-select>
+          <el-form-item label="target">
+            <TargetSelector :project="project" :target="option.target" @update-target="(target) => updateOptionFullTarget(option.id, target)" />
+            <el-button size="small" @click="$emit('locateTarget', option.target)">定位目标</el-button>
           </el-form-item>
         </div>
       </template>
@@ -380,56 +419,58 @@ function getMissingResourceWarning(): string {
       </template>
 
       <template v-else-if="node.type === 'jump'">
-        <el-form-item label="targetScriptId">
-          <el-select :model-value="getJumpTargetScriptId()" @update:model-value="updateJumpTargetScript">
-            <el-option v-for="script in project.scripts" :key="script.id" :label="script.name" :value="script.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="targetNodeId">
-          <el-select :model-value="getJumpTargetNodeId()" @update:model-value="updateJumpTargetNode">
-            <el-option
-              v-for="targetNode in getNodesForScript(getJumpTargetScriptId())"
-              :key="targetNode.id"
-              :label="`${targetNode.id} (${targetNode.type})`"
-              :value="targetNode.id"
-            />
-          </el-select>
+        <el-form-item label="target">
+          <TargetSelector :project="project" :target="node.target" @update-target="(target) => applyPatch({ target })" />
+          <el-button size="small" @click="$emit('locateTarget', node.target)">定位目标</el-button>
         </el-form-item>
       </template>
 
       <template v-else-if="node.type === 'setVariable'">
         <el-form-item label="variableName">
-          <el-input :model-value="node.name" @update:model-value="(value: string) => applyPatch({ name: value })" />
+          <el-select :model-value="getSetVariableName()" filterable @update:model-value="updateSetVariableName">
+            <el-option v-for="variable in project.variables ?? []" :key="variable.name" :label="`${variable.name} (${variable.type})`" :value="variable.name" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="operator">
+          <el-select :model-value="node.operator ?? 'set'" @update:model-value="(value: 'set' | 'add' | 'subtract') => applyPatch({ operator: value })">
+            <el-option label="set" value="set" />
+            <el-option label="add" value="add" />
+            <el-option label="subtract" value="subtract" />
+          </el-select>
         </el-form-item>
         <el-form-item label="value">
-          <el-input :model-value="formatVariableValue(node.value)" @update:model-value="(value: string) => applyPatch({ value: parseVariableValue(value) })" />
+          <el-switch
+            v-if="findVariable(project, getSetVariableName())?.type === 'boolean'"
+            :model-value="Boolean(node.value)"
+            @update:model-value="updateSetVariableValue"
+          />
+          <el-input-number
+            v-else-if="findVariable(project, getSetVariableName())?.type === 'number'"
+            :model-value="Number(node.value)"
+            @update:model-value="(value: number | undefined) => updateSetVariableValue(value ?? 0)"
+          />
+          <el-input v-else :model-value="formatVariableValue(node.value)" @update:model-value="updateSetVariableValue" />
         </el-form-item>
       </template>
 
       <template v-else-if="node.type === 'condition'">
-        <el-form-item label="variableName">
-          <el-input :model-value="getConditionBranch()?.variable" @update:model-value="(value: string) => applyConditionPatch({ variable: value })" />
-        </el-form-item>
-        <el-form-item label="operator">
-          <el-select :model-value="getConditionBranch()?.operator" @update:model-value="(value: ConditionBranch['operator']) => applyConditionPatch({ operator: value })">
-            <el-option v-for="operator in conditionOperators" :key="operator.value" :label="operator.label" :value="operator.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="compareValue">
-          <el-input
-            :model-value="formatVariableValue(getConditionBranch()?.value)"
-            @update:model-value="(value: string) => applyConditionPatch({ value: parseVariableValue(value) })"
-          />
-        </el-form-item>
+        <ConditionEditor :project="project" :condition="node.condition" @update-condition="updateConditionExpression" />
         <el-form-item label="trueTarget">
-          <el-select :model-value="getConditionBranch()?.target.nodeId" @update:model-value="updateConditionTrueNode">
-            <el-option v-for="targetNode in getNodesForScript(getConditionBranch()?.target.scriptId || scriptId)" :key="targetNode.id" :label="targetNode.id" :value="targetNode.id" />
-          </el-select>
+          <TargetSelector :project="project" :target="getConditionTrueTarget()" @update-target="(target) => applyPatch({ trueTarget: target })" />
+          <el-button v-if="getConditionTrueTarget()" size="small" @click="$emit('locateTarget', getConditionTrueTarget()!)">定位 true 目标</el-button>
         </el-form-item>
         <el-form-item label="falseTarget">
-          <el-select :model-value="getConditionFallback()?.nodeId" @update:model-value="updateConditionFalseNode">
-            <el-option v-for="targetNode in getNodesForScript(getConditionFallback()?.scriptId || scriptId)" :key="targetNode.id" :label="targetNode.id" :value="targetNode.id" />
-          </el-select>
+          <TargetSelector :project="project" :target="getConditionFalseTarget()" @update-target="(target) => applyPatch({ falseTarget: target })" />
+          <el-button v-if="getConditionFalseTarget()" size="small" @click="$emit('locateTarget', getConditionFalseTarget()!)">定位 false 目标</el-button>
+        </el-form-item>
+      </template>
+
+      <template v-else-if="node.type === 'label'">
+        <el-form-item label="name">
+          <el-input :model-value="node.name" @update:model-value="(value: string) => applyPatch({ name: value })" />
+        </el-form-item>
+        <el-form-item label="description">
+          <el-input :model-value="node.description" type="textarea" :rows="3" @update:model-value="(value: string) => applyPatch({ description: value })" />
         </el-form-item>
       </template>
 

@@ -82,6 +82,22 @@ export interface RuntimeAudioState {
   voice?: string;
 }
 
+/** 运行时调试事件。 */
+export interface RuntimeDebugEvent {
+  /** 调试事件唯一标识。 */
+  id: string;
+  /** 调试事件类型。 */
+  type: "jump" | "condition" | "variable" | "error";
+  /** 可读事件消息。 */
+  message: string;
+  /** 关联脚本 id。 */
+  scriptId?: string;
+  /** 关联节点 id。 */
+  nodeId?: string;
+  /** 创建时间。 */
+  createdAt: string;
+}
+
 /** 可保存和恢复的运行时状态。 */
 export interface RuntimeState {
   /** 当前脚本 id。 */
@@ -104,6 +120,8 @@ export interface RuntimeState {
   audio: RuntimeAudioState;
   /** 当前变量表。 */
   variables: Record<string, VariableValue>;
+  /** 最近运行时调试日志。 */
+  debugLog: RuntimeDebugEvent[];
   /** 运行时是否正在等待玩家选择。 */
   isWaitingChoice: boolean;
   /** 剧情是否已经结束。 */

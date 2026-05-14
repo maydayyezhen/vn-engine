@@ -3,11 +3,28 @@ export interface NodeTarget {
   /** 目标脚本 id。 */
   scriptId: string;
   /** 目标节点 id。 */
-  nodeId: string;
+  nodeId?: string;
+  /** 目标标签名称。 */
+  label?: string;
 }
 
 /** 变量值类型，第一阶段只支持 JSON 基础值。 */
 export type VariableValue = string | number | boolean | null;
+
+/** 项目级变量类型。 */
+export type VNVariableType = "boolean" | "number" | "string";
+
+/** 项目级变量定义，用于初始化、校验和编辑器提示。 */
+export interface VNVariableDefinition {
+  /** 变量名称。 */
+  name: string;
+  /** 变量类型。 */
+  type: VNVariableType;
+  /** 变量默认值。 */
+  defaultValue: boolean | number | string;
+  /** 变量说明。 */
+  description?: string;
+}
 
 /** 剧情节点类型。 */
 export type NodeType =
@@ -18,6 +35,7 @@ export type NodeType =
   | "showCharacter"
   | "hideCharacter"
   | "camera"
+  | "label"
   | "playAudio"
   | "stopAudio"
   | "setVariable"
@@ -39,8 +57,50 @@ export type CharacterPosition = "left" | "center" | "right" | "custom";
 /** 音频通道类型，保留 sfx 作为旧数据兼容别名。 */
 export type StoryAudioChannel = "bgm" | "sound" | "voice" | "sfx";
 
-/** 变量比较运算符。 */
-export type ConditionOperator = "equals" | "notEquals" | "greaterThan" | "lessThan" | "exists";
+/** 旧版条件分支比较运算符。 */
+export type LegacyConditionOperator = "equals" | "notEquals" | "greaterThan" | "lessThan" | "exists";
+
+/** 结构化条件比较运算符。 */
+export type ConditionOperator = "eq" | "ne" | "gt" | "gte" | "lt" | "lte" | "contains" | "notContains";
+
+/** 单个变量条件表达式。 */
+export interface VariableCondition {
+  /** 条件类型。 */
+  kind: "variable";
+  /** 变量名称。 */
+  variableName: string;
+  /** 比较运算符。 */
+  operator: ConditionOperator;
+  /** 比较值。 */
+  value: boolean | number | string;
+}
+
+/** and 组合条件。 */
+export interface AndCondition {
+  /** 条件类型。 */
+  kind: "and";
+  /** 子条件列表。 */
+  conditions: ConditionExpression[];
+}
+
+/** or 组合条件。 */
+export interface OrCondition {
+  /** 条件类型。 */
+  kind: "or";
+  /** 子条件列表。 */
+  conditions: ConditionExpression[];
+}
+
+/** not 取反条件。 */
+export interface NotCondition {
+  /** 条件类型。 */
+  kind: "not";
+  /** 被取反的子条件。 */
+  condition: ConditionExpression;
+}
+
+/** 可序列化的结构化条件表达式。 */
+export type ConditionExpression = VariableCondition | AndCondition | OrCondition | NotCondition;
 
 /** 条件节点中的一个分支。 */
 export interface ConditionBranch {
@@ -49,7 +109,7 @@ export interface ConditionBranch {
   /** 要读取的变量名。 */
   variable: string;
   /** 比较运算符。 */
-  operator: ConditionOperator;
+  operator: LegacyConditionOperator;
   /** 用于比较的目标值。 */
   value?: VariableValue;
   /** 条件成立时跳转到的目标。 */
@@ -224,11 +284,18 @@ export interface SetVariableNode {
   type: "setVariable";
   /** 节点唯一标识。 */
   id: string;
-  /** 变量名。 */
-  name: string;
+  /** 变量名，新数据优先使用该字段。 */
+  variableName?: string;
+  /** 变量名，旧数据兼容字段。 */
+  name?: string;
+  /** 变量赋值运算符。 */
+  operator?: VariableAssignOperator;
   /** 变量值。 */
   value: VariableValue;
 }
+
+/** 变量赋值运算符。 */
+export type VariableAssignOperator = "set" | "add" | "subtract";
 
 /** 条件跳转节点。 */
 export interface ConditionNode {
@@ -236,10 +303,16 @@ export interface ConditionNode {
   type: "condition";
   /** 节点唯一标识。 */
   id: string;
-  /** 条件分支列表，按顺序匹配第一个成立分支。 */
-  branches: ConditionBranch[];
+  /** 条件分支列表，按顺序匹配第一个成立分支，保留旧数据兼容。 */
+  branches?: ConditionBranch[];
   /** 所有分支都不成立时的可选跳转目标。 */
   fallbackTarget?: NodeTarget;
+  /** 新版结构化条件表达式。 */
+  condition?: ConditionExpression;
+  /** 条件成立时的跳转目标。 */
+  trueTarget?: NodeTarget;
+  /** 条件不成立时的跳转目标。 */
+  falseTarget?: NodeTarget;
 }
 
 /** 直接跳转节点。 */
@@ -252,6 +325,18 @@ export interface JumpNode {
   target: NodeTarget;
 }
 
+/** 标签节点，用于作为稳定跳转锚点。 */
+export interface LabelNode {
+  /** 节点类型。 */
+  type: "label";
+  /** 节点唯一标识。 */
+  id: string;
+  /** 标签名称。 */
+  name: string;
+  /** 标签说明。 */
+  description?: string;
+}
+
 /** 剧情节点联合类型。 */
 export type StoryNode =
   | DialogueNode
@@ -261,6 +346,7 @@ export type StoryNode =
   | ShowCharacterNode
   | HideCharacterNode
   | CameraNode
+  | LabelNode
   | PlayAudioNode
   | StopAudioNode
   | SetVariableNode

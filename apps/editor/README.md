@@ -45,3 +45,7 @@ Web 导出限制：
 ## 演出编辑与画面预览
 
 节点属性面板支持编辑 `SceneNode` 转场、`ShowCharacterNode` 位置/缩放/透明度/层级/翻转/入场效果、`HideCharacterNode` 退场效果、`CameraNode` 镜头参数，以及对话/旁白文本表现字段。预览区提供“调试预览”和“画面预览”两种模式；画面预览复用 `vn-renderer-pixi`，不播放真实音频。
+
+## 变量和逻辑编辑
+
+编辑器新增变量管理视图，可新增、编辑和删除项目级变量。`SetVariableNode` 可以从变量列表选择变量和 `set/add/subtract` 运算符；`ConditionNode` 提供结构化条件编辑入口；`TargetSelector` 可选择脚本内节点或标签作为跳转目标；节点工具栏支持新增 `LabelNode`。调试预览会显示当前变量值和最近运行时逻辑日志。

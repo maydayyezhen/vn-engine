@@ -23,3 +23,7 @@
 ## 基础演出字段
 
 `vn-schema` 现在定义背景转场、角色入场/退场、角色位置、缩放、透明度、层级、水平翻转、`CameraNode` 和对话表现字段。`validateProject` 会检查非法转场/效果、异常 duration、非法 scale/opacity、自定义位置缺少坐标和异常镜头数值。
+
+## 剧情逻辑结构
+
+`vn-schema` 现在定义项目级变量 `VNVariableDefinition`、增强版 `SetVariableNode`、结构化 `ConditionExpression`、`LabelNode` 和支持标签的 `NodeTarget`。`validateProject` 会检查变量名、默认值类型、未定义变量引用、条件值类型、标签重复和跳转目标断链。

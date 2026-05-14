@@ -1,6 +1,7 @@
 import type { AssetLibrary } from "./asset";
 import type { Character } from "./character";
 import type { ScriptFile } from "./script";
+import type { VNVariableDefinition } from "./node";
 
 /** 工程校验问题级别。 */
 export type ValidationIssueLevel = "error" | "warning";
@@ -31,6 +32,8 @@ export interface VNProject {
   assets: AssetLibrary;
   /** 工程角色列表。 */
   characters: Character[];
+  /** 项目级变量定义列表。 */
+  variables?: VNVariableDefinition[];
   /** 工程剧本文件列表。 */
   scripts: ScriptFile[];
 }

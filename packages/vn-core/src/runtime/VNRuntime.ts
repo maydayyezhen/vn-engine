@@ -1,9 +1,10 @@
-import type { ChoiceOption, NodeTarget, ShowCharacterNode, StoryNode, VNProject } from "@vn-engine/vn-schema";
+import type { ChoiceOption, NodeTarget, SetVariableNode, ShowCharacterNode, StoryNode, VariableValue, VNProject } from "@vn-engine/vn-schema";
 import { validateProject } from "@vn-engine/vn-schema";
 import { ConditionEvaluator } from "../condition/ConditionEvaluator";
 import { findNodeByIndex, findNodeIndex, findScript } from "../utils/runtimeLookup";
+import { resolveRuntimeTarget } from "../utils/targetResolver";
 import { VariableStore } from "../variable/VariableStore";
-import type { RuntimeCameraState, RuntimeCharacterDisplay, RuntimeState } from "./RuntimeState";
+import type { RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeState } from "./RuntimeState";
 import type { RuntimeSnapshot } from "./RuntimeSnapshot";
 
 /** 最小视觉小说运行时解释器。 */
@@ -28,7 +29,7 @@ export class VNRuntime {
 
     this.project = project;
     this.variables = new VariableStore();
-    this.conditionEvaluator = new ConditionEvaluator(this.variables);
+    this.conditionEvaluator = new ConditionEvaluator(this.variables, (message) => this.addDebugEvent("error", message));
     this.state = this.createInitialState(project.startScriptId);
     this.snapshot = this.createSnapshot("dialogue", null, "", []);
   }
@@ -36,7 +37,8 @@ export class VNRuntime {
   /** 从起始脚本的第一个节点开始运行。 */
   start(): RuntimeSnapshot {
     this.state = this.createInitialState(this.project.startScriptId);
-    this.variables.load({});
+    this.variables.load(this.createDefaultVariables());
+    this.state.variables = this.variables.snapshot();
     return this.processCurrentNode();
   }
 
@@ -59,7 +61,7 @@ export class VNRuntime {
 
     this.applyChoiceVariables(option);
     this.state.isWaitingChoice = false;
-    return this.jump(option.target.scriptId, option.target.nodeId);
+    return this.jumpToTarget(option.target);
   }
 
   /** 跳转到指定脚本和节点。 */
@@ -76,6 +78,12 @@ export class VNRuntime {
     return this.processCurrentNode();
   }
 
+  /** 跳转到节点或标签目标。 */
+  jumpToTarget(target: NodeTarget): RuntimeSnapshot {
+    this.applyJump(target);
+    return this.processCurrentNode();
+  }
+
   /** 获取当前快照。 */
   getSnapshot(): RuntimeSnapshot {
     return this.cloneSnapshot(this.snapshot);
@@ -84,6 +92,11 @@ export class VNRuntime {
   /** 获取当前可保存状态。 */
   getState(): RuntimeState {
     return this.cloneState(this.state);
+  }
+
+  /** 获取最近运行时调试日志。 */
+  getDebugLog(): RuntimeDebugEvent[] {
+    return this.state.debugLog.map((event) => ({ ...event }));
   }
 
   /** 从保存状态恢复运行时。 */
@@ -107,10 +120,16 @@ export class VNRuntime {
       camera: this.createDefaultCameraState(),
       pendingEffects: [],
       audio: {},
-      variables: {},
+      variables: this.createDefaultVariables(),
+      debugLog: [],
       isWaitingChoice: false,
       isEnded: false
     };
+  }
+
+  /** 创建项目变量默认值表。 */
+  private createDefaultVariables(): Record<string, VariableValue> {
+    return Object.fromEntries((this.project.variables ?? []).map((variable) => [variable.name, variable.defaultValue]));
   }
 
   /** 执行当前节点，自动跳过不需要玩家确认的节点。 */
@@ -140,7 +159,10 @@ export class VNRuntime {
       this.applyJump(node.target);
       return;
     }
-    if (node.type === "setVariable") this.variables.set(node.name, node.value);
+    if (node.type === "label") {
+      this.addDebugEvent("jump", `经过标签：${node.name}`, this.state.currentScriptId, node.id);
+    }
+    if (node.type === "setVariable") this.applySetVariable(node);
     if (node.type === "scene") {
       this.state.backgroundAssetId = node.backgroundAssetId;
       this.state.background = {
@@ -164,8 +186,16 @@ export class VNRuntime {
     if (node.type === "playAudio") this.state.audio[node.channel] = node.assetId;
     if (node.type === "stopAudio") delete this.state.audio[node.channel];
     if (node.type === "condition") {
-      const matched = node.branches.find((branch) => this.conditionEvaluator.evaluate(branch));
-      const target = matched?.target ?? node.fallbackTarget;
+      let target: NodeTarget | undefined;
+      if (node.condition) {
+        const result = this.conditionEvaluator.evaluateExpression(node.condition);
+        this.addDebugEvent("condition", `条件 ${node.id} 判断结果：${result ? "true" : "false"}`, this.state.currentScriptId, node.id);
+        target = result ? node.trueTarget : node.falseTarget;
+      } else {
+        const matched = (node.branches ?? []).find((branch) => this.conditionEvaluator.evaluate(branch));
+        this.addDebugEvent("condition", `旧版条件 ${node.id} 匹配：${matched?.id ?? "fallback"}`, this.state.currentScriptId, node.id);
+        target = matched?.target ?? node.fallbackTarget;
+      }
       if (target) {
         this.applyJump(target);
         return;
@@ -177,13 +207,51 @@ export class VNRuntime {
 
   /** 应用内部跳转，不立即创建快照。 */
   private applyJump(target: NodeTarget): void {
-    const script = findScript(this.project, target.scriptId);
-    if (!script) throw new Error(`脚本不存在：${target.scriptId}`);
-    const index = findNodeIndex(script, target.nodeId);
-    if (index < 0) throw new Error(`节点不存在：${target.scriptId}:${target.nodeId}`);
-    this.state.currentScriptId = target.scriptId;
-    this.state.currentNodeIndex = index;
-    this.state.currentNodeId = target.nodeId;
+    const resolved = resolveRuntimeTarget(this.project, target);
+    if (!resolved) {
+      const message = `跳转目标不存在：${target.scriptId}:${target.nodeId ?? `#${target.label ?? ""}`}`;
+      this.addDebugEvent("error", message, this.state.currentScriptId, this.state.currentNodeId ?? undefined);
+      throw new Error(message);
+    }
+    this.addDebugEvent("jump", `跳转到：${resolved.scriptId}:${resolved.nodeId}`, this.state.currentScriptId, this.state.currentNodeId ?? undefined);
+    this.state.currentScriptId = resolved.scriptId;
+    this.state.currentNodeIndex = resolved.nodeIndex;
+    this.state.currentNodeId = resolved.nodeId;
+  }
+
+  /** 执行变量赋值节点。 */
+  private applySetVariable(node: SetVariableNode): void {
+    const name = node.variableName ?? node.name ?? "";
+    const operator = node.operator ?? "set";
+    const previous = this.variables.get(name);
+    let nextValue: VariableValue = node.value;
+
+    if (operator === "add" || operator === "subtract") {
+      if (typeof previous !== "number" || typeof node.value !== "number") {
+        this.addDebugEvent("error", `变量 ${name} 无法执行 ${operator}，因为当前值或写入值不是 number。`, this.state.currentScriptId, node.id);
+      } else {
+        nextValue = operator === "add" ? previous + node.value : previous - node.value;
+      }
+    }
+
+    this.variables.set(name, nextValue);
+    this.addDebugEvent("variable", `变量 ${name} ${operator} => ${String(nextValue)}`, this.state.currentScriptId, node.id);
+  }
+
+  /** 添加运行时调试事件。 */
+  private addDebugEvent(type: RuntimeDebugEvent["type"], message: string, scriptId = this.state?.currentScriptId, nodeId = this.state?.currentNodeId ?? undefined): void {
+    if (!this.state) return;
+    this.state.debugLog = [
+      ...this.state.debugLog,
+      {
+        id: `debug_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type,
+        message,
+        scriptId,
+        nodeId,
+        createdAt: new Date().toISOString()
+      }
+    ].slice(-100);
   }
 
   /** 显示或更新角色状态。 */
@@ -237,6 +305,7 @@ export class VNRuntime {
   private applyChoiceVariables(option: ChoiceOption): void {
     for (const [name, value] of Object.entries(option.setVariables ?? {})) {
       this.variables.set(name, value);
+      this.addDebugEvent("variable", `选项写入变量 ${name} => ${String(value)}`, this.state.currentScriptId, this.state.currentNodeId ?? undefined);
     }
     this.state.variables = this.variables.snapshot();
   }
@@ -293,6 +362,7 @@ export class VNRuntime {
       text,
       choices: choices.map((choice) => ({ ...choice, setVariables: { ...choice.setVariables }, target: { ...choice.target } })),
       variables: this.variables.snapshot(),
+      debugLog: this.state.debugLog.map((event) => ({ ...event })),
       audio: { ...this.state.audio },
       isEnded: this.state.isEnded
     };
@@ -312,7 +382,8 @@ export class VNRuntime {
         character: effect.character ? { ...effect.character } : undefined
       })),
       audio: { ...state.audio },
-      variables: { ...state.variables }
+      variables: { ...state.variables },
+      debugLog: (state.debugLog ?? []).map((event) => ({ ...event }))
     };
   }
 
@@ -329,6 +400,7 @@ export class VNRuntime {
       })),
       choices: snapshot.choices.map((choice) => ({ ...choice, setVariables: { ...choice.setVariables }, target: { ...choice.target } })),
       variables: { ...snapshot.variables },
+      debugLog: (snapshot.debugLog ?? []).map((event) => ({ ...event })),
       audio: { ...snapshot.audio }
     };
   }

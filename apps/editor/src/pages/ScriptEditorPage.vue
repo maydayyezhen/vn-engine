@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import type { AssetType, ValidationIssue, VNProject } from "@vn-engine/vn-schema";
+import type { AssetType, NodeTarget, ValidationIssue, VNProject } from "@vn-engine/vn-schema";
 import AssetLibraryPanel from "../components/AssetLibraryPanel.vue";
 import CharacterLibraryPanel from "../components/CharacterLibraryPanel.vue";
 import NodePropertyPanel from "../components/NodePropertyPanel.vue";
@@ -10,6 +10,7 @@ import ProjectToolbar from "../components/ProjectToolbar.vue";
 import ProjectTree from "../components/ProjectTree.vue";
 import StoryNodeList from "../components/StoryNodeList.vue";
 import ValidationPanel from "../components/ValidationPanel.vue";
+import VariableLibraryPanel from "../components/VariableLibraryPanel.vue";
 import WebExportPanel from "../components/WebExportPanel.vue";
 import { importDesktopAssetFile } from "../desktop/desktopAssetBridge";
 import { exportDesktopWebGame } from "../desktop/desktopExportBridge";
@@ -34,6 +35,7 @@ import {
 import {
   addCameraNodeAfter,
   addDialogueNodeAfter,
+  addLabelNodeAfter,
   addNarrationNodeAfter,
   deleteNode,
   duplicateNode,
@@ -50,6 +52,7 @@ import {
   setEditorStartScript
 } from "../services/scriptManageService";
 import { createEditorShortcutHandler } from "../services/editorShortcutService";
+import { resolveTargetNodeId } from "../services/targetSelectService";
 
 /** 预览面板组件实例。 */
 const previewPanelRef = ref<InstanceType<typeof PreviewPanel> | null>(null);
@@ -245,6 +248,16 @@ function handleAddNarration(): void {
 function handleAddCamera(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addCameraNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
+  applyProject(nextProject);
+  const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
+  const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
+  selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
+}
+
+/** 新增标签节点。 */
+function handleAddLabel(): void {
+  const currentNodeId = projectStore.selectedNodeId;
+  const nextProject = addLabelNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
   applyProject(nextProject);
   const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
   const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
@@ -457,6 +470,18 @@ function handleLocateValidationIssue(issue: ValidationIssue): void {
   if (issue.nodeId) selectNode(issue.nodeId);
 }
 
+/** 定位节点或标签跳转目标。 */
+function handleLocateTarget(target: NodeTarget): void {
+  const nodeId = resolveTargetNodeId(projectStore.project, target);
+  if (!nodeId) {
+    ElMessage.warning("目标不存在，无法定位。");
+    return;
+  }
+  selectScript(target.scriptId);
+  selectNode(nodeId);
+  setActiveView("script");
+}
+
 /** 聚焦节点搜索框。 */
 function focusNodeSearch(): void {
   document.querySelector<HTMLInputElement>("#node-search-input")?.focus();
@@ -547,6 +572,7 @@ onBeforeUnmount(() => {
           @add-dialogue="handleAddDialogue"
           @add-narration="handleAddNarration"
           @add-camera="handleAddCamera"
+          @add-label="handleAddLabel"
           @duplicate-node="handleCopyNode"
           @cut-node="handleCutNode"
           @paste-node="handlePasteNode"
@@ -565,6 +591,7 @@ onBeforeUnmount(() => {
           :script-id="projectStore.selectedScriptId"
           :node="currentNode"
           @project-change="applyProject"
+          @locate-target="handleLocateTarget"
         />
       </aside>
       <footer class="editor-panel editor-footer-panel">
@@ -586,6 +613,10 @@ onBeforeUnmount(() => {
 
     <main v-else-if="editorStore.activeView === 'characters'" class="editor-panel editor-resource-panel">
       <CharacterLibraryPanel :project="projectStore.project" @project-change="applyProject" />
+    </main>
+
+    <main v-else-if="editorStore.activeView === 'variables'" class="editor-panel editor-resource-panel">
+      <VariableLibraryPanel :project="projectStore.project" @project-change="applyProject" />
     </main>
 
     <main v-else class="editor-panel editor-resource-panel">

@@ -60,7 +60,7 @@ const projectRootLabel = computed(() => props.desktopRoot || (props.desktopMode 
 
 /** 处理主视图切换。 */
 function handleChangeView(value: string | number | boolean | undefined): void {
-  if (value === "script" || value === "assets" || value === "characters" || value === "export") {
+  if (value === "script" || value === "assets" || value === "characters" || value === "variables" || value === "export") {
     emit("changeView", value);
   }
 }
@@ -101,6 +101,7 @@ function handleCommand(command: string | number | object): void {
           <el-radio-button value="script">剧本</el-radio-button>
           <el-radio-button value="assets">素材</el-radio-button>
           <el-radio-button value="characters">角色</el-radio-button>
+          <el-radio-button value="variables">变量</el-radio-button>
           <el-radio-button value="export">导出</el-radio-button>
         </el-radio-group>
 

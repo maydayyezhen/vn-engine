@@ -49,6 +49,8 @@ const expanded = ref(true);
         <dd><pre>{{ JSON.stringify(audioErrors, null, 2) }}</pre></dd>
         <dt>变量</dt>
         <dd><pre>{{ JSON.stringify(snapshot.variables, null, 2) }}</pre></dd>
+        <dt>逻辑日志</dt>
+        <dd><pre>{{ JSON.stringify(snapshot.debugLog.slice(-10), null, 2) }}</pre></dd>
       </dl>
     </div>
   </aside>

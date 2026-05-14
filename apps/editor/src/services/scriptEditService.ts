@@ -42,9 +42,10 @@ export function getNodeSummary(node: StoryNode): string {
   if (node.type === "showCharacter") return `${node.characterId} ${node.expression ?? ""} ${node.position ?? ""}`.trim();
   if (node.type === "hideCharacter") return node.characterId;
   if (node.type === "camera") return `zoom ${node.zoom ?? 1} offset ${node.offsetX ?? 0},${node.offsetY ?? 0}`;
-  if (node.type === "jump") return `${node.target.scriptId}:${node.target.nodeId}`;
-  if (node.type === "setVariable") return `${node.name} = ${String(node.value)}`;
-  if (node.type === "condition") return node.branches[0]?.variable ?? "条件分支";
+  if (node.type === "label") return `#${node.name}`;
+  if (node.type === "jump") return `${node.target.scriptId}:${node.target.label ? `#${node.target.label}` : node.target.nodeId ?? ""}`;
+  if (node.type === "setVariable") return `${node.variableName ?? node.name ?? ""} ${node.operator ?? "set"} ${String(node.value)}`;
+  if (node.type === "condition") return node.condition?.kind ?? node.branches?.[0]?.variable ?? "条件分支";
   if (node.type === "playAudio") return `${node.channel}:${node.assetId}`;
   if (node.type === "stopAudio") return node.channel;
   return "";
@@ -101,6 +102,17 @@ export function addCameraNodeAfter(project: VNProject, scriptId: string, afterNo
     shake: false,
     shakeIntensity: 0,
     durationMs: 300
+  };
+  return insertNodeAfter(project, scriptId, afterNodeId, node);
+}
+
+/** 在当前节点后新增标签节点。 */
+export function addLabelNodeAfter(project: VNProject, scriptId: string, afterNodeId: string | null): VNProject {
+  const node: StoryNode = {
+    id: createNodeId("label"),
+    type: "label",
+    name: `label_${Date.now().toString(36)}`,
+    description: ""
   };
   return insertNodeAfter(project, scriptId, afterNodeId, node);
 }
@@ -186,7 +198,7 @@ export function updateConditionNode(
     falseTarget?: NodeTarget;
   }
 ): StoryNode {
-  const firstBranch = node.branches[0] ?? {
+  const firstBranch = node.branches?.[0] ?? {
     id: "branch_true",
     variable: "flag",
     operator: "equals",
@@ -204,7 +216,7 @@ export function updateConditionNode(
         value: patch.value ?? firstBranch.value,
         target: patch.trueTarget ?? firstBranch.target
       },
-      ...node.branches.slice(1)
+      ...(node.branches ?? []).slice(1)
     ],
     fallbackTarget: patch.falseTarget ?? node.fallbackTarget
   };

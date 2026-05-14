@@ -8,12 +8,15 @@ export type {
   CharacterEnterEffect,
   CharacterExitEffect,
   CharacterPosition,
+  ConditionExpression,
   ConditionBranch,
   ConditionNode,
   ConditionOperator,
   DialogueNode,
   HideCharacterNode,
   JumpNode,
+  LabelNode,
+  LegacyConditionOperator,
   NarrationNode,
   NodeTarget,
   NodeType,
@@ -24,6 +27,9 @@ export type {
   StopAudioNode,
   StoryNode,
   TransitionType,
+  VariableAssignOperator,
+  VNVariableDefinition,
+  VNVariableType,
   VariableValue
 } from "./node";
 export type { ScriptFile } from "./script";

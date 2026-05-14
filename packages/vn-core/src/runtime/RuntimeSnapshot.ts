@@ -1,5 +1,5 @@
 import type { ChoiceOption, VariableValue } from "@vn-engine/vn-schema";
-import type { RuntimeAudioState, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeEffect } from "./RuntimeState";
+import type { RuntimeAudioState, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeEffect } from "./RuntimeState";
 
 /** 运行时快照类型，用于告诉 UI 当前应该展示什么。 */
 export type RuntimeSnapshotType = "dialogue" | "choices" | "ended";
@@ -36,6 +36,8 @@ export interface RuntimeSnapshot {
   choices: ChoiceOption[];
   /** 当前变量快照。 */
   variables: Record<string, VariableValue>;
+  /** 最近运行时调试日志。 */
+  debugLog: RuntimeDebugEvent[];
   /** 当前音频状态。 */
   audio: RuntimeAudioState;
   /** 剧情是否已经结束。 */

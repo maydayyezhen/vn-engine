@@ -3,7 +3,7 @@ import type { ScriptFile, VNProject } from "@vn-engine/vn-schema";
 import { validateProject } from "@vn-engine/vn-schema";
 import projectJson from "../../../examples/demo-game/project.vnproj.json";
 import startScriptJson from "../../../examples/demo-game/scripts/start.vn.json";
-import { VNRuntime } from "../src";
+import { ConditionEvaluator, VariableStore, VNRuntime } from "../src";
 
 /** 创建覆盖 start、next、choice、jump 和条件分支的测试工程。 */
 function createProject(): VNProject {
@@ -19,6 +19,7 @@ function createProject(): VNProject {
       ]
     },
     characters: [{ id: "lin", name: "林澄", expressions: [] }],
+    variables: [{ name: "stay", type: "boolean", defaultValue: false }],
     scripts: [
       {
         id: "start",
@@ -184,7 +185,7 @@ describe("VNRuntime", () => {
 
     expect(restoredSnapshot.currentScriptId).toBe(choiceSnapshot.currentScriptId);
     expect(restoredSnapshot.currentNodeId).toBe(choiceSnapshot.currentNodeId);
-    expect(restoredSnapshot.variables.stay).toBe(true);
+    expect(restoredSnapshot.variables.stayed).toBe(true);
     expect(restoredSnapshot.backgroundAssetId).toBe("bg-classroom");
     expect(restoredSnapshot.characters[0]).toMatchObject({
       characterId: "lincheng",
@@ -265,5 +266,109 @@ describe("VNRuntime", () => {
     const restored = new VNRuntime(createDemoProjectFromScriptFile());
     const restoredSnapshot = restored.loadState(runtime.getState());
     expect(restoredSnapshot.camera.zoom).toBe(1.04);
+  });
+
+  it("start 会初始化项目级变量默认值", () => {
+    const runtime = new VNRuntime(createDemoProjectFromScriptFile());
+    const snapshot = runtime.start();
+    expect(snapshot.variables.affection).toBe(0);
+    expect(snapshot.variables.stayed).toBe(false);
+    expect(snapshot.variables.endingHint).toBe("");
+  });
+
+  it("set/add/subtract 变量节点会更新变量并记录日志", () => {
+    const project = createProject();
+    project.variables = [{ name: "score", type: "number", defaultValue: 1 }];
+    project.scripts = [
+      {
+        id: "start",
+        name: "start",
+        nodes: [
+          { id: "add", type: "setVariable", variableName: "score", operator: "add", value: 2 },
+          { id: "subtract", type: "setVariable", variableName: "score", operator: "subtract", value: 1 },
+          { id: "text", type: "narration", text: "done" }
+        ]
+      }
+    ];
+    const snapshot = new VNRuntime(project).start();
+    expect(snapshot.variables.score).toBe(2);
+    expect(snapshot.debugLog.some((event) => event.type === "variable")).toBe(true);
+  });
+
+  it("ConditionEvaluator 支持比较、包含和逻辑组合", () => {
+    const variables = new VariableStore({ score: 2, name: "lincheng", flag: true });
+    const evaluator = new ConditionEvaluator(variables);
+    expect(evaluator.evaluateExpression({ kind: "variable", variableName: "score", operator: "eq", value: 2 })).toBe(true);
+    expect(evaluator.evaluateExpression({ kind: "variable", variableName: "score", operator: "ne", value: 3 })).toBe(true);
+    expect(evaluator.evaluateExpression({ kind: "variable", variableName: "score", operator: "gt", value: 1 })).toBe(true);
+    expect(evaluator.evaluateExpression({ kind: "variable", variableName: "score", operator: "gte", value: 2 })).toBe(true);
+    expect(evaluator.evaluateExpression({ kind: "variable", variableName: "score", operator: "lt", value: 3 })).toBe(true);
+    expect(evaluator.evaluateExpression({ kind: "variable", variableName: "score", operator: "lte", value: 2 })).toBe(true);
+    expect(evaluator.evaluateExpression({ kind: "variable", variableName: "name", operator: "contains", value: "cheng" })).toBe(true);
+    expect(evaluator.evaluateExpression({ kind: "variable", variableName: "name", operator: "notContains", value: "x" })).toBe(true);
+    expect(evaluator.evaluateExpression({
+      kind: "and",
+      conditions: [
+        { kind: "variable", variableName: "flag", operator: "eq", value: true },
+        { kind: "not", condition: { kind: "variable", variableName: "score", operator: "lt", value: 2 } }
+      ]
+    })).toBe(true);
+    expect(evaluator.evaluateExpression({
+      kind: "or",
+      conditions: [
+        { kind: "variable", variableName: "flag", operator: "eq", value: false },
+        { kind: "variable", variableName: "score", operator: "gte", value: 2 }
+      ]
+    })).toBe(true);
+  });
+
+  it("ConditionNode 可以跳 trueTarget 和 falseTarget", () => {
+    const project = createProject();
+    project.variables = [{ name: "flag", type: "boolean", defaultValue: false }];
+    project.scripts = [
+      {
+        id: "start",
+        name: "start",
+        nodes: [
+          {
+            id: "condition",
+            type: "condition",
+            condition: { kind: "variable", variableName: "flag", operator: "eq", value: true },
+            trueTarget: { scriptId: "start", nodeId: "true-text" },
+            falseTarget: { scriptId: "start", nodeId: "false-text" }
+          },
+          { id: "true-text", type: "narration", text: "true" },
+          { id: "false-text", type: "narration", text: "false" }
+        ]
+      }
+    ];
+    expect(new VNRuntime(project).start().currentNodeId).toBe("false-text");
+    project.variables = [{ name: "flag", type: "boolean", defaultValue: true }];
+    expect(new VNRuntime(project).start().currentNodeId).toBe("true-text");
+  });
+
+  it("JumpNode 和 ChoiceOption 可以跳到 label，LabelNode 会自动跳过", () => {
+    const project = createProject();
+    project.variables = [{ name: "go", type: "boolean", defaultValue: false }];
+    project.scripts = [
+      {
+        id: "start",
+        name: "start",
+        nodes: [
+          { id: "jump", type: "jump", target: { scriptId: "start", label: "target_label" } },
+          { id: "choice", type: "choice", options: [{ id: "go", text: "go", target: { scriptId: "start", label: "target_label" } }] },
+          { id: "label", type: "label", name: "target_label" },
+          { id: "text", type: "narration", text: "arrived" }
+        ]
+      }
+    ];
+    const runtime = new VNRuntime(project);
+    expect(runtime.start().currentNodeId).toBe("text");
+    expect(runtime.getDebugLog().some((event) => event.type === "jump")).toBe(true);
+
+    project.scripts[0].nodes.shift();
+    const choiceRuntime = new VNRuntime(project);
+    choiceRuntime.start();
+    expect(choiceRuntime.choose("go").currentNodeId).toBe("text");
   });
 });

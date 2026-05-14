@@ -185,6 +185,27 @@ pre {
   width: 100%;
 }
 
+.target-selector {
+  display: grid;
+  gap: 8px;
+}
+
+.variable-table {
+  margin-top: 12px;
+}
+
+.debug-log-list {
+  max-height: 140px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.debug-log-item {
+  padding: 2px 0;
+  border-bottom: 1px solid #eef1f5;
+}
+
 .preview-actions {
   display: flex;
   align-items: center;

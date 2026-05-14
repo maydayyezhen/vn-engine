@@ -170,45 +170,104 @@
               "id": "stay",
               "text": "留下来听她说",
               "setVariables": {
-                "stay": true
+                "stayed": true
               },
               "target": {
                 "scriptId": "start",
-                "nodeId": "condition-stay"
+                "label": "after_choice"
               }
             },
             {
               "id": "leave",
               "text": "转身离开",
               "setVariables": {
-                "stay": false
+                "stayed": false
               },
               "target": {
                 "scriptId": "start",
-                "nodeId": "condition-stay"
+                "label": "after_choice"
               }
             }
           ]
         },
         {
+          "id": "label-after-choice",
+          "type": "label",
+          "name": "after_choice",
+          "description": "玩家做出是否留下的选择后进入逻辑判断。"
+        },
+        {
           "id": "condition-stay",
           "type": "condition",
-          "branches": [
-            {
-              "id": "branch-stay",
-              "variable": "stay",
-              "operator": "equals",
-              "value": true,
-              "target": {
-                "scriptId": "start",
-                "nodeId": "ending-a"
-              }
-            }
-          ],
-          "fallbackTarget": {
+          "condition": {
+            "kind": "variable",
+            "variableName": "stayed",
+            "operator": "eq",
+            "value": true
+          },
+          "trueTarget": {
             "scriptId": "start",
-            "nodeId": "scene-corridor"
+            "label": "stay_route"
+          },
+          "falseTarget": {
+            "scriptId": "start",
+            "label": "leave_route"
           }
+        },
+        {
+          "id": "label-stay-route",
+          "type": "label",
+          "name": "stay_route",
+          "description": "留下路线。"
+        },
+        {
+          "id": "set-affection-add",
+          "type": "setVariable",
+          "variableName": "affection",
+          "operator": "add",
+          "value": 2
+        },
+        {
+          "id": "set-ending-hint-warm",
+          "type": "setVariable",
+          "variableName": "endingHint",
+          "operator": "set",
+          "value": "warm"
+        },
+        {
+          "id": "condition-affection",
+          "type": "condition",
+          "condition": {
+            "kind": "and",
+            "conditions": [
+              {
+                "kind": "variable",
+                "variableName": "affection",
+                "operator": "gte",
+                "value": 2
+              },
+              {
+                "kind": "variable",
+                "variableName": "stayed",
+                "operator": "eq",
+                "value": true
+              }
+            ]
+          },
+          "trueTarget": {
+            "scriptId": "start",
+            "label": "ending_a"
+          },
+          "falseTarget": {
+            "scriptId": "start",
+            "label": "leave_route"
+          }
+        },
+        {
+          "id": "label-ending-a",
+          "type": "label",
+          "name": "ending_a",
+          "description": "温柔结局标签。"
         },
         {
           "id": "ending-a",
@@ -232,8 +291,21 @@
           "type": "jump",
           "target": {
             "scriptId": "start",
-            "nodeId": "final-end"
+            "label": "final_end"
           }
+        },
+        {
+          "id": "label-leave-route",
+          "type": "label",
+          "name": "leave_route",
+          "description": "离开路线。"
+        },
+        {
+          "id": "set-ending-hint-quiet",
+          "type": "setVariable",
+          "variableName": "endingHint",
+          "operator": "set",
+          "value": "quiet"
         },
         {
           "id": "scene-corridor",
@@ -276,11 +348,37 @@
           "channel": "bgm"
         },
         {
+          "id": "label-final-end",
+          "type": "label",
+          "name": "final_end",
+          "description": "公共结束标签。"
+        },
+        {
           "id": "final-end",
           "type": "narration",
           "text": "测试故事到这里结束。"
         }
       ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "affection",
+      "type": "number",
+      "defaultValue": 0,
+      "description": "林澄好感度。"
+    },
+    {
+      "name": "stayed",
+      "type": "boolean",
+      "defaultValue": false,
+      "description": "玩家是否选择留下。"
+    },
+    {
+      "name": "endingHint",
+      "type": "string",
+      "defaultValue": "",
+      "description": "结局提示文本。"
     }
   ]
 }

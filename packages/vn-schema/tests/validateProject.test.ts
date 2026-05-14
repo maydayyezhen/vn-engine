@@ -121,3 +121,80 @@ describe("validateProject presentation fields", () => {
     expect(result.warnings.some((warning) => warning.message.includes("镜头震动强度"))).toBe(true);
   });
 });
+
+describe("validateProject logic fields", () => {
+  it("变量定义合法时可以通过校验", () => {
+    const project = createProject();
+    expect(validateProject(project).valid).toBe(true);
+  });
+
+  it("变量名重复会报错", () => {
+    const project = createProject();
+    project.variables = [...(project.variables ?? []), { name: "affection", type: "number", defaultValue: 0 }];
+    expect(hasError(project, "变量名重复")).toBe(true);
+  });
+
+  it("变量名非法会报错", () => {
+    const project = createProject();
+    project.variables = [...(project.variables ?? []), { name: "1bad", type: "string", defaultValue: "" }];
+    expect(hasError(project, "变量名非法")).toBe(true);
+  });
+
+  it("默认值类型不匹配会报错", () => {
+    const project = createProject();
+    project.variables = [...(project.variables ?? []), { name: "badDefault", type: "number", defaultValue: "0" }];
+    expect(hasError(project, "默认值类型")).toBe(true);
+  });
+
+  it("SetVariableNode 引用未定义变量会报错", () => {
+    const project = createProject();
+    project.scripts[0].nodes.push({ id: "set-missing", type: "setVariable", variableName: "missing", value: true });
+    expect(hasError(project, "变量赋值引用未定义变量")).toBe(true);
+  });
+
+  it("add/subtract 用于非 number 变量会报错", () => {
+    const project = createProject();
+    project.scripts[0].nodes.push({ id: "set-bad-op", type: "setVariable", variableName: "stayed", operator: "add", value: 1 });
+    expect(hasError(project, "add/subtract")).toBe(true);
+  });
+
+  it("条件引用未定义变量会报错", () => {
+    const project = createProject();
+    project.scripts[0].nodes.push({
+      id: "condition-missing",
+      type: "condition",
+      condition: { kind: "variable", variableName: "missing", operator: "eq", value: true },
+      trueTarget: { scriptId: "start", nodeId: "final-end" }
+    });
+    expect(hasError(project, "条件引用未定义变量")).toBe(true);
+  });
+
+  it("条件比较值类型不匹配会报错", () => {
+    const project = createProject();
+    project.scripts[0].nodes.push({
+      id: "condition-bad-value",
+      type: "condition",
+      condition: { kind: "variable", variableName: "affection", operator: "gte", value: "2" },
+      trueTarget: { scriptId: "start", nodeId: "final-end" }
+    });
+    expect(hasError(project, "比较值类型")).toBe(true);
+  });
+
+  it("标签重复会报错", () => {
+    const project = createProject();
+    project.scripts[0].nodes.push({ id: "dup-label", type: "label", name: "final_end" });
+    expect(hasError(project, "标签名重复")).toBe(true);
+  });
+
+  it("跳转到不存在标签会报错", () => {
+    const project = createProject();
+    project.scripts[0].nodes.push({ id: "jump-missing-label", type: "jump", target: { scriptId: "start", label: "missing_label" } });
+    expect(hasError(project, "标签不存在")).toBe(true);
+  });
+
+  it("跳转到存在标签可以通过", () => {
+    const project = createProject();
+    project.scripts[0].nodes.push({ id: "jump-existing-label", type: "jump", target: { scriptId: "start", label: "final_end" } });
+    expect(validateProject(project).valid).toBe(true);
+  });
+});

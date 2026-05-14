@@ -206,6 +206,14 @@ defineExpose({
         <el-descriptions-item label="变量">
           <pre>{{ JSON.stringify(snapshot.variables, null, 2) }}</pre>
         </el-descriptions-item>
+        <el-descriptions-item label="逻辑日志">
+          <div class="debug-log-list">
+            <div v-for="event in snapshot.debugLog.slice(-8)" :key="event.id" class="debug-log-item">
+              [{{ event.type }}] {{ event.message }}
+            </div>
+            <span v-if="!snapshot.debugLog.length">暂无日志</span>
+          </div>
+        </el-descriptions-item>
       </el-descriptions>
     </div>
   </el-card>
