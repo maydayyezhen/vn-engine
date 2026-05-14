@@ -23,6 +23,9 @@ export type NodeType =
   | "condition"
   | "jump";
 
+/** 音频通道类型，保留 sfx 作为旧数据兼容别名。 */
+export type StoryAudioChannel = "bgm" | "sound" | "voice" | "sfx";
+
 /** 变量比较运算符。 */
 export type ConditionOperator = "equals" | "notEquals" | "greaterThan" | "lessThan" | "exists";
 
@@ -106,7 +109,7 @@ export interface ShowCharacterNode {
   characterId: string;
   /** 立绘素材 id。 */
   assetId?: string;
-  /** 表情标识，第一阶段仅作为结构化数据保留。 */
+  /** 表情标识。 */
   expression?: string;
   /** 角色在画面中的位置。 */
   position?: "left" | "center" | "right";
@@ -129,7 +132,7 @@ export interface PlayAudioNode {
   /** 节点唯一标识。 */
   id: string;
   /** 音频通道。 */
-  channel: "bgm" | "sfx" | "voice";
+  channel: StoryAudioChannel;
   /** 音频素材 id。 */
   assetId: string;
   /** 是否循环播放。 */
@@ -143,7 +146,7 @@ export interface StopAudioNode {
   /** 节点唯一标识。 */
   id: string;
   /** 要停止的音频通道。 */
-  channel: "bgm" | "sfx" | "voice";
+  channel: StoryAudioChannel;
 }
 
 /** 设置变量节点。 */

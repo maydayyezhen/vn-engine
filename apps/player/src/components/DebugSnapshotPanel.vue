@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import type { AudioPlaybackError, AudioResolvedResource } from "@vn-engine/vn-audio";
 import type { RuntimeSnapshot } from "@vn-engine/vn-core";
 
 /** 组件属性。 */
 defineProps<{
   /** 当前运行时快照。 */
   snapshot: RuntimeSnapshot;
+  /** 当前解析到的音频资源。 */
+  audioResources: AudioResolvedResource[];
+  /** 当前音频错误。 */
+  audioErrors: AudioPlaybackError[];
 }>();
 
 /** 调试面板是否展开。 */
@@ -28,8 +33,12 @@ const expanded = ref(true);
         <dd>{{ snapshot.backgroundAssetId || "无" }}</dd>
         <dt>角色</dt>
         <dd><pre>{{ JSON.stringify(snapshot.characters, null, 2) }}</pre></dd>
-        <dt>音频</dt>
+        <dt>音频状态</dt>
         <dd><pre>{{ JSON.stringify(snapshot.audio, null, 2) }}</pre></dd>
+        <dt>音频资源</dt>
+        <dd><pre>{{ JSON.stringify(audioResources, null, 2) }}</pre></dd>
+        <dt>音频错误</dt>
+        <dd><pre>{{ JSON.stringify(audioErrors, null, 2) }}</pre></dd>
         <dt>变量</dt>
         <dd><pre>{{ JSON.stringify(snapshot.variables, null, 2) }}</pre></dd>
       </dl>

@@ -9,43 +9,50 @@
         "id": "bg-classroom",
         "name": "教室背景",
         "type": "background",
-        "path": "assets/backgrounds/classroom-placeholder.png",
-        "description": "开场教室占位背景。"
+        "path": "/demo-assets/background/classroom.png",
+        "description": "Web demo 阶段的教室背景路径；文件可以后续替换为真实素材。"
       },
       {
         "id": "bg-corridor",
         "name": "走廊背景",
         "type": "background",
-        "path": "assets/backgrounds/corridor-placeholder.png",
-        "description": "离开分支使用的走廊占位背景。"
+        "path": "/demo-assets/background/corridor.png",
+        "description": "Web demo 阶段的走廊背景路径；加载失败时 renderer 会使用占位图形。"
       },
       {
         "id": "lincheng-normal",
         "name": "林澄普通立绘",
         "type": "character",
-        "path": "assets/characters/lincheng/normal-placeholder.png",
-        "description": "林澄普通表情。"
+        "path": "/demo-assets/character/lincheng/normal.png",
+        "description": "林澄普通表情立绘路径；当前可由占位渲染兜底。"
       },
       {
         "id": "lincheng-smile",
         "name": "林澄微笑立绘",
         "type": "character",
-        "path": "assets/characters/lincheng/smile-placeholder.png",
-        "description": "林澄微笑表情。"
+        "path": "/demo-assets/character/lincheng/smile.png",
+        "description": "林澄微笑表情立绘路径；当前可由占位渲染兜底。"
       },
       {
         "id": "bgm-main-theme",
-        "name": "主旋律 BGM",
+        "name": "测试BGM",
         "type": "bgm",
-        "path": "assets/bgm/main-theme-placeholder.mp3",
-        "description": "测试故事主旋律。"
+        "path": "/demo-assets/audio/bgm-demo.wav",
+        "description": "由 scripts/generate-demo-audio.mjs 生成的可复现 BGM 占位音频。"
       },
       {
         "id": "sound-door",
-        "name": "开门音效",
+        "name": "提示音效",
         "type": "sound",
-        "path": "assets/sound/door-placeholder.mp3",
-        "description": "离开教室时的音效。"
+        "path": "/demo-assets/audio/sound-click.wav",
+        "description": "由 scripts/generate-demo-audio.mjs 生成的短音效占位音频。"
+      },
+      {
+        "id": "voice-lincheng-001",
+        "name": "林澄占位语音",
+        "type": "voice",
+        "path": "/demo-assets/audio/voice-lincheng-001.wav",
+        "description": "由 scripts/generate-demo-audio.mjs 生成的语音占位音频。"
       }
     ]
   },
@@ -110,10 +117,21 @@
           "position": "center"
         },
         {
+          "id": "play-voice",
+          "type": "playAudio",
+          "channel": "voice",
+          "assetId": "voice-lincheng-001"
+        },
+        {
           "id": "dialogue-greeting",
           "type": "dialogue",
           "characterId": "lincheng",
           "text": "你终于来了。我有些话想对你说。"
+        },
+        {
+          "id": "stop-voice",
+          "type": "stopAudio",
+          "channel": "voice"
         },
         {
           "id": "choice-stay-or-leave",
@@ -195,7 +213,7 @@
         {
           "id": "play-door-sound",
           "type": "playAudio",
-          "channel": "sfx",
+          "channel": "sound",
           "assetId": "sound-door"
         },
         {

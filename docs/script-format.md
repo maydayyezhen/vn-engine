@@ -39,7 +39,33 @@
 - `path`：素材路径或占位路径。
 - `description`：可选说明。
 
-当前素材仍是路径元数据，不包含真实图片或音频文件管理。
+项目 JSON 只保存素材元数据，不保存图片、音频、视频二进制，也不使用 base64 内嵌素材。
+
+## Web Demo 素材路径
+
+当前还没有接 Tauri 文件系统，播放器 demo 的可访问素材放在：
+
+```text
+apps/player/public/demo-assets/
+```
+
+项目资源路径统一写成浏览器可访问路径：
+
+```text
+/demo-assets/audio/bgm-demo.wav
+/demo-assets/audio/sound-click.wav
+/demo-assets/audio/voice-lincheng-001.wav
+/demo-assets/background/classroom.png
+/demo-assets/character/lincheng/normal.png
+```
+
+demo 音频由 `scripts/generate-demo-audio.mjs` 生成：
+
+```bash
+pnpm generate:demo-audio
+```
+
+这些音频只用于技术验证。后续替换真实素材时，应通过编辑器或 Tauri 阶段的素材导入流程复制文件并更新资源路径。
 
 ## 角色与表情
 
@@ -79,6 +105,8 @@
 - `condition`：条件跳转，包含 `id`、`branches`、`fallbackTarget`。
 - `jump`：直接跳转，包含 `id`、`target`。
 
+`playAudio.channel` 和 `stopAudio.channel` 推荐使用 `bgm`、`sound`、`voice`。`sfx` 仅作为旧数据兼容别名保留。
+
 ## 引用规则
 
 `jump.target`、`choice.options[].target`、`condition.branches[].target` 和 `condition.fallbackTarget` 都使用 `{ "scriptId": "...", "nodeId": "..." }` 指向目标节点。
@@ -92,45 +120,23 @@
 - `PlayAudioNode.assetId` 必须引用 `bgm`、`sound`、`sfx` 或 `voice` 素材。
 - 素材 id、角色 id、脚本 id 和节点 id 不能重复。
 
-## 完整 JSON 示例
+## 未来 Tauri 素材目录
 
-```json
-{
-  "id": "start",
-  "name": "开场",
-  "nodes": [
-    {
-      "id": "scene-classroom",
-      "type": "scene",
-      "backgroundAssetId": "bg-classroom"
-    },
-    {
-      "id": "show-lincheng",
-      "type": "showCharacter",
-      "characterId": "lincheng",
-      "assetId": "lincheng-normal",
-      "expression": "normal",
-      "position": "center"
-    },
-    {
-      "id": "dialogue-greeting",
-      "type": "dialogue",
-      "characterId": "lincheng",
-      "text": "你终于来了。"
-    },
-    {
-      "id": "choice-stay-or-leave",
-      "type": "choice",
-      "prompt": "你要怎么做？",
-      "options": [
-        {
-          "id": "stay",
-          "text": "留下来听她说",
-          "setVariables": { "stay": true },
-          "target": { "scriptId": "start", "nodeId": "condition-stay" }
-        }
-      ]
-    }
-  ]
-}
+未来接 Tauri 后，真实工程目录建议采用：
+
+```text
+my-vn-project/
+├─ project.vnproj.json
+├─ scripts/
+│  └─ start.vn.json
+└─ assets/
+   ├─ background/
+   ├─ character/
+   ├─ audio/
+   │  ├─ bgm/
+   │  ├─ sound/
+   │  └─ voice/
+   └─ video/
 ```
+
+Tauri 阶段负责选择本地素材、复制到工程 `assets` 目录、生成相对路径、更新项目资源元数据，并在导出游戏包时复制依赖素材。

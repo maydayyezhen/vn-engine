@@ -25,7 +25,7 @@ describe("resolveRenderResources", () => {
     const background = resolveBackgroundResource(project, createStartedSnapshot());
     expect(background.assetId).toBe("bg-classroom");
     expect(background.name).toBe("教室背景");
-    expect(background.path).toBe("assets/backgrounds/classroom-placeholder.png");
+    expect(background.path).toBe("/demo-assets/background/classroom.png");
     expect(background.exists).toBe(true);
   });
 
@@ -60,7 +60,7 @@ describe("resolveRenderResources", () => {
     const audio = resolveAudioResources(project, createStartedSnapshot());
     expect(audio[0]?.channel).toBe("bgm");
     expect(audio[0]?.assetId).toBe("bgm-main-theme");
-    expect(audio[0]?.path).toBe("assets/bgm/main-theme-placeholder.mp3");
+    expect(audio[0]?.path).toBe("/demo-assets/audio/bgm-demo.wav");
     expect(audio[0]?.exists).toBe(true);
   });
 });

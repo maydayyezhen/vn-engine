@@ -40,7 +40,7 @@ const conditionOperators: Array<{ label: string; value: ConditionBranch["operato
 const positions = ["left", "center", "right"] as const;
 
 /** 音频通道选项。 */
-const audioChannels: PlayAudioNode["channel"][] = ["bgm", "sfx", "voice"];
+const audioChannels: PlayAudioNode["channel"][] = ["bgm", "sound", "voice"];
 
 /** 将表单字符串转换为基础变量值。 */
 function parseVariableValue(value: string): VariableValue {

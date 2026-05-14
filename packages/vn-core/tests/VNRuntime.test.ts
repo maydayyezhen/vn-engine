@@ -14,22 +14,18 @@ function createProject(): VNProject {
     startScriptId: "start",
     assets: {
       items: [
-        { id: "classroom", name: "教室", type: "background", path: "assets/background/classroom.png" }
+        { id: "classroom", name: "教室", type: "background", path: "assets/background/classroom.png" },
+        { id: "bgm-test", name: "测试BGM", type: "bgm", path: "assets/audio/bgm.wav" }
       ]
     },
-    characters: [
-      {
-        id: "lin",
-        name: "林澄",
-        expressions: []
-      }
-    ],
+    characters: [{ id: "lin", name: "林澄", expressions: [] }],
     scripts: [
       {
         id: "start",
         name: "开始",
         nodes: [
           { id: "scene", type: "scene", backgroundAssetId: "classroom" },
+          { id: "play-bgm", type: "playAudio", channel: "bgm", assetId: "bgm-test", loop: true },
           { id: "hello", type: "dialogue", characterId: "lin", text: "你来了。" },
           {
             id: "choice",
@@ -61,7 +57,7 @@ function createProject(): VNProject {
         name: "结局",
         nodes: [
           { id: "good", type: "narration", text: "温柔的结尾。" },
-          { id: "jump-end", type: "jump", target: { scriptId: "ending", nodeId: "quiet" } },
+          { id: "stop-bgm", type: "stopAudio", channel: "bgm" },
           { id: "quiet", type: "narration", text: "安静离开。" }
         ]
       }
@@ -83,6 +79,7 @@ describe("VNRuntime", () => {
     const snapshot = runtime.start();
     expect(snapshot.type).toBe("dialogue");
     expect(snapshot.backgroundAssetId).toBe("classroom");
+    expect(snapshot.audio.bgm).toBe("bgm-test");
     expect(snapshot.currentNodeId).toBe("hello");
     expect(snapshot.text).toBe("你来了。");
   });
@@ -120,6 +117,24 @@ describe("VNRuntime", () => {
     const snapshot = runtime.jump("ending", "quiet");
     expect(snapshot.currentScriptId).toBe("ending");
     expect(snapshot.currentNodeId).toBe("quiet");
+  });
+
+  it("PlayAudioNode 会更新音频状态并自动进入下一个可展示节点", () => {
+    const runtime = new VNRuntime(createProject());
+    const snapshot = runtime.start();
+    expect(snapshot.currentNodeId).toBe("hello");
+    expect(snapshot.audio.bgm).toBe("bgm-test");
+  });
+
+  it("StopAudioNode 会停止对应通道并自动进入下一个可展示节点", () => {
+    const runtime = new VNRuntime(createProject());
+    runtime.start();
+    runtime.next();
+    const good = runtime.choose("stay");
+    expect(good.audio.bgm).toBe("bgm-test");
+    const quiet = runtime.next();
+    expect(quiet.currentNodeId).toBe("quiet");
+    expect(quiet.audio.bgm).toBeUndefined();
   });
 
   it("demo 工程文件可以直接通过 schema 校验", () => {
@@ -175,5 +190,6 @@ describe("VNRuntime", () => {
       { characterId: "lincheng", assetId: "lincheng-smile", expression: "smile", position: "center" }
     ]);
     expect(restoredSnapshot.audio.bgm).toBe("bgm-main-theme");
+    expect(restoredSnapshot.audio.voice).toBeUndefined();
   });
 });

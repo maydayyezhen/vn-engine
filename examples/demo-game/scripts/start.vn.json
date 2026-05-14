@@ -36,10 +36,21 @@
       "position": "center"
     },
     {
+      "id": "play-voice",
+      "type": "playAudio",
+      "channel": "voice",
+      "assetId": "voice-lincheng-001"
+    },
+    {
       "id": "dialogue-greeting",
       "type": "dialogue",
       "characterId": "lincheng",
       "text": "你终于来了。我有些话想对你说。"
+    },
+    {
+      "id": "stop-voice",
+      "type": "stopAudio",
+      "channel": "voice"
     },
     {
       "id": "choice-stay-or-leave",
@@ -121,7 +132,7 @@
     {
       "id": "play-door-sound",
       "type": "playAudio",
-      "channel": "sfx",
+      "channel": "sound",
       "assetId": "sound-door"
     },
     {

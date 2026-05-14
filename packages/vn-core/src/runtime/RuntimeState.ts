@@ -17,6 +17,8 @@ export interface RuntimeAudioState {
   /** 当前 BGM 素材 id。 */
   bgm?: string;
   /** 当前音效素材 id。 */
+  sound?: string;
+  /** 旧版音效通道兼容字段。 */
   sfx?: string;
   /** 当前语音素材 id。 */
   voice?: string;

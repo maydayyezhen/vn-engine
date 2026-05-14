@@ -72,7 +72,8 @@ pre {
 }
 
 .player-controls,
-.debug-panel {
+.debug-panel,
+.audio-panel {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.08);
@@ -92,10 +93,80 @@ pre {
   font-size: 14px;
 }
 
-.debug-panel {
+.side-panels {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.debug-panel,
+.audio-panel {
   overflow: auto;
   min-width: 0;
   color: #e8eef7;
+}
+
+.audio-panel {
+  padding: 14px;
+}
+
+.audio-panel h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.audio-panel dl {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 13px;
+}
+
+.audio-panel dt {
+  color: #aebbd0;
+}
+
+.audio-panel dd {
+  margin: 0;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.audio-control-row {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.audio-control-row input {
+  width: 100%;
+}
+
+.audio-checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.audio-errors {
+  border: 1px solid rgba(255, 196, 87, 0.35);
+  border-radius: 6px;
+  padding: 8px;
+  color: #ffe2a5;
+  background: rgba(255, 196, 87, 0.08);
+  font-size: 12px;
+}
+
+.audio-errors p {
+  margin: 6px 0 0;
 }
 
 .debug-panel.collapsed {

@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite --host 0.0.0.0 --port 5173 --strictPort",
     "build": "vue-tsc --noEmit && vite build",
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^5.2.4",
+    "@vn-engine/vn-audio": "workspace:*",
     "@vn-engine/vn-core": "workspace:*",
     "@vn-engine/vn-renderer-pixi": "workspace:*",
     "@vn-engine/vn-schema": "workspace:*",
