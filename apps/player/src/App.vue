@@ -36,6 +36,8 @@ const gameMode = ref<GameMode>("title");
 const activePanel = ref<ActivePanel>(null);
 /** 存读档面板模式。 */
 const savePanelMode = ref<"save" | "load">("load");
+/** 当前子面板关闭后要回到的面板。 */
+const panelCloseTarget = ref<ActivePanel>(null);
 /** 当前项目 id。 */
 const projectId = computed(() => project.value.id);
 
@@ -120,22 +122,42 @@ function returnToTitle(): void {
 }
 
 /** 打开保存面板。 */
-function openSavePanel(): void {
+function openSavePanel(closeTarget: ActivePanel = null): void {
   savePanelMode.value = "save";
+  panelCloseTarget.value = closeTarget;
   activePanel.value = "save";
 }
 
 /** 打开读取面板。 */
-function openLoadPanel(): void {
+function openLoadPanel(closeTarget: ActivePanel = null): void {
   savePanelMode.value = "load";
+  panelCloseTarget.value = closeTarget;
   activePanel.value = "load";
+}
+
+/** 打开历史面板。 */
+function openHistoryPanel(closeTarget: ActivePanel = null): void {
+  panelCloseTarget.value = closeTarget;
+  activePanel.value = "history";
+}
+
+/** 打开设置面板。 */
+function openSettingsPanel(closeTarget: ActivePanel = null): void {
+  panelCloseTarget.value = closeTarget;
+  activePanel.value = "settings";
+}
+
+/** 关闭当前子面板并回到打开它的位置。 */
+function closeChildPanel(): void {
+  activePanel.value = panelCloseTarget.value;
+  panelCloseTarget.value = null;
 }
 
 /** 保存到指定槽位。 */
 function saveToSlot(slotId: string): void {
   if (gameMode.value !== "playing") return;
   playerSaves.saveCurrent(slotId, snapshot.value, runtime.value.getState());
-  activePanel.value = null;
+  closeChildPanel();
 }
 
 /** 从指定槽位读档。 */
@@ -221,8 +243,8 @@ onMounted(async () => {
           :skip-read-enabled="playerSettings.settings.value.skipReadEnabled"
           @save="openSavePanel"
           @load="openLoadPanel"
-          @history="activePanel = 'history'"
-          @settings="activePanel = 'settings'"
+          @history="openHistoryPanel"
+          @settings="openSettingsPanel"
           @menu="activePanel = 'pause'"
           @toggle-auto-play="toggleAutoPlay"
           @skip-read="skipReadNodes"
@@ -230,14 +252,14 @@ onMounted(async () => {
       </div>
     </section>
 
-    <StartMenu v-if="gameMode === 'title' && !activePanel" @start="startNewGame" @load="openLoadPanel" @settings="activePanel = 'settings'" />
+    <StartMenu v-if="gameMode === 'title' && !activePanel" @start="startNewGame" @load="openLoadPanel" @settings="openSettingsPanel" />
     <PauseMenu
       v-if="activePanel === 'pause'"
       @resume="activePanel = null"
-      @save="openSavePanel"
-      @load="openLoadPanel"
-      @history="activePanel = 'history'"
-      @settings="activePanel = 'settings'"
+      @save="openSavePanel('pause')"
+      @load="openLoadPanel('pause')"
+      @history="openHistoryPanel('pause')"
+      @settings="openSettingsPanel('pause')"
       @restart="restart"
       @title="returnToTitle"
     />
@@ -246,16 +268,16 @@ onMounted(async () => {
       :mode="savePanelMode"
       :slot-ids="playerSaves.slotIds"
       :saves="playerSaves.saves.value"
-      @close="activePanel = gameMode === 'title' ? null : 'pause'"
+      @close="closeChildPanel"
       @save="saveToSlot"
       @load="loadFromSlot"
       @remove="removeSave"
     />
-    <HistoryPanel v-if="activePanel === 'history'" :entries="playerHistory.entries.value" @close="activePanel = 'pause'" @clear="playerHistory.clear" />
+    <HistoryPanel v-if="activePanel === 'history'" :entries="playerHistory.entries.value" @close="closeChildPanel" @clear="playerHistory.clear" />
     <SettingsPanel
       v-if="activePanel === 'settings'"
       :settings="playerSettings.settings.value"
-      @close="activePanel = gameMode === 'title' ? null : 'pause'"
+      @close="closeChildPanel"
       @update="updateSettings"
     />
   </main>
