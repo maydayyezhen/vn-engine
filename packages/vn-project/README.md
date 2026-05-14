@@ -1,5 +1,19 @@
 # @vn-engine/vn-project
 
+## 本地工程目录纯逻辑
+
+当前包提供桌面工程读写前的纯逻辑工具：
+
+- `PROJECT_DIRECTORY_LAYOUT`：标准工程目录布局。
+- `STANDARD_PROJECT_DIRECTORIES`：新建工程时需要创建的目录列表。
+- `getAssetDirectoryForType(type)`：按素材类型返回推荐存放目录。
+- `normalizeProjectAssetPath(path)`：校验并规范化工程内相对素材路径。
+- `splitProjectScripts(project)`：将完整 `VNProject` 拆成工程主文件和脚本文件。
+- `mergeProjectScripts(projectFile, scripts)`：将工程主文件和脚本文件合并为完整项目。
+- `createDefaultProject()`：创建可通过基础校验的新工程初始数据。
+
+路径策略会拒绝 Windows/POSIX 绝对路径、外部 URL 和 `../` 逃逸路径。项目 JSON 只应保存工程内相对路径。
+
 该包负责视觉小说项目导入导出前的纯逻辑层，不依赖 Vue、Element Plus、DOM 或 Tauri。
 
 当前能力：

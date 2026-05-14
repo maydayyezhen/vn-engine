@@ -1,5 +1,11 @@
 # @vn-engine/vn-export
 
+## 桌面导出配合
+
+`createProjectAssetExportPlan(project)` 会根据项目素材库生成纯逻辑复制计划，包含工程内源路径和 Web 导出包内目标路径。真实文件复制由 `apps/desktop` 的 Tauri 命令或 Node 脚本完成，`vn-export` 不直接读取本地文件系统。
+
+导出校验会阻止空路径、绝对路径、外部 URL 和 `../` 逃逸路径，避免把用户电脑上的本地绝对路径写入导出包清单。
+
 该包提供 Web 游戏导出前的纯逻辑能力，不依赖 Vue、DOM、Tauri、PixiJS 或 Audio API。
 
 当前能力：

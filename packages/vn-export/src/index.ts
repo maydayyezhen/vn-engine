@@ -5,6 +5,7 @@ export {
   type WebExportManifest
 } from "./WebExportManifest";
 export { collectProjectAssetRefs } from "./collectProjectAssetRefs";
+export { createProjectAssetExportPlan, type ProjectAssetExportPlanItem } from "./createProjectAssetExportPlan";
 export { createWebExportManifest } from "./createWebExportManifest";
 export { normalizeExportPath, type NormalizedExportPath } from "./normalizeExportPath";
 export { validateExportProject, type ExportValidationResult } from "./validateExportProject";

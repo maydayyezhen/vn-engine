@@ -7,3 +7,6 @@ dist/
 !.env.example
 dev-*.log
 export-server.log
+export-server.err.log
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/

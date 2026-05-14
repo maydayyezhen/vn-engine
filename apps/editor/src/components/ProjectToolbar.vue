@@ -2,7 +2,7 @@
 import type { ValidationResult, VNProject } from "@vn-engine/vn-schema";
 import type { EditorView } from "../stores/editorStore";
 
-/** 组件属性。 */
+/** 顶部工具栏组件属性。 */
 defineProps<{
   /** 当前工程数据。 */
   project: VNProject;
@@ -16,18 +16,30 @@ defineProps<{
   validationResult: ValidationResult;
   /** 当前主视图。 */
   activeView: EditorView;
+  /** 是否运行在 Tauri 桌面环境。 */
+  desktopMode: boolean;
+  /** 当前桌面工程根目录，仅用于 UI 展示。 */
+  desktopRoot: string | null;
 }>();
 
-/** 组件事件触发器。 */
+/** 顶部工具栏事件。 */
 const emit = defineEmits<{
-  /** 触发导入项目。 */
+  /** 触发导入项目 JSON。 */
   importProject: [];
-  /** 触发导出项目。 */
+  /** 触发导出项目 JSON。 */
   exportProject: [];
   /** 重置为 demo 项目。 */
   resetDemo: [];
   /** 重新开始预览。 */
   restartPreview: [];
+  /** 新建桌面工程。 */
+  createDesktopProject: [];
+  /** 打开桌面工程。 */
+  openDesktopProject: [];
+  /** 保存桌面工程。 */
+  saveDesktopProject: [];
+  /** 导出桌面完整 Web 游戏包。 */
+  exportDesktopWebGame: [];
   /** 切换主视图。 */
   changeView: [view: EditorView];
 }>();
@@ -53,6 +65,10 @@ function handleChangeView(value: string | number | boolean | undefined): void {
         </el-tag>
         <span>脚本：{{ scriptId }}</span>
         <span>节点：{{ nodeId || "未选择" }}</span>
+        <el-tag size="small" :type="desktopMode ? 'success' : 'info'">
+          {{ desktopMode ? "桌面模式" : "Web模式" }}
+        </el-tag>
+        <span class="desktop-root">工程：{{ desktopRoot || (desktopMode ? "未打开本地工程" : "需要桌面版") }}</span>
       </div>
       <div class="toolbar-actions">
         <el-radio-group :model-value="activeView" size="small" @update:model-value="handleChangeView">
@@ -63,6 +79,10 @@ function handleChangeView(value: string | number | boolean | undefined): void {
         </el-radio-group>
         <el-button size="small" @click="$emit('importProject')">导入项目JSON</el-button>
         <el-button size="small" type="primary" @click="$emit('exportProject')">导出项目JSON</el-button>
+        <el-button size="small" :disabled="!desktopMode" @click="$emit('createDesktopProject')">新建工程</el-button>
+        <el-button size="small" :disabled="!desktopMode" @click="$emit('openDesktopProject')">打开工程</el-button>
+        <el-button size="small" :disabled="!desktopMode" type="success" @click="$emit('saveDesktopProject')">保存工程</el-button>
+        <el-button size="small" :disabled="!desktopMode" type="warning" @click="$emit('exportDesktopWebGame')">导出完整Web包</el-button>
         <el-button size="small" @click="$emit('resetDemo')">重置为demo项目</el-button>
         <el-button size="small" @click="$emit('restartPreview')">重新开始预览</el-button>
       </div>

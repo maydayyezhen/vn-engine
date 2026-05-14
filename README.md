@@ -1,5 +1,16 @@
 # vn-engine
 
+## 第十轮更新：Tauri 桌面工程读写
+
+当前已接入 `apps/desktop` Tauri 桌面壳。桌面版加载同一个 `apps/editor` 界面，并提供新建工程、打开工程、保存工程、复制导入素材、导出完整 Web 游戏包等本地能力。
+
+```bash
+pnpm dev:desktop
+pnpm build:desktop
+```
+
+Web 版 `pnpm dev:editor` 仍可独立运行；在 Web 模式下，桌面工程按钮会禁用并提示需要桌面版。本地工程只保存工程内相对路径，例如 `assets/background/classroom.png`。绝对路径、外部 URL 和 `../` 逃逸路径会被拒绝。
+
 本项目是本地优先的视觉小说引擎与编辑器 monorepo，用于制作 Galgame/视觉小说。
 
 当前已经打通结构化 JSON 工程、运行时解释器、编辑器内存态编辑、JSON 导入导出、素材库管理、PixiJS 播放器画面、浏览器端音频播放同步、播放器运行时 UI，以及 demo Web 游戏导出包。项目不包含后端，不包含数据库，不实现自定义脚本语言，也不实现节点图编辑器。

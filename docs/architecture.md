@@ -1,5 +1,11 @@
 # 架构说明
 
+## 第十轮更新：Tauri 桌面闭环
+
+`apps/desktop` 已提供 Tauri 命令层：新建/打开/保存工程、选择并复制素材、导出完整 Web 游戏包。它加载 `apps/editor` 作为界面，编辑器通过 `src/desktop/*Bridge.ts` 集中调用 Tauri 命令。Web 模式下桥接层返回明确错误，页面不会因为缺少 Tauri API 白屏。
+
+本地工程采用 `project.vnproj.json`、`scripts/` 和 `assets/` 的目录结构。素材导入时先复制到工程目录，再把 `assets/...` 相对路径写入项目 JSON。绝对路径、外部 URL 和 `../` 逃逸路径会被路径策略拒绝。
+
 ## 整体架构
 
 `vn-engine` 是本地优先的视觉小说引擎与编辑器 monorepo。工程分为应用层和核心包层：

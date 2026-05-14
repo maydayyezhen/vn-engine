@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import type { AssetType, VNProject } from "@vn-engine/vn-schema";
 import AssetLibraryPanel from "../components/AssetLibraryPanel.vue";
 import CharacterLibraryPanel from "../components/CharacterLibraryPanel.vue";
 import NodePropertyPanel from "../components/NodePropertyPanel.vue";
@@ -10,8 +11,18 @@ import ProjectTree from "../components/ProjectTree.vue";
 import StoryNodeList from "../components/StoryNodeList.vue";
 import ValidationPanel from "../components/ValidationPanel.vue";
 import WebExportPanel from "../components/WebExportPanel.vue";
+import { importDesktopAssetFile } from "../desktop/desktopAssetBridge";
+import { exportDesktopWebGame } from "../desktop/desktopExportBridge";
+import {
+  createDesktopProjectDirectory,
+  getDesktopProjectRoot,
+  openDesktopProjectDirectory,
+  saveDesktopProject
+} from "../desktop/desktopProjectBridge";
+import { isDesktopRuntime } from "../desktop/isDesktopRuntime";
 import { editorStore, setActiveView, setDirty, setValidationResult, type EditorView } from "../stores/editorStore";
 import { currentNode, currentScript, projectStore, replaceProject, selectNode, selectScript, setProject } from "../stores/projectStore";
+import { addAsset, createEmptyAsset } from "../services/assetEditService";
 import { loadDemoProject } from "../services/projectLoadService";
 import {
   createProjectExportFileName,
@@ -27,12 +38,15 @@ import {
   selectSafeNodeAfterDelete,
   validateCurrentProject
 } from "../services/scriptEditService";
-import type { VNProject } from "@vn-engine/vn-schema";
 
 /** 预览面板组件实例。 */
 const previewPanelRef = ref<InstanceType<typeof PreviewPanel> | null>(null);
 /** 隐藏文件输入组件实例。 */
 const fileInputRef = ref<HTMLInputElement | null>(null);
+/** 当前是否处于 Tauri 桌面环境。 */
+const desktopMode = isDesktopRuntime();
+/** 当前打开的桌面工程根目录，仅用于 UI 展示。 */
+const desktopProjectRoot = ref<string | null>(null);
 
 /** 应用新的工程内存态。 */
 function applyProject(project: VNProject): void {
@@ -41,7 +55,7 @@ function applyProject(project: VNProject): void {
   setValidationResult(validateCurrentProject(project));
 }
 
-/** 应用导入或重置后的工程。 */
+/** 应用导入、打开或重置后的工程。 */
 function loadProjectIntoEditor(project: VNProject, dirty: boolean): void {
   replaceProject(project);
   setDirty(dirty);
@@ -179,6 +193,7 @@ async function handleExportProject(): Promise<void> {
 async function handleResetDemo(): Promise<void> {
   if (!(await confirmDiscardIfDirty("重置为 demo 项目"))) return;
   loadProjectIntoEditor(loadDemoProject(), false);
+  desktopProjectRoot.value = null;
   ElMessage.success("已重置为 demo 项目。");
 }
 
@@ -187,8 +202,74 @@ function handleRestartPreview(): void {
   previewPanelRef.value?.restart();
 }
 
-onMounted(() => {
+/** 新建桌面本地工程。 */
+async function handleCreateDesktopProject(): Promise<void> {
+  if (!(await confirmDiscardIfDirty("新建本地工程"))) return;
+  const result = await createDesktopProjectDirectory();
+  if (!result.ok || !result.data) {
+    ElMessage.error(result.message ?? "新建本地工程失败。");
+    return;
+  }
+  desktopProjectRoot.value = result.data.rootPath;
+  loadProjectIntoEditor(result.data.project, false);
+  ElMessage.success("本地工程已新建。");
+}
+
+/** 打开桌面本地工程。 */
+async function handleOpenDesktopProject(): Promise<void> {
+  if (!(await confirmDiscardIfDirty("打开本地工程"))) return;
+  const result = await openDesktopProjectDirectory();
+  if (!result.ok || !result.data) {
+    ElMessage.error(result.message ?? "打开本地工程失败。");
+    return;
+  }
+  desktopProjectRoot.value = result.data.rootPath;
+  loadProjectIntoEditor(result.data.project, false);
+  ElMessage.success("本地工程已打开。");
+}
+
+/** 保存当前项目到桌面本地工程目录。 */
+async function handleSaveDesktopProject(): Promise<void> {
+  const result = await saveDesktopProject(projectStore.project);
+  if (!result.ok) {
+    ElMessage.error(result.message ?? "保存本地工程失败。");
+    return;
+  }
+  setDirty(false);
+  ElMessage.success("本地工程已保存。");
+}
+
+/** 导出桌面完整 Web 游戏包。 */
+async function handleExportDesktopWebGame(): Promise<void> {
+  const result = await exportDesktopWebGame(projectStore.project);
+  if (!result.ok || !result.data) {
+    ElMessage.error(result.message ?? "导出完整 Web 游戏包失败。");
+    return;
+  }
+  ElMessage.success(`Web 游戏包已导出：${result.data.export_dir}`);
+}
+
+/** 在桌面模式导入素材文件并登记为素材元数据。 */
+async function handleImportAssetFile(assetType: AssetType): Promise<void> {
+  const result = await importDesktopAssetFile(assetType);
+  if (!result.ok || !result.data) {
+    ElMessage.error(result.message ?? "导入素材失败。");
+    return;
+  }
+  const fileName = result.data.relative_path.split("/").at(-1) ?? "导入素材";
+  const asset = {
+    ...createEmptyAsset(assetType),
+    name: fileName.replace(/\.[^.]+$/, ""),
+    path: result.data.relative_path
+  };
+  applyProject(addAsset(projectStore.project, asset));
+  ElMessage.success("素材已复制到工程 assets 并登记。");
+}
+
+onMounted(async () => {
   setValidationResult(validateCurrentProject(projectStore.project));
+  const rootResult = await getDesktopProjectRoot();
+  if (rootResult.ok) desktopProjectRoot.value = rootResult.data ?? null;
 });
 </script>
 
@@ -202,11 +283,17 @@ onMounted(() => {
         :dirty="editorStore.dirty"
         :validation-result="editorStore.validationResult"
         :active-view="editorStore.activeView"
+        :desktop-mode="desktopMode"
+        :desktop-root="desktopProjectRoot"
         @change-view="handleChangeView"
         @import-project="handleImportProject"
         @export-project="handleExportProject"
         @reset-demo="handleResetDemo"
         @restart-preview="handleRestartPreview"
+        @create-desktop-project="handleCreateDesktopProject"
+        @open-desktop-project="handleOpenDesktopProject"
+        @save-desktop-project="handleSaveDesktopProject"
+        @export-desktop-web-game="handleExportDesktopWebGame"
       />
       <input ref="fileInputRef" class="hidden-file-input" type="file" accept="application/json,.json,.vnproject.json" @change="handleImportFile" />
     </header>
@@ -243,7 +330,12 @@ onMounted(() => {
     </template>
 
     <main v-else-if="editorStore.activeView === 'assets'" class="editor-panel editor-resource-panel">
-      <AssetLibraryPanel :project="projectStore.project" @project-change="applyProject" />
+      <AssetLibraryPanel
+        :project="projectStore.project"
+        :desktop-mode="desktopMode"
+        @project-change="applyProject"
+        @import-asset-file="handleImportAssetFile"
+      />
     </main>
 
     <main v-else-if="editorStore.activeView === 'characters'" class="editor-panel editor-resource-panel">

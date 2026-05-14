@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "VN Engine Editor",
+  "version": "0.1.0",
+  "identifier": "com.vnengine.editor",
+  "build": {
+    "beforeDevCommand": "pnpm --filter @vn-engine/editor dev",
+    "devUrl": "http://localhost:5174",
+    "beforeBuildCommand": "pnpm --filter @vn-engine/editor build && pnpm --filter @vn-engine/player build",
+    "frontendDist": "../../editor/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "VN Engine Editor",
+        "width": 1440,
+        "height": 960,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/icon.ico"]
+  }
+}

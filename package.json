@@ -7,6 +7,8 @@
   "scripts": {
     "dev:player": "pnpm --filter @vn-engine/player dev",
     "dev:editor": "pnpm --filter @vn-engine/editor dev",
+    "dev:desktop": "pnpm --filter @vn-engine/desktop dev",
+    "build:desktop": "pnpm --filter @vn-engine/desktop build",
     "generate:demo-audio": "node scripts/generate-demo-audio.mjs",
     "export:demo-web": "node scripts/export-demo-web-game.mjs",
     "build": "pnpm -r build",
