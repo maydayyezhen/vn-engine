@@ -47,6 +47,9 @@ http://localhost:5174/
 - 复制、删除当前节点。
 - 显示工程校验结果。
 - 使用 `vn-core` 在底部预览最新内存项目。
+- 导出当前内存项目为 `ProjectBundle` JSON 文件。
+- 从 `ProjectBundle` JSON 或裸 `VNProject` JSON 导入项目并继续编辑。
+- 重置为 demo 项目。
 
 ## 测试
 
@@ -72,6 +75,7 @@ pnpm build
 
 - `packages/vn-schema` 定义工程数据结构与基础校验。
 - `packages/vn-core` 实现与 Vue、DOM、PixiJS、Tauri 解耦的运行时解释器。
+- `packages/vn-project` 提供项目序列化、反序列化和深拷贝纯逻辑。
 - `apps/player` 读取 demo 工程数据并展示 `RuntimeSnapshot`，第一阶段不使用 Element Plus。
 - `apps/editor` 使用 Vue3、Vite、TypeScript、Element Plus 搭建编辑器骨架。
 - `apps/desktop` 仅预留未来 Tauri 桌面壳说明。
@@ -82,6 +86,7 @@ pnpm build
 - 不包含后端。
 - 不包含数据库。
 - 不接真实 Tauri 文件系统。
+- 导入导出当前是 Web 编辑器内的 JSON 文件能力，不是本地工程目录读写。
 - 不做节点图编辑器。
 - 不实现自定义脚本语言。
 - 不引入大型状态机库。

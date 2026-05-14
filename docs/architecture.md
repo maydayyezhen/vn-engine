@@ -10,7 +10,7 @@
 - `packages/vn-schema` 定义工程数据结构。
 - `packages/vn-core` 执行剧情解释，不依赖任何 UI 或渲染框架。
 - `packages/vn-renderer-pixi` 未来适配 PixiJS 渲染。
-- `packages/vn-project` 未来抽象本地工程读写。
+- `packages/vn-project` 提供项目序列化、反序列化、深拷贝和未来本地工程读写前的纯逻辑。
 - `packages/vn-audio` 未来抽象音频播放。
 - `packages/vn-ui-runtime` 未来沉淀运行时 UI 逻辑。
 - `packages/vn-compiler` 未来可选实现脚本文法转换。
@@ -34,6 +34,10 @@
 ## 为什么 Tauri 只负责本地能力
 
 Tauri 的职责是打开文件夹、读写文件、导入素材、导出游戏包和调用系统文件选择器。它不应该承载剧情解释、数据校验或编辑器业务逻辑，避免桌面壳绑死核心能力。
+
+## 为什么导入导出先做 Web JSON
+
+当前编辑器通过浏览器能力导入和下载 JSON 文件，序列化规则集中在 `packages/vn-project`。这样可以先验证项目数据保存与恢复闭环，避免过早把工程格式绑定到 Tauri 文件系统。下一阶段再把同一套纯逻辑接到桌面壳的本地目录读写。
 
 ## 为什么第一阶段不做节点图编辑器
 

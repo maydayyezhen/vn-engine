@@ -4,6 +4,29 @@
 
 `project.vnproj.json` 是视觉小说工程入口文件，包含工程 id、名称、版本、起始脚本 id、素材库、角色列表和脚本列表。第一阶段示例中，播放器和编辑器会把 `scripts/*.vn.json` 加载后填入 `scripts` 字段。
 
+## ProjectBundle 导入导出格式
+
+编辑器导出的 JSON 使用 `ProjectBundle` 包结构：
+
+```json
+{
+  "format": "vn-engine-project",
+  "formatVersion": "0.1.0",
+  "exportedAt": "2026-05-14T00:00:00.000Z",
+  "project": {
+    "id": "demo-game",
+    "name": "林澄的测试故事",
+    "version": "0.1.0",
+    "startScriptId": "start",
+    "assets": { "items": [] },
+    "characters": [],
+    "scripts": []
+  }
+}
+```
+
+导入时同时兼容 `ProjectBundle` 和裸 `VNProject`。`ProjectBundle.project` 必须是完整工程数据，包含 `scripts`、`characters`、`assets` 等字段。
+
 ## 脚本文件
 
 `scripts/*.vn.json` 表示单个结构化剧本文件。每个脚本包含：

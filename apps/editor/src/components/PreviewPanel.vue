@@ -51,6 +51,11 @@ watch(
 );
 
 restart();
+
+defineExpose({
+  /** 暴露给顶部工具栏使用的重新开始预览动作。 */
+  restart
+});
 </script>
 
 <template>

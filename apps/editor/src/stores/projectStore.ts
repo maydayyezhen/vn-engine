@@ -41,6 +41,14 @@ export function setProject(project: VNProject): void {
   projectStore.project = project;
 }
 
+/** 替换工程并重置当前选择。 */
+export function replaceProject(project: VNProject): void {
+  projectStore.project = project;
+  projectStore.selectedScriptId = project.startScriptId;
+  const script = project.scripts.find((item) => item.id === project.startScriptId) ?? project.scripts[0];
+  projectStore.selectedNodeId = script?.nodes[0]?.id ?? null;
+}
+
 /** 选择脚本。 */
 export function selectScript(scriptId: string): void {
   projectStore.selectedScriptId = scriptId;

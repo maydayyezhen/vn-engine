@@ -1,5 +1,20 @@
 # apps/editor
 
-最小编辑器骨架。第一阶段使用 Vue3 + Vite + TypeScript + Element Plus 展示 demo-game 的项目树、节点列表、节点属性和预览区域。
+最小可用编辑器。当前使用 Vue3 + Vite + TypeScript + Element Plus 展示并编辑 demo-game 的项目树、节点列表、节点属性、校验结果和运行预览。
 
-业务逻辑预留在 `services` 和 `stores` 中，Vue 组件只负责界面展示和触发操作。第一阶段不实现拖拽、节点图和真实保存。
+当前能力：
+
+- 内存态编辑结构化 JSON 剧本。
+- 新增、复制、删除基础节点。
+- 使用 `vn-core` 预览当前内存项目。
+- 导出当前项目为 `ProjectBundle` JSON。
+- 导入 `ProjectBundle` JSON 或裸 `VNProject` JSON。
+- 重置为 demo 项目。
+- 展示 dirty 状态和校验状态。
+
+限制：
+
+- 不实现拖拽排序。
+- 不实现节点图。
+- 不接真实 Tauri 文件系统。
+- 不做真实磁盘保存；导入导出通过浏览器 Web 文件能力完成。
