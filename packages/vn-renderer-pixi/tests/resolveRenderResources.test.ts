@@ -4,6 +4,7 @@ import type { ScriptFile, VNProject } from "@vn-engine/vn-schema";
 import projectJson from "../../../examples/demo-game/project.vnproj.json";
 import startScriptJson from "../../../examples/demo-game/scripts/start.vn.json";
 import { resolveAudioResources, resolveBackgroundResource, resolveCharacterResources, resolveRenderResources } from "../src";
+import { normalizeCameraState, normalizeTransition, resolveCharacterLayout, resolveCharacterX, sortCharactersByZIndex } from "../src/utils/presentationLayout";
 
 /** 创建 demo 工程数据。 */
 function createProject(): VNProject {
@@ -46,7 +47,19 @@ describe("resolveRenderResources", () => {
     const snapshot = {
       ...createStartedSnapshot(),
       backgroundAssetId: "missing-bg",
-      characters: [{ characterId: "lincheng", expression: "missing-expression", position: "center" as const }]
+      characters: [
+        {
+          characterId: "lincheng",
+          expression: "missing-expression",
+          position: "center" as const,
+          scale: 1,
+          opacity: 1,
+          zIndex: 0,
+          flipX: false,
+          enterEffect: "none" as const,
+          transitionDurationMs: 300
+        }
+      ]
     };
     const resources = resolveRenderResources(project, snapshot);
     expect(resources.background.exists).toBe(false);
@@ -62,5 +75,38 @@ describe("resolveRenderResources", () => {
     expect(audio[0]?.assetId).toBe("bgm-main-theme");
     expect(audio[0]?.path).toBe("/demo-assets/audio/bgm-demo.wav");
     expect(audio[0]?.exists).toBe(true);
+  });
+});
+
+describe("presentation layout helpers", () => {
+  it("计算 left/center/right/custom 角色横坐标", () => {
+    expect(resolveCharacterX("left", 1000)).toBe(280);
+    expect(resolveCharacterX("center", 1000)).toBe(500);
+    expect(resolveCharacterX("right", 1000)).toBe(720);
+    expect(resolveCharacterX("custom", 1000, 123)).toBe(123);
+  });
+
+  it("按 zIndex 排序角色并处理默认布局值", () => {
+    const project = createProject();
+    const runtime = new VNRuntime(project);
+    runtime.start();
+    const resources = resolveCharacterResources(project, runtime.next());
+    const layout = resolveCharacterLayout(resources[0], { width: 1280, height: 720 });
+
+    expect(sortCharactersByZIndex([{ ...resources[0], zIndex: 2 }, { ...resources[0], characterId: "b", zIndex: 1 }]).map((item) => item.zIndex)).toEqual([1, 2]);
+    expect(layout.scale).toBe(1.05);
+    expect(layout.opacity).toBe(1);
+  });
+
+  it("解析转场和镜头状态", () => {
+    expect(normalizeTransition("fade", 600)).toEqual({ type: "fade", durationMs: 600 });
+    expect(normalizeCameraState({ zoom: 1.2, offsetX: 4, offsetY: 5, shake: true, shakeIntensity: 8, durationMs: 300 })).toEqual({
+      zoom: 1.2,
+      offsetX: 4,
+      offsetY: 5,
+      shake: true,
+      shakeIntensity: 8,
+      durationMs: 300
+    });
   });
 });

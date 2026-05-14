@@ -2,6 +2,15 @@ import type { AssetItem, AssetType } from "./asset";
 import type { NodeTarget, StoryNode } from "./node";
 import type { ValidationIssue, ValidationResult, VNProject } from "./project";
 
+/** 合法背景转场类型集合。 */
+const TRANSITION_TYPES = ["none", "fade", "slideLeft", "slideRight"] as const;
+/** 合法角色登场效果集合。 */
+const ENTER_EFFECTS = ["none", "fadeIn", "slideInLeft", "slideInRight"] as const;
+/** 合法角色退场效果集合。 */
+const EXIT_EFFECTS = ["none", "fadeOut", "slideOutLeft", "slideOutRight"] as const;
+/** 合法角色位置集合。 */
+const CHARACTER_POSITIONS = ["left", "center", "right", "custom"] as const;
+
 /** 生成用于查找跳转目标的复合键。 */
 function targetKey(target: NodeTarget): string {
   return `${target.scriptId}:${target.nodeId}`;
@@ -10,6 +19,70 @@ function targetKey(target: NodeTarget): string {
 /** 创建校验错误。 */
 function createError(message: string, scriptId?: string, nodeId?: string): ValidationIssue {
   return { level: "error", message, scriptId, nodeId };
+}
+
+/** 创建校验警告。 */
+function createWarning(message: string, scriptId?: string, nodeId?: string): ValidationIssue {
+  return { level: "warning", message, scriptId, nodeId };
+}
+
+/** 判断字符串是否属于白名单。 */
+function isOneOf(value: unknown, values: readonly string[]): boolean {
+  return typeof value === "string" && values.includes(value);
+}
+
+/** 校验毫秒时长范围。 */
+function validateDuration(value: number | undefined, fieldName: string, errors: ValidationIssue[], scriptId: string, nodeId: string): void {
+  if (value === undefined) return;
+  if (!Number.isFinite(value) || value < 0 || value > 5000) {
+    errors.push(createError(`${fieldName} 必须在 0 到 5000 毫秒之间。`, scriptId, nodeId));
+  }
+}
+
+/** 校验演出字段。 */
+function validatePresentationNode(node: StoryNode, scriptId: string, errors: ValidationIssue[], warnings: ValidationIssue[]): void {
+  if (node.type === "scene") {
+    if (node.transition !== undefined && !isOneOf(node.transition, TRANSITION_TYPES)) {
+      errors.push(createError(`背景转场类型非法：${String(node.transition)}`, scriptId, node.id));
+    }
+    validateDuration(node.transitionDurationMs, "背景转场时长", errors, scriptId, node.id);
+  }
+
+  if (node.type === "showCharacter") {
+    if (node.position !== undefined && !isOneOf(node.position, CHARACTER_POSITIONS)) {
+      errors.push(createError(`角色位置类型非法：${String(node.position)}`, scriptId, node.id));
+    }
+    if (node.enterEffect !== undefined && !isOneOf(node.enterEffect, ENTER_EFFECTS)) {
+      errors.push(createError(`角色登场效果非法：${String(node.enterEffect)}`, scriptId, node.id));
+    }
+    validateDuration(node.transitionDurationMs, "角色登场时长", errors, scriptId, node.id);
+    if (node.scale !== undefined && (!Number.isFinite(node.scale) || node.scale <= 0)) {
+      errors.push(createError("角色缩放必须大于 0。", scriptId, node.id));
+    }
+    if (node.opacity !== undefined && (!Number.isFinite(node.opacity) || node.opacity < 0 || node.opacity > 1)) {
+      errors.push(createError("角色透明度必须在 0 到 1 之间。", scriptId, node.id));
+    }
+    if (node.position === "custom" && (node.x === undefined || node.y === undefined)) {
+      warnings.push(createWarning("自定义角色位置建议同时填写 x 和 y。", scriptId, node.id));
+    }
+  }
+
+  if (node.type === "hideCharacter") {
+    if (node.exitEffect !== undefined && !isOneOf(node.exitEffect, EXIT_EFFECTS)) {
+      errors.push(createError(`角色退场效果非法：${String(node.exitEffect)}`, scriptId, node.id));
+    }
+    validateDuration(node.transitionDurationMs, "角色退场时长", errors, scriptId, node.id);
+  }
+
+  if (node.type === "camera") {
+    validateDuration(node.durationMs, "镜头效果时长", errors, scriptId, node.id);
+    if (node.zoom !== undefined && (!Number.isFinite(node.zoom) || node.zoom <= 0 || node.zoom > 5)) {
+      errors.push(createError("镜头缩放必须大于 0 且不超过 5。", scriptId, node.id));
+    }
+    if (node.shakeIntensity !== undefined && (!Number.isFinite(node.shakeIntensity) || node.shakeIntensity < 0 || node.shakeIntensity > 100)) {
+      warnings.push(createWarning("镜头震动强度建议保持在 0 到 100 之间。", scriptId, node.id));
+    }
+  }
 }
 
 /** 从剧情节点中收集所有跳转目标。 */
@@ -87,6 +160,7 @@ export function validateProject(project: VNProject): ValidationResult {
       if (nodeIds.has(node.id)) errors.push(createError(`节点 id 重复：${node.id}`, script.id, node.id));
       nodeIds.add(node.id);
       targets.add(`${script.id}:${node.id}`);
+      validatePresentationNode(node, script.id, errors, warnings);
     }
   }
 

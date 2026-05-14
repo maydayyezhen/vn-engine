@@ -42,3 +42,6 @@ Web 导出限制：
 编辑器支持多脚本管理、入口脚本设置、节点上移/下移、内部复制/剪切/粘贴、撤销/重做、节点搜索、节点类型筛选、校验结果点击定位和基础快捷键。复杂编辑逻辑集中在 `src/services` 与 `src/stores`，组件层只负责展示和触发操作。
 
 快捷键包括 `Ctrl+S`、`Ctrl+Z`、`Ctrl+Y` / `Ctrl+Shift+Z`、`Ctrl+C`、`Ctrl+X`、`Ctrl+V`、`Delete` 和 `Ctrl+F`。输入框和文本域聚焦时会保留正常文本编辑行为。
+## 演出编辑与画面预览
+
+节点属性面板支持编辑 `SceneNode` 转场、`ShowCharacterNode` 位置/缩放/透明度/层级/翻转/入场效果、`HideCharacterNode` 退场效果、`CameraNode` 镜头参数，以及对话/旁白文本表现字段。预览区提供“调试预览”和“画面预览”两种模式；画面预览复用 `vn-renderer-pixi`，不播放真实音频。

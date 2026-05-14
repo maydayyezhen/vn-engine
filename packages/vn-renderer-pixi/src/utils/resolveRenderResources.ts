@@ -16,13 +16,20 @@ export function resolveBackgroundResource(project: VNProject, snapshot: RuntimeS
     name: asset?.name ?? snapshot.backgroundAssetId ?? "未设置背景",
     path: asset?.path,
     asset,
-    exists: Boolean(asset)
+    exists: Boolean(asset),
+    transition: snapshot.background?.transition ?? "none",
+    transitionDurationMs: snapshot.background?.transitionDurationMs ?? 300
   };
 }
 
 /** 解析当前角色资源列表。 */
 export function resolveCharacterResources(project: VNProject, snapshot: RuntimeSnapshot): ResolvedCharacterResource[] {
-  return snapshot.characters.map((display) => {
+  const displays = [
+    ...snapshot.characters,
+    ...(snapshot.pendingEffects ?? []).flatMap((effect) => (effect.character ? [effect.character] : []))
+  ];
+
+  return displays.map((display) => {
     const character = project.characters.find((item) => item.id === display.characterId);
     const expression = character?.expressions?.find((item) => item.id === display.expression);
     const assetId = expression?.assetId ?? display.assetId;
@@ -36,6 +43,15 @@ export function resolveCharacterResources(project: VNProject, snapshot: RuntimeS
       assetId,
       path: asset?.path,
       position: display.position ?? "center",
+      x: display.x,
+      y: display.y,
+      scale: display.scale ?? 1,
+      opacity: display.opacity ?? 1,
+      zIndex: display.zIndex ?? 0,
+      flipX: display.flipX ?? false,
+      enterEffect: display.enterEffect ?? "none",
+      exitEffect: display.exitEffect,
+      transitionDurationMs: display.transitionDurationMs ?? 300,
       asset,
       exists: Boolean(character && (!display.expression || expression) && asset)
     };
@@ -64,6 +80,7 @@ export function resolveRenderResources(project: VNProject, snapshot: RuntimeSnap
   return {
     background: resolveBackgroundResource(project, snapshot),
     characters: resolveCharacterResources(project, snapshot),
-    audio: resolveAudioResources(project, snapshot)
+    audio: resolveAudioResources(project, snapshot),
+    camera: snapshot.camera ?? { zoom: 1, offsetX: 0, offsetY: 0, shake: false, shakeIntensity: 0, durationMs: 0 }
   };
 }

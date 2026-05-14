@@ -186,9 +186,16 @@ describe("VNRuntime", () => {
     expect(restoredSnapshot.currentNodeId).toBe(choiceSnapshot.currentNodeId);
     expect(restoredSnapshot.variables.stay).toBe(true);
     expect(restoredSnapshot.backgroundAssetId).toBe("bg-classroom");
-    expect(restoredSnapshot.characters).toEqual([
-      { characterId: "lincheng", assetId: "lincheng-smile", expression: "smile", position: "center" }
-    ]);
+    expect(restoredSnapshot.characters[0]).toMatchObject({
+      characterId: "lincheng",
+      assetId: "lincheng-smile",
+      expression: "smile",
+      position: "center",
+      scale: 1.05,
+      opacity: 1,
+      zIndex: 2,
+      flipX: false
+    });
     expect(restoredSnapshot.audio.bgm).toBe("bgm-main-theme");
     expect(restoredSnapshot.audio.voice).toBeUndefined();
   });
@@ -206,5 +213,57 @@ describe("VNRuntime", () => {
     expect(snapshot.backgroundAssetId).toBe(beforeSave.backgroundAssetId);
     expect(snapshot.characters).toEqual(beforeSave.characters);
     expect(snapshot.audio).toEqual(beforeSave.audio);
+  });
+
+  it("SceneNode 会更新背景转场状态", () => {
+    const runtime = new VNRuntime(createDemoProjectFromScriptFile());
+    const snapshot = runtime.start();
+    expect(snapshot.background).toMatchObject({
+      assetId: "bg-classroom",
+      transition: "fade",
+      transitionDurationMs: 600
+    });
+  });
+
+  it("ShowCharacterNode 会更新角色演出状态", () => {
+    const runtime = new VNRuntime(createDemoProjectFromScriptFile());
+    runtime.start();
+    const snapshot = runtime.next();
+    expect(snapshot.characters[0]).toMatchObject({
+      position: "center",
+      scale: 1.05,
+      opacity: 1,
+      zIndex: 2,
+      flipX: false,
+      enterEffect: "fadeIn",
+      transitionDurationMs: 400
+    });
+  });
+
+  it("HideCharacterNode 会生成退场 pendingEffects", () => {
+    const runtime = new VNRuntime(createDemoProjectFromScriptFile());
+    runtime.start();
+    runtime.next();
+    runtime.next();
+    runtime.choose("stay");
+    const snapshot = runtime.next();
+    expect(snapshot.pendingEffects[0]).toMatchObject({
+      type: "hideCharacter",
+      characterId: "lincheng",
+      exitEffect: "fadeOut",
+      transitionDurationMs: 500
+    });
+  });
+
+  it("CameraNode 会更新镜头状态并可被 getState/loadState 恢复", () => {
+    const runtime = new VNRuntime(createDemoProjectFromScriptFile());
+    runtime.start();
+    runtime.next();
+    const choices = runtime.next();
+    expect(choices.camera.zoom).toBe(1.04);
+
+    const restored = new VNRuntime(createDemoProjectFromScriptFile());
+    const restoredSnapshot = restored.loadState(runtime.getState());
+    expect(restoredSnapshot.camera.zoom).toBe(1.04);
   });
 });

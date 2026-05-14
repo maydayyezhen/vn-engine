@@ -1,5 +1,13 @@
 import type { RuntimeSnapshot } from "@vn-engine/vn-core";
-import type { AssetItem, ChoiceOption, VNProject } from "@vn-engine/vn-schema";
+import type {
+  AssetItem,
+  CharacterEnterEffect,
+  CharacterExitEffect,
+  CharacterPosition,
+  ChoiceOption,
+  TransitionType,
+  VNProject
+} from "@vn-engine/vn-schema";
 
 /** PixiJS 视觉小说渲染器尺寸。 */
 export interface VNRenderSize {
@@ -37,6 +45,10 @@ export interface ResolvedBackgroundResource {
   asset?: AssetItem;
   /** 资源是否存在于素材库。 */
   exists: boolean;
+  /** 背景转场类型。 */
+  transition: TransitionType;
+  /** 背景转场时长，单位毫秒。 */
+  transitionDurationMs: number;
 }
 
 /** 解析后的角色资源。 */
@@ -54,7 +66,25 @@ export interface ResolvedCharacterResource {
   /** 立绘资源路径。 */
   path?: string;
   /** 角色位置。 */
-  position: "left" | "center" | "right";
+  position: CharacterPosition;
+  /** 自定义位置横坐标。 */
+  x?: number;
+  /** 自定义位置纵坐标。 */
+  y?: number;
+  /** 缩放倍率。 */
+  scale: number;
+  /** 透明度。 */
+  opacity: number;
+  /** 显示层级。 */
+  zIndex: number;
+  /** 是否水平翻转。 */
+  flipX: boolean;
+  /** 登场效果。 */
+  enterEffect: CharacterEnterEffect;
+  /** 退场效果。 */
+  exitEffect?: CharacterExitEffect;
+  /** 演出时长，单位毫秒。 */
+  transitionDurationMs: number;
   /** 原始素材条目。 */
   asset?: AssetItem;
   /** 资源引用是否完整有效。 */
@@ -85,6 +115,8 @@ export interface ResolvedRenderResources {
   characters: ResolvedCharacterResource[];
   /** 当前音频资源列表，本轮仅用于调试显示。 */
   audio: ResolvedAudioResource[];
+  /** 当前镜头状态。 */
+  camera: RuntimeSnapshot["camera"];
 }
 
 /** 选择层渲染输入。 */

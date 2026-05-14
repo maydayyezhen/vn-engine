@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 import type { RuntimeSnapshot, VNRuntime } from "@vn-engine/vn-core";
+import { PixiVNRenderer } from "@vn-engine/vn-renderer-pixi";
 import type { VNProject } from "@vn-engine/vn-schema";
 import { choosePreview, nextPreview, restartPreview } from "../services/previewRuntimeService";
 import { findAssetById, findCharacterById, findCharacterExpression } from "../services/resourceLookupService";
@@ -17,6 +18,12 @@ const runtime = shallowRef<VNRuntime | null>(null);
 const snapshot = ref<RuntimeSnapshot | null>(null);
 /** 预览错误信息。 */
 const errorMessage = ref("");
+/** 当前预览模式。 */
+const previewMode = ref<"debug" | "visual">("debug");
+/** PixiJS 画面预览挂载容器。 */
+const visualContainerRef = ref<HTMLDivElement | null>(null);
+/** 编辑器画面预览渲染器。 */
+const visualRenderer = shallowRef<PixiVNRenderer | null>(null);
 
 /** 当前背景资源解析结果。 */
 const backgroundAsset = computed(() => findAssetById(props.project, snapshot.value?.backgroundAssetId));
@@ -52,6 +59,25 @@ const displayedAudio = computed(() =>
     })
 );
 
+/** 确保画面预览渲染器已挂载。 */
+async function ensureVisualRenderer(): Promise<PixiVNRenderer | null> {
+  if (!visualContainerRef.value) return null;
+  if (!visualRenderer.value) {
+    const renderer = new PixiVNRenderer({ width: 640, height: 360 });
+    await renderer.mount(visualContainerRef.value);
+    visualRenderer.value = renderer;
+  }
+  return visualRenderer.value;
+}
+
+/** 渲染编辑器画面预览，不播放真实音频。 */
+async function renderVisualPreview(): Promise<void> {
+  if (previewMode.value !== "visual" || !snapshot.value) return;
+  await nextTick();
+  const renderer = await ensureVisualRenderer();
+  await renderer?.render(snapshot.value, props.project, { hideRuntimeUi: false });
+}
+
 /** 重新开始预览。 */
 function restart(): void {
   try {
@@ -59,6 +85,7 @@ function restart(): void {
     runtime.value = result.runtime;
     snapshot.value = result.snapshot;
     errorMessage.value = "";
+    void renderVisualPreview();
   } catch (error) {
     runtime.value = null;
     snapshot.value = null;
@@ -70,22 +97,34 @@ function restart(): void {
 function next(): void {
   if (!runtime.value || !snapshot.value || snapshot.value.type === "choices" || snapshot.value.isEnded) return;
   snapshot.value = nextPreview(runtime.value);
+  void renderVisualPreview();
 }
 
 /** 选择预览选项。 */
 function choose(optionId: string): void {
   if (!runtime.value) return;
   snapshot.value = choosePreview(runtime.value, optionId);
+  void renderVisualPreview();
 }
+
+watch(previewMode, () => {
+  void renderVisualPreview();
+});
 
 watch(
   () => props.project,
   () => {
     errorMessage.value = "";
+    void renderVisualPreview();
   }
 );
 
 restart();
+
+onBeforeUnmount(() => {
+  visualRenderer.value?.destroy();
+  visualRenderer.value = null;
+});
 
 defineExpose({
   /** 暴露给顶部工具栏使用的重新开始预览动作。 */
@@ -98,11 +137,34 @@ defineExpose({
     <template #header>
       <div class="panel-header">
         <span>运行预览</span>
-        <el-button size="small" type="primary" @click="restart">重新开始预览</el-button>
+        <div class="preview-actions">
+          <el-segmented
+            v-model="previewMode"
+            size="small"
+            :options="[
+              { label: '调试预览', value: 'debug' },
+              { label: '画面预览', value: 'visual' }
+            ]"
+          />
+          <el-button size="small" type="primary" @click="restart">重新开始预览</el-button>
+        </div>
       </div>
     </template>
 
     <el-alert v-if="errorMessage" :title="errorMessage" type="error" :closable="false" show-icon />
+
+    <div v-else-if="snapshot && previewMode === 'visual'" class="visual-preview-panel">
+      <div ref="visualContainerRef" class="editor-visual-stage"></div>
+      <div class="visual-preview-controls">
+        <el-button size="small" :disabled="snapshot.type === 'choices' || snapshot.isEnded" @click="next">下一步</el-button>
+        <template v-if="snapshot.type === 'choices'">
+          <el-button v-for="choice in snapshot.choices" :key="choice.id" size="small" @click="choose(choice.id)">
+            {{ choice.text }}
+          </el-button>
+        </template>
+      </div>
+    </div>
+
     <div v-else-if="snapshot" class="preview-grid">
       <div class="preview-stage">
         <div class="preview-meta">
@@ -116,6 +178,9 @@ defineExpose({
             </span>
           </span>
           <span v-else>无</span>
+        </div>
+        <div class="preview-meta">
+          镜头：zoom {{ snapshot.camera.zoom }} / offset {{ snapshot.camera.offsetX }}, {{ snapshot.camera.offsetY }} / shake {{ snapshot.camera.shake ? "on" : "off" }}
         </div>
         <div class="preview-meta">
           音频：

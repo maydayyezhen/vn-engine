@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ConditionBranch, NodeTarget, PlayAudioNode, StoryNode, VariableValue, VNProject } from "@vn-engine/vn-schema";
+import type { CharacterEnterEffect, CharacterExitEffect, CharacterPosition, ConditionBranch, NodeTarget, PlayAudioNode, StoryNode, TransitionType, VariableValue, VNProject } from "@vn-engine/vn-schema";
 import {
   findAssetById,
   findCharacterById,
@@ -37,7 +37,13 @@ const conditionOperators: Array<{ label: string; value: ConditionBranch["operato
 ];
 
 /** 角色位置选项。 */
-const positions = ["left", "center", "right"] as const;
+const positions: CharacterPosition[] = ["left", "center", "right", "custom"];
+/** 背景转场选项。 */
+const transitions: TransitionType[] = ["none", "fade", "slideLeft", "slideRight"];
+/** 角色登场效果选项。 */
+const enterEffects: CharacterEnterEffect[] = ["none", "fadeIn", "slideInLeft", "slideInRight"];
+/** 角色退场效果选项。 */
+const exitEffects: CharacterExitEffect[] = ["none", "fadeOut", "slideOutLeft", "slideOutRight"];
 
 /** 音频通道选项。 */
 const audioChannels: PlayAudioNode["channel"][] = ["bgm", "sound", "voice"];
@@ -199,11 +205,29 @@ function getMissingResourceWarning(): string {
         <el-form-item label="text">
           <el-input :model-value="node.text" type="textarea" :rows="4" @update:model-value="(value: string) => applyPatch({ text: value })" />
         </el-form-item>
+        <el-form-item label="textSpeed">
+          <el-input-number :model-value="node.textSpeed ?? 30" :min="1" :max="200" @update:model-value="(value: number | undefined) => applyPatch({ textSpeed: value ?? 30 })" />
+        </el-form-item>
+        <el-form-item label="autoNext">
+          <el-switch :model-value="node.autoNext ?? false" @update:model-value="(value: boolean) => applyPatch({ autoNext: value })" />
+        </el-form-item>
+        <el-form-item label="waitForClick">
+          <el-switch :model-value="node.waitForClick ?? true" @update:model-value="(value: boolean) => applyPatch({ waitForClick: value })" />
+        </el-form-item>
       </template>
 
       <template v-else-if="node.type === 'narration'">
         <el-form-item label="text">
           <el-input :model-value="node.text" type="textarea" :rows="4" @update:model-value="(value: string) => applyPatch({ text: value })" />
+        </el-form-item>
+        <el-form-item label="textSpeed">
+          <el-input-number :model-value="node.textSpeed ?? 30" :min="1" :max="200" @update:model-value="(value: number | undefined) => applyPatch({ textSpeed: value ?? 30 })" />
+        </el-form-item>
+        <el-form-item label="autoNext">
+          <el-switch :model-value="node.autoNext ?? false" @update:model-value="(value: boolean) => applyPatch({ autoNext: value })" />
+        </el-form-item>
+        <el-form-item label="waitForClick">
+          <el-switch :model-value="node.waitForClick ?? true" @update:model-value="(value: boolean) => applyPatch({ waitForClick: value })" />
         </el-form-item>
       </template>
 
@@ -240,6 +264,14 @@ function getMissingResourceWarning(): string {
             <el-option v-for="asset in getBackgroundOptions(project)" :key="asset.id" :label="`${asset.name} (${asset.id})`" :value="asset.id" />
           </el-select>
         </el-form-item>
+        <el-form-item label="transition">
+          <el-select :model-value="node.transition ?? 'none'" @update:model-value="(value: TransitionType) => applyPatch({ transition: value })">
+            <el-option v-for="transition in transitions" :key="transition" :label="transition" :value="transition" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="transitionDurationMs">
+          <el-input-number :model-value="node.transitionDurationMs ?? 300" :min="0" :max="5000" @update:model-value="(value: number | undefined) => applyPatch({ transitionDurationMs: value ?? 300 })" />
+        </el-form-item>
       </template>
 
       <template v-else-if="node.type === 'showCharacter'">
@@ -254,9 +286,35 @@ function getMissingResourceWarning(): string {
           </el-select>
         </el-form-item>
         <el-form-item label="position">
-          <el-select :model-value="node.position" @update:model-value="(value: 'left' | 'center' | 'right') => applyPatch({ position: value })">
+          <el-select :model-value="node.position ?? 'center'" @update:model-value="(value: CharacterPosition) => applyPatch({ position: value })">
             <el-option v-for="position in positions" :key="position" :label="position" :value="position" />
           </el-select>
+        </el-form-item>
+        <el-form-item v-if="node.position === 'custom'" label="custom x / y">
+          <div class="inline-fields">
+            <el-input-number :model-value="node.x ?? 640" @update:model-value="(value: number | undefined) => applyPatch({ x: value ?? 640 })" />
+            <el-input-number :model-value="node.y ?? 575" @update:model-value="(value: number | undefined) => applyPatch({ y: value ?? 575 })" />
+          </div>
+        </el-form-item>
+        <el-form-item label="scale">
+          <el-input-number :model-value="node.scale ?? 1" :min="0.1" :max="5" :step="0.1" @update:model-value="(value: number | undefined) => applyPatch({ scale: value ?? 1 })" />
+        </el-form-item>
+        <el-form-item label="opacity">
+          <el-input-number :model-value="node.opacity ?? 1" :min="0" :max="1" :step="0.05" @update:model-value="(value: number | undefined) => applyPatch({ opacity: value ?? 1 })" />
+        </el-form-item>
+        <el-form-item label="zIndex">
+          <el-input-number :model-value="node.zIndex ?? 0" @update:model-value="(value: number | undefined) => applyPatch({ zIndex: value ?? 0 })" />
+        </el-form-item>
+        <el-form-item label="flipX">
+          <el-switch :model-value="node.flipX ?? false" @update:model-value="(value: boolean) => applyPatch({ flipX: value })" />
+        </el-form-item>
+        <el-form-item label="enterEffect">
+          <el-select :model-value="node.enterEffect ?? 'none'" @update:model-value="(value: CharacterEnterEffect) => applyPatch({ enterEffect: value })">
+            <el-option v-for="effect in enterEffects" :key="effect" :label="effect" :value="effect" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="transitionDurationMs">
+          <el-input-number :model-value="node.transitionDurationMs ?? 300" :min="0" :max="5000" @update:model-value="(value: number | undefined) => applyPatch({ transitionDurationMs: value ?? 300 })" />
         </el-form-item>
       </template>
 
@@ -265,6 +323,35 @@ function getMissingResourceWarning(): string {
           <el-select :model-value="node.characterId" filterable @update:model-value="(value: string) => applyPatch({ characterId: value })">
             <el-option v-for="character in getCharacterOptions(project)" :key="character.id" :label="`${character.displayName || character.name} (${character.id})`" :value="character.id" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="exitEffect">
+          <el-select :model-value="node.exitEffect ?? 'none'" @update:model-value="(value: CharacterExitEffect) => applyPatch({ exitEffect: value })">
+            <el-option v-for="effect in exitEffects" :key="effect" :label="effect" :value="effect" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="transitionDurationMs">
+          <el-input-number :model-value="node.transitionDurationMs ?? 300" :min="0" :max="5000" @update:model-value="(value: number | undefined) => applyPatch({ transitionDurationMs: value ?? 300 })" />
+        </el-form-item>
+      </template>
+
+      <template v-else-if="node.type === 'camera'">
+        <el-form-item label="zoom">
+          <el-input-number :model-value="node.zoom ?? 1" :min="0.1" :max="5" :step="0.1" @update:model-value="(value: number | undefined) => applyPatch({ zoom: value ?? 1 })" />
+        </el-form-item>
+        <el-form-item label="offsetX">
+          <el-input-number :model-value="node.offsetX ?? 0" @update:model-value="(value: number | undefined) => applyPatch({ offsetX: value ?? 0 })" />
+        </el-form-item>
+        <el-form-item label="offsetY">
+          <el-input-number :model-value="node.offsetY ?? 0" @update:model-value="(value: number | undefined) => applyPatch({ offsetY: value ?? 0 })" />
+        </el-form-item>
+        <el-form-item label="shake">
+          <el-switch :model-value="node.shake ?? false" @update:model-value="(value: boolean) => applyPatch({ shake: value })" />
+        </el-form-item>
+        <el-form-item label="shakeIntensity">
+          <el-input-number :model-value="node.shakeIntensity ?? 0" :min="0" :max="100" @update:model-value="(value: number | undefined) => applyPatch({ shakeIntensity: value ?? 0 })" />
+        </el-form-item>
+        <el-form-item label="durationMs">
+          <el-input-number :model-value="node.durationMs ?? 300" :min="0" :max="5000" @update:model-value="(value: number | undefined) => applyPatch({ durationMs: value ?? 300 })" />
         </el-form-item>
       </template>
 

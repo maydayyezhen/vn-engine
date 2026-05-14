@@ -53,6 +53,9 @@ importers:
       '@vn-engine/vn-project':
         specifier: workspace:*
         version: link:../../packages/vn-project
+      '@vn-engine/vn-renderer-pixi':
+        specifier: workspace:*
+        version: link:../../packages/vn-renderer-pixi
       '@vn-engine/vn-schema':
         specifier: workspace:*
         version: link:../../packages/vn-schema

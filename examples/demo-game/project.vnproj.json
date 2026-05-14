@@ -86,7 +86,9 @@
         {
           "id": "scene-classroom",
           "type": "scene",
-          "backgroundAssetId": "bg-classroom"
+          "backgroundAssetId": "bg-classroom",
+          "transition": "fade",
+          "transitionDurationMs": 600
         },
         {
           "id": "play-bgm",
@@ -101,12 +103,20 @@
           "characterId": "lincheng",
           "assetId": "lincheng-normal",
           "expression": "normal",
-          "position": "center"
+          "position": "left",
+          "enterEffect": "slideInLeft",
+          "transitionDurationMs": 500,
+          "scale": 1,
+          "opacity": 1,
+          "zIndex": 1,
+          "flipX": false
         },
         {
           "id": "narration-intro",
           "type": "narration",
-          "text": "这是一个用于验证视觉小说运行时的测试故事。"
+          "text": "这是一个用于验证视觉小说运行时的测试故事。",
+          "textSpeed": 36,
+          "waitForClick": true
         },
         {
           "id": "show-lincheng-smile",
@@ -114,7 +124,13 @@
           "characterId": "lincheng",
           "assetId": "lincheng-smile",
           "expression": "smile",
-          "position": "center"
+          "position": "center",
+          "enterEffect": "fadeIn",
+          "transitionDurationMs": 400,
+          "scale": 1.05,
+          "opacity": 1,
+          "zIndex": 2,
+          "flipX": false
         },
         {
           "id": "play-voice",
@@ -126,7 +142,19 @@
           "id": "dialogue-greeting",
           "type": "dialogue",
           "characterId": "lincheng",
-          "text": "你终于来了。我有些话想对你说。"
+          "text": "你终于来了。我有些话想对你说。",
+          "textSpeed": 42,
+          "waitForClick": true
+        },
+        {
+          "id": "camera-soft-zoom",
+          "type": "camera",
+          "zoom": 1.04,
+          "offsetX": 0,
+          "offsetY": 0,
+          "shake": false,
+          "shakeIntensity": 0,
+          "durationMs": 400
         },
         {
           "id": "stop-voice",
@@ -190,7 +218,9 @@
         {
           "id": "hide-lincheng-a",
           "type": "hideCharacter",
-          "characterId": "lincheng"
+          "characterId": "lincheng",
+          "exitEffect": "fadeOut",
+          "transitionDurationMs": 500
         },
         {
           "id": "stop-bgm-a",
@@ -208,13 +238,25 @@
         {
           "id": "scene-corridor",
           "type": "scene",
-          "backgroundAssetId": "bg-corridor"
+          "backgroundAssetId": "bg-corridor",
+          "transition": "slideLeft",
+          "transitionDurationMs": 500
         },
         {
           "id": "play-door-sound",
           "type": "playAudio",
           "channel": "sound",
           "assetId": "sound-door"
+        },
+        {
+          "id": "camera-corridor-shake",
+          "type": "camera",
+          "zoom": 1,
+          "offsetX": 0,
+          "offsetY": 0,
+          "shake": true,
+          "shakeIntensity": 8,
+          "durationMs": 300
         },
         {
           "id": "ending-b",
@@ -224,7 +266,9 @@
         {
           "id": "hide-lincheng-b",
           "type": "hideCharacter",
-          "characterId": "lincheng"
+          "characterId": "lincheng",
+          "exitEffect": "slideOutRight",
+          "transitionDurationMs": 500
         },
         {
           "id": "stop-bgm-b",

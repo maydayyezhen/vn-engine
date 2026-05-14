@@ -7,6 +7,7 @@ import { CharacterLayer } from "./layers/CharacterLayer";
 import { ChoiceLayer } from "./layers/ChoiceLayer";
 import { DialogueLayer } from "./layers/DialogueLayer";
 import type { PixiVNRendererOptions, PixiVNRenderOptions, VNRenderSize } from "./types";
+import { normalizeCameraState } from "./utils/presentationLayout";
 import { resolveRenderResources } from "./utils/resolveRenderResources";
 
 /** PixiJS 视觉小说最小渲染器。 */
@@ -17,6 +18,10 @@ export class PixiVNRenderer {
   private size: VNRenderSize;
   /** 根容器。 */
   private readonly root = new Container();
+  /** 场景容器，镜头效果只作用于背景和角色。 */
+  private readonly sceneRoot = new Container();
+  /** UI 容器，不受镜头效果影响。 */
+  private readonly uiRoot = new Container();
   /** 资源加载器。 */
   private readonly assetLoader = new PixiAssetLoader();
   /** 背景层。 */
@@ -27,6 +32,8 @@ export class PixiVNRenderer {
   private dialogueLayer: DialogueLayer | null = null;
   /** 选项层。 */
   private choiceLayer: ChoiceLayer | null = null;
+  /** 镜头动画编号，用于让旧震动动画失效。 */
+  private cameraAnimationToken = 0;
 
   /** 创建 PixiJS 视觉小说渲染器。 */
   constructor(private readonly options: PixiVNRendererOptions = {}) {
@@ -51,15 +58,17 @@ export class PixiVNRenderer {
 
     this.app = app;
     app.stage.addChild(this.root);
+    this.root.addChild(this.sceneRoot);
+    this.root.addChild(this.uiRoot);
     this.backgroundLayer = new BackgroundLayer(this.assetLoader, app.renderer);
     this.characterLayer = new CharacterLayer(this.assetLoader, app.renderer);
     this.dialogueLayer = new DialogueLayer();
     this.choiceLayer = new ChoiceLayer(this.options.onChoose);
 
-    this.root.addChild(this.backgroundLayer.container);
-    this.root.addChild(this.characterLayer.container);
-    this.root.addChild(this.dialogueLayer.container);
-    this.root.addChild(this.choiceLayer.container);
+    this.sceneRoot.addChild(this.backgroundLayer.container);
+    this.sceneRoot.addChild(this.characterLayer.container);
+    this.uiRoot.addChild(this.dialogueLayer.container);
+    this.uiRoot.addChild(this.choiceLayer.container);
 
     app.canvas.className = "pixi-vn-canvas";
     container.innerHTML = "";
@@ -73,6 +82,7 @@ export class PixiVNRenderer {
 
     await this.backgroundLayer.render(resources.background, this.size);
     await this.characterLayer.render(resources.characters, this.size);
+    this.applyCamera(resources.camera);
     this.dialogueLayer.container.visible = !renderOptions.hideRuntimeUi;
     this.choiceLayer.container.visible = !renderOptions.hideRuntimeUi;
     if (!renderOptions.hideRuntimeUi) {
@@ -89,6 +99,15 @@ export class PixiVNRenderer {
   }
 
   /** 销毁渲染器并释放画布。 */
+  /** 应用基础镜头状态。 */
+  private applyCamera(camera: RuntimeSnapshot["camera"]): void {
+    const normalized = normalizeCameraState(camera);
+    const shakeOffset = normalized.shake ? Math.sin(performance.now() / 24) * normalized.shakeIntensity : 0;
+    this.sceneRoot.pivot.set(this.size.width / 2, this.size.height / 2);
+    this.sceneRoot.position.set(this.size.width / 2 + normalized.offsetX + shakeOffset, this.size.height / 2 + normalized.offsetY);
+    this.sceneRoot.scale.set(normalized.zoom);
+  }
+
   destroy(): void {
     this.assetLoader.clear();
     this.root.removeChildren();

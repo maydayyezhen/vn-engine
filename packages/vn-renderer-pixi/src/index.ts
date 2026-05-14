@@ -11,6 +11,14 @@ export {
   resolveBackgroundResource,
   resolveCharacterResources
 } from "./utils/resolveRenderResources";
+export {
+  normalizeCameraState,
+  normalizeTransition,
+  resolveCharacterLayout,
+  resolveCharacterX,
+  resolveCharacterY,
+  sortCharactersByZIndex
+} from "./utils/presentationLayout";
 export type {
   PixiVNRendererOptions,
   PixiVNRenderOptions,

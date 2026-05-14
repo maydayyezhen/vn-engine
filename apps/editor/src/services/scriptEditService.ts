@@ -41,6 +41,7 @@ export function getNodeSummary(node: StoryNode): string {
   if (node.type === "scene") return node.backgroundAssetId;
   if (node.type === "showCharacter") return `${node.characterId} ${node.expression ?? ""} ${node.position ?? ""}`.trim();
   if (node.type === "hideCharacter") return node.characterId;
+  if (node.type === "camera") return `zoom ${node.zoom ?? 1} offset ${node.offsetX ?? 0},${node.offsetY ?? 0}`;
   if (node.type === "jump") return `${node.target.scriptId}:${node.target.nodeId}`;
   if (node.type === "setVariable") return `${node.name} = ${String(node.value)}`;
   if (node.type === "condition") return node.branches[0]?.variable ?? "条件分支";
@@ -85,6 +86,21 @@ export function addNarrationNodeAfter(project: VNProject, scriptId: string, afte
     id: createNodeId("narration"),
     type: "narration",
     text: "新的旁白"
+  };
+  return insertNodeAfter(project, scriptId, afterNodeId, node);
+}
+
+/** 在当前节点后新增镜头节点。 */
+export function addCameraNodeAfter(project: VNProject, scriptId: string, afterNodeId: string | null): VNProject {
+  const node: StoryNode = {
+    id: createNodeId("camera"),
+    type: "camera",
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
+    shake: false,
+    shakeIntensity: 0,
+    durationMs: 300
   };
   return insertNodeAfter(project, scriptId, afterNodeId, node);
 }

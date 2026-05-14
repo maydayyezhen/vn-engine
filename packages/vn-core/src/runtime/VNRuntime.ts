@@ -1,9 +1,9 @@
-import type { ChoiceOption, NodeTarget, StoryNode, VNProject } from "@vn-engine/vn-schema";
+import type { ChoiceOption, NodeTarget, ShowCharacterNode, StoryNode, VNProject } from "@vn-engine/vn-schema";
 import { validateProject } from "@vn-engine/vn-schema";
 import { ConditionEvaluator } from "../condition/ConditionEvaluator";
 import { findNodeByIndex, findNodeIndex, findScript } from "../utils/runtimeLookup";
 import { VariableStore } from "../variable/VariableStore";
-import type { RuntimeState } from "./RuntimeState";
+import type { RuntimeCameraState, RuntimeCharacterDisplay, RuntimeState } from "./RuntimeState";
 import type { RuntimeSnapshot } from "./RuntimeSnapshot";
 
 /** 最小视觉小说运行时解释器。 */
@@ -102,7 +102,10 @@ export class VNRuntime {
       currentNodeId: firstNode?.id ?? null,
       currentNodeIndex: 0,
       backgroundAssetId: undefined,
+      background: undefined,
       characters: [],
+      camera: this.createDefaultCameraState(),
+      pendingEffects: [],
       audio: {},
       variables: {},
       isWaitingChoice: false,
@@ -116,8 +119,8 @@ export class VNRuntime {
       const node = this.getCurrentNode();
       if (!node) return this.markEnded();
       this.state.currentNodeId = node.id;
-      if (node.type === "dialogue") return this.showDialogue(node.characterId, node.text);
-      if (node.type === "narration") return this.showDialogue(null, node.text);
+      if (node.type === "dialogue") return this.showDialogue(node.characterId, node.text, node.textSpeed, node.autoNext, node.waitForClick);
+      if (node.type === "narration") return this.showDialogue(null, node.text, node.textSpeed, node.autoNext, node.waitForClick);
       if (node.type === "choice") return this.showChoices(node);
       this.applyAutoNode(node);
     }
@@ -138,9 +141,26 @@ export class VNRuntime {
       return;
     }
     if (node.type === "setVariable") this.variables.set(node.name, node.value);
-    if (node.type === "scene") this.state.backgroundAssetId = node.backgroundAssetId;
-    if (node.type === "showCharacter") this.showCharacter(node.characterId, node.assetId, node.expression, node.position);
-    if (node.type === "hideCharacter") this.hideCharacter(node.characterId);
+    if (node.type === "scene") {
+      this.state.backgroundAssetId = node.backgroundAssetId;
+      this.state.background = {
+        assetId: node.backgroundAssetId,
+        transition: node.transition ?? "none",
+        transitionDurationMs: node.transitionDurationMs ?? 300
+      };
+    }
+    if (node.type === "showCharacter") this.showCharacter(node);
+    if (node.type === "hideCharacter") this.hideCharacter(node.characterId, node.exitEffect ?? "none", node.transitionDurationMs ?? 300);
+    if (node.type === "camera") {
+      this.state.camera = {
+        zoom: node.zoom ?? 1,
+        offsetX: node.offsetX ?? 0,
+        offsetY: node.offsetY ?? 0,
+        shake: node.shake ?? false,
+        shakeIntensity: node.shakeIntensity ?? 0,
+        durationMs: node.durationMs ?? 300
+      };
+    }
     if (node.type === "playAudio") this.state.audio[node.channel] = node.assetId;
     if (node.type === "stopAudio") delete this.state.audio[node.channel];
     if (node.type === "condition") {
@@ -167,15 +187,50 @@ export class VNRuntime {
   }
 
   /** 显示或更新角色状态。 */
-  private showCharacter(characterId: string, assetId?: string, expression?: string, position?: "left" | "center" | "right"): void {
-    const current = this.state.characters.filter((item) => item.characterId !== characterId);
-    current.push({ characterId, assetId, expression, position });
+  private showCharacter(node: ShowCharacterNode): void {
+    const current = this.state.characters.filter((item) => item.characterId !== node.characterId);
+    current.push({
+      characterId: node.characterId,
+      assetId: node.assetId,
+      expression: node.expression,
+      position: node.position ?? "center",
+      x: node.x,
+      y: node.y,
+      scale: node.scale ?? 1,
+      opacity: node.opacity ?? 1,
+      zIndex: node.zIndex ?? 0,
+      flipX: node.flipX ?? false,
+      enterEffect: node.enterEffect ?? "none",
+      transitionDurationMs: node.transitionDurationMs ?? 300
+    });
     this.state.characters = current;
   }
 
   /** 隐藏角色状态。 */
-  private hideCharacter(characterId: string): void {
+  private hideCharacter(characterId: string, exitEffect: RuntimeCharacterDisplay["exitEffect"], transitionDurationMs: number): void {
+    const character = this.state.characters.find((item) => item.characterId === characterId);
+    if (character) {
+      this.state.pendingEffects.push({
+        type: "hideCharacter",
+        characterId,
+        exitEffect: exitEffect ?? "none",
+        transitionDurationMs,
+        character: { ...character, exitEffect, transitionDurationMs }
+      });
+    }
     this.state.characters = this.state.characters.filter((item) => item.characterId !== characterId);
+  }
+
+  /** 创建默认镜头状态。 */
+  private createDefaultCameraState(): RuntimeCameraState {
+    return {
+      zoom: 1,
+      offsetX: 0,
+      offsetY: 0,
+      shake: false,
+      shakeIntensity: 0,
+      durationMs: 0
+    };
   }
 
   /** 应用选项附带的变量写入。 */
@@ -187,10 +242,13 @@ export class VNRuntime {
   }
 
   /** 创建对话快照。 */
-  private showDialogue(speaker: string | null, text: string): RuntimeSnapshot {
+  private showDialogue(speaker: string | null, text: string, textSpeed?: number, autoNext?: boolean, waitForClick?: boolean): RuntimeSnapshot {
     this.state.isWaitingChoice = false;
     this.state.variables = this.variables.snapshot();
     this.snapshot = this.createSnapshot("dialogue", speaker, text, []);
+    this.snapshot.textSpeed = textSpeed;
+    this.snapshot.autoNext = autoNext;
+    this.snapshot.waitForClick = waitForClick;
     return this.getSnapshot();
   }
 
@@ -218,12 +276,19 @@ export class VNRuntime {
     text: string,
     choices: ChoiceOption[]
   ): RuntimeSnapshot {
-    return {
+    const pendingEffects = this.state.pendingEffects.map((effect) => ({
+      ...effect,
+      character: effect.character ? { ...effect.character } : undefined
+    }));
+    const snapshot: RuntimeSnapshot = {
       type,
       currentScriptId: this.state.currentScriptId,
       currentNodeId: this.state.currentNodeId,
       backgroundAssetId: this.state.backgroundAssetId,
+      background: this.state.background ? { ...this.state.background } : undefined,
       characters: this.state.characters.map((item) => ({ ...item })),
+      camera: { ...this.state.camera },
+      pendingEffects,
       speaker,
       text,
       choices: choices.map((choice) => ({ ...choice, setVariables: { ...choice.setVariables }, target: { ...choice.target } })),
@@ -231,13 +296,21 @@ export class VNRuntime {
       audio: { ...this.state.audio },
       isEnded: this.state.isEnded
     };
+    this.state.pendingEffects = [];
+    return snapshot;
   }
 
   /** 复制运行状态，避免外部修改内部状态。 */
   private cloneState(state: RuntimeState): RuntimeState {
     return {
       ...state,
+      background: state.background ? { ...state.background } : undefined,
       characters: state.characters.map((item) => ({ ...item })),
+      camera: { ...(state.camera ?? this.createDefaultCameraState()) },
+      pendingEffects: (state.pendingEffects ?? []).map((effect) => ({
+        ...effect,
+        character: effect.character ? { ...effect.character } : undefined
+      })),
       audio: { ...state.audio },
       variables: { ...state.variables }
     };
@@ -247,7 +320,13 @@ export class VNRuntime {
   private cloneSnapshot(snapshot: RuntimeSnapshot): RuntimeSnapshot {
     return {
       ...snapshot,
+      background: snapshot.background ? { ...snapshot.background } : undefined,
       characters: snapshot.characters.map((item) => ({ ...item })),
+      camera: { ...snapshot.camera },
+      pendingEffects: snapshot.pendingEffects.map((effect) => ({
+        ...effect,
+        character: effect.character ? { ...effect.character } : undefined
+      })),
       choices: snapshot.choices.map((choice) => ({ ...choice, setVariables: { ...choice.setVariables }, target: { ...choice.target } })),
       variables: { ...snapshot.variables },
       audio: { ...snapshot.audio }

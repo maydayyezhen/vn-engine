@@ -17,11 +17,24 @@ export type NodeType =
   | "scene"
   | "showCharacter"
   | "hideCharacter"
+  | "camera"
   | "playAudio"
   | "stopAudio"
   | "setVariable"
   | "condition"
   | "jump";
+
+/** 背景转场类型。 */
+export type TransitionType = "none" | "fade" | "slideLeft" | "slideRight";
+
+/** 角色登场演出类型。 */
+export type CharacterEnterEffect = "none" | "fadeIn" | "slideInLeft" | "slideInRight";
+
+/** 角色退场演出类型。 */
+export type CharacterExitEffect = "none" | "fadeOut" | "slideOutLeft" | "slideOutRight";
+
+/** 角色画面位置类型。 */
+export type CharacterPosition = "left" | "center" | "right" | "custom";
 
 /** 音频通道类型，保留 sfx 作为旧数据兼容别名。 */
 export type StoryAudioChannel = "bgm" | "sound" | "voice" | "sfx";
@@ -65,6 +78,12 @@ export interface DialogueNode {
   characterId: string;
   /** 台词文本。 */
   text: string;
+  /** 文本显示速度，数值越大代表越快。 */
+  textSpeed?: number;
+  /** 是否自动进入下一句。 */
+  autoNext?: boolean;
+  /** 是否等待玩家点击。 */
+  waitForClick?: boolean;
 }
 
 /** 旁白节点，不绑定说话角色。 */
@@ -75,6 +94,12 @@ export interface NarrationNode {
   id: string;
   /** 旁白文本。 */
   text: string;
+  /** 文本显示速度，数值越大代表越快。 */
+  textSpeed?: number;
+  /** 是否自动进入下一句。 */
+  autoNext?: boolean;
+  /** 是否等待玩家点击。 */
+  waitForClick?: boolean;
 }
 
 /** 选项节点，等待玩家选择。 */
@@ -97,6 +122,10 @@ export interface SceneNode {
   id: string;
   /** 背景素材 id。 */
   backgroundAssetId: string;
+  /** 背景切换转场类型。 */
+  transition?: TransitionType;
+  /** 背景切换转场时长，单位毫秒。 */
+  transitionDurationMs?: number;
 }
 
 /** 角色登场节点。 */
@@ -112,7 +141,23 @@ export interface ShowCharacterNode {
   /** 表情标识。 */
   expression?: string;
   /** 角色在画面中的位置。 */
-  position?: "left" | "center" | "right";
+  position?: CharacterPosition;
+  /** 自定义位置横坐标，仅 position 为 custom 时使用。 */
+  x?: number;
+  /** 自定义位置纵坐标，仅 position 为 custom 时使用。 */
+  y?: number;
+  /** 角色缩放倍率。 */
+  scale?: number;
+  /** 角色透明度，范围 0 到 1。 */
+  opacity?: number;
+  /** 角色显示层级，数值越大越靠前。 */
+  zIndex?: number;
+  /** 是否水平翻转立绘。 */
+  flipX?: boolean;
+  /** 角色登场效果。 */
+  enterEffect?: CharacterEnterEffect;
+  /** 角色登场动画时长，单位毫秒。 */
+  transitionDurationMs?: number;
 }
 
 /** 角色隐藏节点。 */
@@ -123,6 +168,30 @@ export interface HideCharacterNode {
   id: string;
   /** 要隐藏的角色 id。 */
   characterId: string;
+  /** 角色退场效果。 */
+  exitEffect?: CharacterExitEffect;
+  /** 角色退场动画时长，单位毫秒。 */
+  transitionDurationMs?: number;
+}
+
+/** 基础镜头节点，用于更新画面缩放、偏移和轻微震动状态。 */
+export interface CameraNode {
+  /** 节点类型。 */
+  type: "camera";
+  /** 节点唯一标识。 */
+  id: string;
+  /** 画面缩放倍率。 */
+  zoom?: number;
+  /** 画面横向偏移。 */
+  offsetX?: number;
+  /** 画面纵向偏移。 */
+  offsetY?: number;
+  /** 是否启用轻微震动。 */
+  shake?: boolean;
+  /** 震动强度。 */
+  shakeIntensity?: number;
+  /** 镜头效果时长，单位毫秒。 */
+  durationMs?: number;
 }
 
 /** 播放音频节点。 */
@@ -191,6 +260,7 @@ export type StoryNode =
   | SceneNode
   | ShowCharacterNode
   | HideCharacterNode
+  | CameraNode
   | PlayAudioNode
   | StopAudioNode
   | SetVariableNode

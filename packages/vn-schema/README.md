@@ -20,3 +20,6 @@
 ## 编辑器定位信息
 
 `ScriptFile.name` 可作为脚本显示名称使用；旧项目如果没有该字段，编辑器会回退显示脚本 id。`validateProject` 返回的校验项包含 `message`、`level`，并在能够定位时包含 `scriptId` 与 `nodeId`，编辑器可以据此从校验面板跳转到对应脚本和节点。
+## 基础演出字段
+
+`vn-schema` 现在定义背景转场、角色入场/退场、角色位置、缩放、透明度、层级、水平翻转、`CameraNode` 和对话表现字段。`validateProject` 会检查非法转场/效果、异常 duration、非法 scale/opacity、自定义位置缺少坐标和异常镜头数值。

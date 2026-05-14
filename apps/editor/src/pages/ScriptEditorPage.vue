@@ -32,6 +32,7 @@ import {
   readProjectJsonFile
 } from "../services/projectImportExportService";
 import {
+  addCameraNodeAfter,
   addDialogueNodeAfter,
   addNarrationNodeAfter,
   deleteNode,
@@ -234,6 +235,16 @@ function handleAddDialogue(): void {
 function handleAddNarration(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addNarrationNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
+  applyProject(nextProject);
+  const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
+  const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
+  selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
+}
+
+/** 新增镜头节点。 */
+function handleAddCamera(): void {
+  const currentNodeId = projectStore.selectedNodeId;
+  const nextProject = addCameraNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
   applyProject(nextProject);
   const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
   const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
@@ -535,6 +546,7 @@ onBeforeUnmount(() => {
           @select-node="handleSelectNode"
           @add-dialogue="handleAddDialogue"
           @add-narration="handleAddNarration"
+          @add-camera="handleAddCamera"
           @duplicate-node="handleCopyNode"
           @cut-node="handleCutNode"
           @paste-node="handlePasteNode"

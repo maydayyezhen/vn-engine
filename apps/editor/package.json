@@ -16,6 +16,7 @@
     "@vn-engine/vn-core": "workspace:*",
     "@vn-engine/vn-export": "workspace:*",
     "@vn-engine/vn-project": "workspace:*",
+    "@vn-engine/vn-renderer-pixi": "workspace:*",
     "@vn-engine/vn-schema": "workspace:*",
     "element-plus": "^2.9.10",
     "vite": "^6.3.5",

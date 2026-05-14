@@ -196,3 +196,14 @@ my-vn-project/
 ```
 
 Tauri 阶段负责选择本地素材、复制到工程 `assets` 目录、生成相对路径、更新项目资源元数据，并在导出游戏包时复制依赖素材。
+## 演出字段
+
+`SceneNode` 可选字段：`transition`、`transitionDurationMs`，用于描述背景转场。支持 `none`、`fade`、`slideLeft`、`slideRight`。
+
+`ShowCharacterNode` 可选字段：`enterEffect`、`transitionDurationMs`、`position`、`x`、`y`、`scale`、`opacity`、`zIndex`、`flipX`。`position` 支持 `left`、`center`、`right`、`custom`；`custom` 位置建议同时填写 `x` 和 `y`。
+
+`HideCharacterNode` 可选字段：`exitEffect`、`transitionDurationMs`。支持 `none`、`fadeOut`、`slideOutLeft`、`slideOutRight`。
+
+`CameraNode` 是自动节点，字段包括 `zoom`、`offsetX`、`offsetY`、`shake`、`shakeIntensity`、`durationMs`。它只描述基础镜头状态，不表示关键帧或复杂时间轴。
+
+`DialogueNode` 和 `NarrationNode` 可选字段：`textSpeed`、`autoNext`、`waitForClick`。当前播放器保留这些字段供运行时 UI 使用，未实现复杂打字机系统。

@@ -4,6 +4,10 @@ export type { Character, CharacterExpression } from "./character";
 export type {
   ChoiceNode,
   ChoiceOption,
+  CameraNode,
+  CharacterEnterEffect,
+  CharacterExitEffect,
+  CharacterPosition,
   ConditionBranch,
   ConditionNode,
   ConditionOperator,
@@ -19,6 +23,7 @@ export type {
   ShowCharacterNode,
   StopAudioNode,
   StoryNode,
+  TransitionType,
   VariableValue
 } from "./node";
 export type { ScriptFile } from "./script";
