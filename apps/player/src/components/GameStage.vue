@@ -44,7 +44,9 @@ async function renderCurrent(): Promise<void> {
 /** 按 16:9 约束计算舞台尺寸。 */
 function resizeRenderer(element: HTMLElement): void {
   const width = element.clientWidth || 1280;
-  const height = Math.max(360, Math.min(element.clientHeight || 720, width * 9 / 16));
+  const expectedHeight = width * 9 / 16;
+  const availableHeight = element.clientHeight || expectedHeight;
+  const height = Math.max(180, Math.min(availableHeight, expectedHeight));
   pixi.resize(width, height);
   void renderCurrent();
 }
