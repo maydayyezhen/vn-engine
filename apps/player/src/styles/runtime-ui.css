@@ -214,10 +214,19 @@
   }
 
   .runtime-toolbar {
-    top: 8px;
-    right: 8px;
-    left: 8px;
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     max-width: none;
+    margin-top: 8px;
+    padding: 6px;
+  }
+
+  .runtime-toolbar button {
+    width: 100%;
+    min-width: 0;
+    padding: 6px 4px;
+    font-size: 12px;
   }
 
   .menu-card,
