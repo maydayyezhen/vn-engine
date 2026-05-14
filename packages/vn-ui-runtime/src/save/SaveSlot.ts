@@ -4,6 +4,8 @@ import type { RuntimeState } from "@vn-engine/vn-core";
 export interface SaveSlot {
   /** 存档槽位 id。 */
   slotId: string;
+  /** 所属项目 id，用于避免不同项目存档混用。 */
+  projectId: string;
   /** 存档标题。 */
   title: string;
   /** ISO 格式保存时间。 */

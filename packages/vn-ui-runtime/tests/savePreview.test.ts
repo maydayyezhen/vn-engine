@@ -4,8 +4,9 @@ import { createMemoryStorage, createTestSnapshot, createTestState } from "./test
 
 describe("createSavePreview", () => {
   it("能从快照生成存档预览", () => {
-    const slot = createSavePreview("slot-1", createTestSnapshot(), createTestState(), "2026-05-14T00:00:00.000Z");
+    const slot = createSavePreview("slot-1", createTestSnapshot(), createTestState(), "2026-05-14T00:00:00.000Z", "demo-game");
     expect(slot.slotId).toBe("slot-1");
+    expect(slot.projectId).toBe("demo-game");
     expect(slot.previewText).toBe("这里是测试文本。");
     expect(slot.speakerName).toBe("林澄");
     expect(slot.backgroundAssetId).toBe("bg-classroom");
@@ -16,7 +17,7 @@ describe("createSavePreview", () => {
 describe("SaveStorage", () => {
   it("能保存、读取和删除存档", () => {
     const storage = new SaveStorage(createMemoryStorage());
-    const slot = createSavePreview("slot-1", createTestSnapshot(), createTestState(), "2026-05-14T00:00:00.000Z");
+    const slot = createSavePreview("slot-1", createTestSnapshot(), createTestState(), "2026-05-14T00:00:00.000Z", "demo-game");
 
     storage.save(slot);
     expect(storage.listSaves()).toHaveLength(1);

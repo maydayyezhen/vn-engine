@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch } from "vue";
+import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import type { RuntimeSnapshot, VNRuntime } from "@vn-engine/vn-core";
 import { VNRuntime as Runtime } from "@vn-engine/vn-core";
 import type { RuntimeSettings } from "@vn-engine/vn-ui-runtime";
@@ -14,7 +14,8 @@ import RuntimeToolbar from "./components/RuntimeToolbar.vue";
 import SaveLoadPanel from "./components/SaveLoadPanel.vue";
 import SettingsPanel from "./components/SettingsPanel.vue";
 import StartMenu from "./components/StartMenu.vue";
-import { createDemoProject, createDemoRuntime } from "./runtime/createDemoRuntime";
+import { loadPlayerProject } from "./project/loadPlayerProject";
+import { createDemoProject } from "./runtime/createDemoRuntime";
 import { useAutoPlay } from "./ui/useAutoPlay";
 import { usePlayerHistory } from "./ui/usePlayerHistory";
 import { usePlayerSaves } from "./ui/usePlayerSaves";
@@ -26,10 +27,10 @@ type GameMode = "title" | "playing";
 /** 当前打开的运行时面板。 */
 type ActivePanel = null | "pause" | "save" | "load" | "history" | "settings";
 
-/** 当前 demo 工程数据。 */
-const project = createDemoProject();
+/** 当前播放器工程数据。 */
+const project = shallowRef(createDemoProject());
 /** 当前运行时实例。 */
-const runtime = shallowRef<VNRuntime>(new Runtime(project));
+const runtime = shallowRef<VNRuntime>(new Runtime(project.value));
 /** 当前运行时快照。 */
 const snapshot = ref<RuntimeSnapshot>(runtime.value.getSnapshot());
 /** 当前播放器模式。 */
@@ -40,15 +41,21 @@ const activePanel = ref<ActivePanel>(null);
 const savePanelMode = ref<"save" | "load">("load");
 /** 是否隐藏运行时 UI。 */
 const uiHidden = ref(false);
+/** 外部项目加载提示。 */
+const projectLoadMessage = ref<string | null>(null);
+/** 当前项目来源。 */
+const projectSource = ref<"external" | "demo">("demo");
+/** 当前项目 id。 */
+const projectId = computed(() => project.value.id);
 
 /** 播放器音频同步状态。 */
 const playerAudio = usePlayerAudio(project, snapshot);
 /** 本地存档状态。 */
-const playerSaves = usePlayerSaves(window.localStorage);
+const playerSaves = usePlayerSaves(window.localStorage, projectId);
 /** 当前游玩历史。 */
 const playerHistory = usePlayerHistory();
 /** 本地运行时设置。 */
-const playerSettings = usePlayerSettings(window.localStorage);
+const playerSettings = usePlayerSettings(window.localStorage, projectId);
 /** 已读节点和快进判断。 */
 const skipRead = useSkipRead(window.localStorage);
 /** 自动播放延迟。 */
@@ -73,7 +80,8 @@ function applyAudioSettings(settings: RuntimeSettings): void {
 /** 进入新游戏。 */
 function startNewGame(): void {
   playerAudio.stopAll();
-  runtime.value = createDemoRuntime();
+  runtime.value = new Runtime(project.value);
+  runtime.value.start();
   snapshot.value = runtime.value.getSnapshot();
   gameMode.value = "playing";
   activePanel.value = null;
@@ -109,7 +117,7 @@ function restart(): void {
 function returnToTitle(): void {
   autoPlay.setEnabled(false);
   playerAudio.stopAll();
-  runtime.value = new Runtime(project);
+  runtime.value = new Runtime(project.value);
   snapshot.value = runtime.value.getSnapshot();
   gameMode.value = "title";
   activePanel.value = null;
@@ -140,7 +148,8 @@ function loadFromSlot(slotId: string): void {
   const slot = playerSaves.load(slotId);
   if (!slot) return;
   playerAudio.stopAll();
-  runtime.value = new Runtime(project);
+  if (slot.projectId !== project.value.id) return;
+  runtime.value = new Runtime(project.value);
   snapshot.value = runtime.value.loadState(slot.state);
   gameMode.value = "playing";
   activePanel.value = null;
@@ -197,6 +206,16 @@ watch(
   },
   { immediate: true, deep: true }
 );
+
+onMounted(async () => {
+  const result = await loadPlayerProject();
+  project.value = result.project;
+  projectSource.value = result.source;
+  projectLoadMessage.value = result.message ?? null;
+  runtime.value = new Runtime(project.value);
+  snapshot.value = runtime.value.getSnapshot();
+  applyAudioSettings(playerSettings.settings.value);
+});
 </script>
 
 <template>
@@ -248,6 +267,8 @@ watch(
         :snapshot="snapshot"
         :audio-resources="playerAudio.resources.value"
         :audio-errors="playerAudio.errors.value"
+        :project-source="projectSource"
+        :project-load-message="projectLoadMessage"
       />
     </section>
 

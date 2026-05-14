@@ -13,6 +13,7 @@
 - `packages/vn-renderer-pixi` 接收 `RuntimeSnapshot` 和 `VNProject`，负责 PixiJS 画面渲染。
 - `packages/vn-audio` 接收 `RuntimeSnapshot` 和 `VNProject`，负责浏览器端音频播放同步。
 - `packages/vn-ui-runtime` 沉淀运行时 UI 纯逻辑，包括存档、历史、设置和自动播放控制。
+- `packages/vn-export` 提供 Web 导出前的纯逻辑，包括素材引用收集、路径规范化、导出校验和导出清单。
 - `packages/vn-compiler` 未来可选实现脚本文法转换。
 
 ## 为什么 schema、core、renderer、audio、editor 要分离
@@ -38,6 +39,10 @@
 ## localStorage 的边界
 
 当前播放器的存档、设置和已读记录使用浏览器 `localStorage`，用于 Web demo 阶段验证运行时 UI 闭环。它不替代未来 Tauri 本地工程文件系统，也不会把存档写入项目 JSON。后续桌面阶段再处理项目目录、素材复制、导出包和更完整的存档位置。
+
+## Web 导出包边界
+
+当前 `packages/vn-export` 不读取真实文件系统，也不复制任意本地素材。它只负责判断项目是否适合导出、规范化资源路径、收集资源引用并生成导出清单。命令行脚本 `pnpm export:demo-web` 在 Web demo 阶段负责把 `apps/player/dist`、`ProjectBundle` 和 demo 素材复制到 `dist/export/demo-web-game/`。完整的本地素材复制、选择导出目录和打包流程留到 Tauri 阶段。
 
 ## 为什么编辑器只是修改数据
 

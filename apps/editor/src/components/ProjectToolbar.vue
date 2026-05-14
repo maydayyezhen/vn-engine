@@ -34,7 +34,7 @@ const emit = defineEmits<{
 
 /** 处理主视图切换。 */
 function handleChangeView(value: string | number | boolean | undefined): void {
-  if (value === "script" || value === "assets" || value === "characters") {
+  if (value === "script" || value === "assets" || value === "characters" || value === "export") {
     emit("changeView", value);
   }
 }
@@ -59,6 +59,7 @@ function handleChangeView(value: string | number | boolean | undefined): void {
           <el-radio-button value="script">剧本编辑</el-radio-button>
           <el-radio-button value="assets">素材库</el-radio-button>
           <el-radio-button value="characters">角色管理</el-radio-button>
+          <el-radio-button value="export">Web导出</el-radio-button>
         </el-radio-group>
         <el-button size="small" @click="$emit('importProject')">导入项目JSON</el-button>
         <el-button size="small" type="primary" @click="$emit('exportProject')">导出项目JSON</el-button>

@@ -2,7 +2,7 @@
 
 本项目是本地优先的视觉小说引擎与编辑器 monorepo，用于制作 Galgame/视觉小说。
 
-当前已经打通结构化 JSON 工程、运行时解释器、编辑器内存态编辑、JSON 导入导出、素材库管理、PixiJS 播放器画面、浏览器端音频播放同步，以及播放器运行时 UI。项目不包含后端，不包含数据库，不实现自定义脚本语言，也不实现节点图编辑器。
+当前已经打通结构化 JSON 工程、运行时解释器、编辑器内存态编辑、JSON 导入导出、素材库管理、PixiJS 播放器画面、浏览器端音频播放同步、播放器运行时 UI，以及 demo Web 游戏导出包。项目不包含后端，不包含数据库，不实现自定义脚本语言，也不实现节点图编辑器。
 
 ## 环境
 
@@ -59,6 +59,27 @@ http://localhost:5174/
 
 编辑器支持节点编辑、素材库管理、角色表情映射、JSON 导入导出和文字化预览。编辑器预览不播放真实音频。
 
+## 导出 demo Web 游戏包
+
+```bash
+pnpm build
+pnpm export:demo-web
+```
+
+导出目录：
+
+```text
+dist/export/demo-web-game/
+```
+
+目录内包含 `index.html`、构建后的 `assets/`、`game/project.bundle.json`、`game/export-manifest.json` 和 `demo-assets/`。导出包需要通过静态服务器运行，不建议直接双击 `index.html`：
+
+```bash
+npx serve dist/export/demo-web-game
+```
+
+播放器启动时会优先加载 `/game/project.bundle.json`，加载失败时回退内置 demo，保证开发环境不白屏。
+
 ## 测试
 
 ```bash
@@ -73,6 +94,7 @@ pnpm test
 - `vn-renderer-pixi` 的渲染资源解析逻辑。
 - `vn-audio` 的音频资源解析和快照音频状态解析。
 - `vn-ui-runtime` 的存档预览、存储、历史记录、设置容错和自动播放控制。
+- `vn-export` 的导出素材引用收集、路径规范化和导出校验。
 
 ## 类型检查
 
@@ -93,6 +115,8 @@ pnpm build
 - `packages/vn-project` 提供项目序列化、反序列化和深拷贝纯逻辑。
 - `packages/vn-renderer-pixi` 接收 `RuntimeSnapshot` 和 `VNProject`，负责 PixiJS 画面渲染。
 - `packages/vn-audio` 接收 `RuntimeSnapshot` 和 `VNProject`，负责浏览器端音频同步。
+- `packages/vn-ui-runtime` 提供存档、历史、设置和自动播放等运行时 UI 纯逻辑。
+- `packages/vn-export` 提供 Web 导出校验、素材引用收集和导出清单生成。
 - `apps/player` 使用 Vue 承载 PixiJS 舞台和音频控制，不使用 Element Plus。
 - `apps/editor` 使用 Vue3、Vite、TypeScript、Element Plus 搭建编辑器。
 - `apps/desktop` 仅预留未来 Tauri 桌面壳说明。
@@ -104,6 +128,7 @@ pnpm build
 - 不接真实 Tauri 文件系统。
 - 素材仍是路径元数据，不管理真实图片或音频二进制文件导入。
 - 当前没有复杂音频淡入淡出。
-- 当前没有复杂转场、演出时间轴、存档菜单。
+- 当前没有复杂转场和演出时间轴。
+- 当前没有 zip 导出。
 - 不做节点图编辑器。
 - 不实现自定义脚本语言。

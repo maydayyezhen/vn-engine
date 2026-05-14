@@ -11,6 +11,10 @@ defineProps<{
   audioResources: AudioResolvedResource[];
   /** 当前音频错误。 */
   audioErrors: AudioPlaybackError[];
+  /** 当前项目来源。 */
+  projectSource?: "external" | "demo";
+  /** 外部项目加载失败信息。 */
+  projectLoadMessage?: string | null;
 }>();
 
 /** 调试面板是否展开。 */
@@ -27,6 +31,10 @@ const expanded = ref(true);
       <dl>
         <dt>脚本</dt>
         <dd>{{ snapshot.currentScriptId }}</dd>
+        <dt>项目来源</dt>
+        <dd>{{ projectSource === "external" ? "外部项目包" : "内置 demo" }}</dd>
+        <dt v-if="projectLoadMessage">加载提示</dt>
+        <dd v-if="projectLoadMessage">{{ projectLoadMessage }}</dd>
         <dt>节点</dt>
         <dd>{{ snapshot.currentNodeId || "结束" }}</dd>
         <dt>背景</dt>

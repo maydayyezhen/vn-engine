@@ -9,6 +9,7 @@ import ProjectToolbar from "../components/ProjectToolbar.vue";
 import ProjectTree from "../components/ProjectTree.vue";
 import StoryNodeList from "../components/StoryNodeList.vue";
 import ValidationPanel from "../components/ValidationPanel.vue";
+import WebExportPanel from "../components/WebExportPanel.vue";
 import { editorStore, setActiveView, setDirty, setValidationResult, type EditorView } from "../stores/editorStore";
 import { currentNode, currentScript, projectStore, replaceProject, selectNode, selectScript, setProject } from "../stores/projectStore";
 import { loadDemoProject } from "../services/projectLoadService";
@@ -245,8 +246,12 @@ onMounted(() => {
       <AssetLibraryPanel :project="projectStore.project" @project-change="applyProject" />
     </main>
 
-    <main v-else class="editor-panel editor-resource-panel">
+    <main v-else-if="editorStore.activeView === 'characters'" class="editor-panel editor-resource-panel">
       <CharacterLibraryPanel :project="projectStore.project" @project-change="applyProject" />
+    </main>
+
+    <main v-else class="editor-panel editor-resource-panel">
+      <WebExportPanel :project="projectStore.project" />
     </main>
   </div>
 </template>

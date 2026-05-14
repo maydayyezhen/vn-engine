@@ -5,7 +5,7 @@ import type { RuntimeSnapshot } from "@vn-engine/vn-core";
 import type { VNProject } from "@vn-engine/vn-schema";
 
 /** 创建播放器音频同步逻辑。 */
-export function usePlayerAudio(project: VNProject, snapshot: Ref<RuntimeSnapshot>) {
+export function usePlayerAudio(project: Ref<VNProject>, snapshot: Ref<RuntimeSnapshot>) {
   /** 浏览器音频管理器。 */
   const audioManager = new AudioManager();
   /** 主音量。 */
@@ -13,13 +13,13 @@ export function usePlayerAudio(project: VNProject, snapshot: Ref<RuntimeSnapshot
   /** 是否静音。 */
   const muted = ref(audioManager.getVolumeState().muted);
   /** 当前解析到的音频资源。 */
-  const resources = ref<AudioResolvedResource[]>(resolveAudioState(snapshot.value, project));
+  const resources = ref<AudioResolvedResource[]>(resolveAudioState(snapshot.value, project.value));
   /** 当前音频错误。 */
   const errors = ref<AudioPlaybackError[]>([]);
 
   /** 同步当前运行时快照中的音频状态。 */
   async function sync(): Promise<void> {
-    const result = await syncAudioState(snapshot.value, project, audioManager);
+    const result = await syncAudioState(snapshot.value, project.value, audioManager);
     resources.value = result.resources;
     errors.value = result.errors;
   }
@@ -46,7 +46,7 @@ export function usePlayerAudio(project: VNProject, snapshot: Ref<RuntimeSnapshot
     audioManager.stopAll();
   }
 
-  watch(snapshot, () => {
+  watch([snapshot, project], () => {
     void sync();
   }, { immediate: true });
 

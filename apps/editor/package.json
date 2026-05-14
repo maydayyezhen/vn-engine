@@ -12,6 +12,7 @@
     "@element-plus/icons-vue": "^2.3.1",
     "@vitejs/plugin-vue": "^5.2.4",
     "@vn-engine/vn-core": "workspace:*",
+    "@vn-engine/vn-export": "workspace:*",
     "@vn-engine/vn-project": "workspace:*",
     "@vn-engine/vn-schema": "workspace:*",
     "element-plus": "^2.9.10",

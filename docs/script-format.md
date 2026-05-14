@@ -46,6 +46,7 @@
 播放器运行时存档不写入 `project.vnproj.json`。当前 Web demo 使用浏览器 `localStorage` 保存 `SaveSlot`：
 
 - `slotId`：槽位 id。
+- `projectId`：所属项目 id。
 - `title`：存档标题。
 - `savedAt`：保存时间。
 - `previewText`：列表预览文本。
@@ -56,6 +57,45 @@
 - `state`：`VNRuntime.getState()` 返回的运行时状态。
 
 存档只保存运行时状态和预览信息，不保存完整 `VNProject`，也不保存图片、音频二进制。当前默认 demo 项目不变；后续正式项目可扩展项目 id、版本和兼容性校验。
+
+## Web 导出包格式
+
+命令行导出的 Web 游戏目录结构：
+
+```text
+exported-game/
+├─ index.html
+├─ assets/
+├─ game/
+│  ├─ project.bundle.json
+│  ├─ export-manifest.json
+│  └─ README.md
+└─ demo-assets/
+```
+
+`game/project.bundle.json` 使用标准 `ProjectBundle`。播放器启动时优先请求 `/game/project.bundle.json`，如果请求失败、JSON 解析失败或项目校验失败，则回退到内置 demo 项目。
+
+`game/export-manifest.json` 使用 `WebExportManifest`：
+
+```json
+{
+  "exportFormat": "vn-engine-web-export",
+  "exportVersion": "0.1.0",
+  "exportedAt": "2026-05-14T00:00:00.000Z",
+  "projectId": "demo-game",
+  "projectName": "林澄的测试故事",
+  "projectBundlePath": "game/project.bundle.json",
+  "assetRefs": [],
+  "warnings": []
+}
+```
+
+素材路径规则：
+
+- `/demo-assets/audio/bgm-demo.wav` 会规范化为 `demo-assets/audio/bgm-demo.wav`。
+- `assets/audio/bgm/main.mp3` 作为普通相对路径保留。
+- `../secret.txt`、`C:\\Users\\xxx\\secret.mp3`、`/etc/passwd` 这类危险路径会阻止导出。
+- 素材二进制不会写入 JSON，也不会转成 base64。
 
 ## Web Demo 素材路径
 

@@ -218,3 +218,36 @@ pre {
   height: calc(100% - 57px);
   overflow: auto;
 }
+
+.web-export-panel {
+  height: 100%;
+  overflow: auto;
+}
+
+.web-export-panel .el-card {
+  min-height: 100%;
+  border-radius: 8px;
+}
+
+.panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.export-alert,
+.export-meta {
+  margin-top: 12px;
+}
+
+.web-export-panel h3 {
+  margin: 18px 0 10px;
+}
+
+.export-structure {
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f8fafc;
+}

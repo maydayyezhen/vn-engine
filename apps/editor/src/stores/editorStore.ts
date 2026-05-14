@@ -2,7 +2,7 @@ import { reactive } from "vue";
 import type { ValidationResult } from "@vn-engine/vn-schema";
 
 /** 编辑器主视图类型。 */
-export type EditorView = "script" | "assets" | "characters";
+export type EditorView = "script" | "assets" | "characters" | "export";
 
 /** 节点属性面板状态。 */
 export interface PropertyPanelState {

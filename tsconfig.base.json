@@ -21,6 +21,7 @@
       "@vn-engine/vn-project": ["packages/vn-project/src/index.ts"],
       "@vn-engine/vn-audio": ["packages/vn-audio/src/index.ts"],
       "@vn-engine/vn-ui-runtime": ["packages/vn-ui-runtime/src/index.ts"],
+      "@vn-engine/vn-export": ["packages/vn-export/src/index.ts"],
       "@vn-engine/vn-compiler": ["packages/vn-compiler/src/index.ts"]
     }
   }
