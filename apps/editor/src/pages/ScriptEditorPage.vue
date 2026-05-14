@@ -75,36 +75,34 @@ onMounted(() => {
 </script>
 
 <template>
-  <el-container class="editor-page">
-    <el-aside width="260px" class="editor-aside">
+  <div class="editor-page">
+    <aside class="editor-panel editor-project-panel">
       <ProjectTree :project="projectStore.project" :selected-script-id="projectStore.selectedScriptId" @select-script="handleSelectScript" />
-    </el-aside>
-    <el-container>
-      <el-main class="editor-main">
-        <StoryNodeList
-          :nodes="currentScript?.nodes ?? []"
-          :selected-node-id="projectStore.selectedNodeId"
-          @select-node="handleSelectNode"
-          @add-dialogue="handleAddDialogue"
-          @add-narration="handleAddNarration"
-          @duplicate-node="handleDuplicateNode"
-          @delete-node="handleDeleteNode"
-        />
-      </el-main>
-      <el-aside width="420px" class="editor-aside">
-        <NodePropertyPanel
-          :project="projectStore.project"
-          :script-id="projectStore.selectedScriptId"
-          :node="currentNode"
-          @project-change="applyProject"
-        />
-      </el-aside>
-      <el-footer height="280px" class="editor-footer">
-        <div class="footer-grid">
-          <PreviewPanel :project="projectStore.project" />
-          <ValidationPanel :result="editorStore.validationResult" />
-        </div>
-      </el-footer>
-    </el-container>
-  </el-container>
+    </aside>
+    <main class="editor-panel editor-node-panel">
+      <StoryNodeList
+        :nodes="currentScript?.nodes ?? []"
+        :selected-node-id="projectStore.selectedNodeId"
+        @select-node="handleSelectNode"
+        @add-dialogue="handleAddDialogue"
+        @add-narration="handleAddNarration"
+        @duplicate-node="handleDuplicateNode"
+        @delete-node="handleDeleteNode"
+      />
+    </main>
+    <aside class="editor-panel editor-property-panel">
+      <NodePropertyPanel
+        :project="projectStore.project"
+        :script-id="projectStore.selectedScriptId"
+        :node="currentNode"
+        @project-change="applyProject"
+      />
+    </aside>
+    <footer class="editor-panel editor-footer-panel">
+      <div class="footer-grid">
+        <PreviewPanel :project="projectStore.project" />
+        <ValidationPanel :result="editorStore.validationResult" />
+      </div>
+    </footer>
+  </div>
 </template>
