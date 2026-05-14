@@ -48,6 +48,12 @@ pre {
   overflow: hidden;
 }
 
+.editor-resource-panel {
+  grid-column: 1 / 4;
+  grid-row: 2 / 4;
+  overflow: hidden;
+}
+
 .editor-footer-panel {
   grid-column: 2 / 4;
 }
@@ -164,6 +170,46 @@ pre {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.inline-item {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.character-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 8px;
+}
+
+.character-card {
+  border-radius: 8px;
+}
+
+.character-grid,
+.expression-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(160px, 1fr) minmax(180px, 1fr) 96px;
+  gap: 10px;
+  align-items: center;
+}
+
+.character-description {
+  margin: 10px 0;
+}
+
+.expression-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0 8px;
+}
+
+.expression-row + .expression-row {
+  margin-top: 8px;
 }
 
 .validation-card .el-card__body,

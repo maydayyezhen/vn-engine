@@ -6,6 +6,8 @@ export interface RuntimeCharacterDisplay {
   characterId: string;
   /** 当前立绘素材 id。 */
   assetId?: string;
+  /** 当前角色表情 id。 */
+  expression?: string;
   /** 角色画面位置。 */
   position?: "left" | "center" | "right";
 }

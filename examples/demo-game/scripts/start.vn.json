@@ -11,7 +11,7 @@
       "id": "play-bgm",
       "type": "playAudio",
       "channel": "bgm",
-      "assetId": "bgm-test",
+      "assetId": "bgm-main-theme",
       "loop": true
     },
     {
@@ -19,12 +19,21 @@
       "type": "showCharacter",
       "characterId": "lincheng",
       "assetId": "lincheng-normal",
+      "expression": "normal",
       "position": "center"
     },
     {
       "id": "narration-intro",
       "type": "narration",
       "text": "这是一个用于验证视觉小说运行时的测试故事。"
+    },
+    {
+      "id": "show-lincheng-smile",
+      "type": "showCharacter",
+      "characterId": "lincheng",
+      "assetId": "lincheng-smile",
+      "expression": "smile",
+      "position": "center"
     },
     {
       "id": "dialogue-greeting",
@@ -78,7 +87,7 @@
       ],
       "fallbackTarget": {
         "scriptId": "start",
-        "nodeId": "ending-b"
+        "nodeId": "scene-corridor"
       }
     },
     {
@@ -103,6 +112,17 @@
         "scriptId": "start",
         "nodeId": "final-end"
       }
+    },
+    {
+      "id": "scene-corridor",
+      "type": "scene",
+      "backgroundAssetId": "bg-corridor"
+    },
+    {
+      "id": "play-door-sound",
+      "type": "playAudio",
+      "channel": "sfx",
+      "assetId": "sound-door"
     },
     {
       "id": "ending-b",

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, shallowRef, watch } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 import type { RuntimeSnapshot, VNRuntime } from "@vn-engine/vn-core";
 import type { VNProject } from "@vn-engine/vn-schema";
 import { choosePreview, nextPreview, restartPreview } from "../services/previewRuntimeService";
+import { findAssetById, findCharacterById, findCharacterExpression } from "../services/resourceLookupService";
 
 /** 组件属性。 */
 const props = defineProps<{
@@ -16,6 +17,40 @@ const runtime = shallowRef<VNRuntime | null>(null);
 const snapshot = ref<RuntimeSnapshot | null>(null);
 /** 预览错误信息。 */
 const errorMessage = ref("");
+
+/** 当前背景资源解析结果。 */
+const backgroundAsset = computed(() => findAssetById(props.project, snapshot.value?.backgroundAssetId));
+
+/** 当前角色资源解析结果。 */
+const displayedCharacters = computed(() =>
+  (snapshot.value?.characters ?? []).map((item) => {
+    const character = findCharacterById(props.project, item.characterId);
+    const expression = findCharacterExpression(props.project, item.characterId, item.expression);
+    const asset = findAssetById(props.project, expression?.assetId ?? item.assetId);
+    return {
+      ...item,
+      characterName: character?.displayName || character?.name || item.characterId,
+      expressionName: expression?.name || item.expression || "默认",
+      assetName: asset?.name || item.assetId || "未绑定素材",
+      assetPath: asset?.path || "素材路径缺失"
+    };
+  })
+);
+
+/** 当前音频资源解析结果。 */
+const displayedAudio = computed(() =>
+  Object.entries(snapshot.value?.audio ?? {})
+    .filter(([, assetId]) => Boolean(assetId))
+    .map(([channel, assetId]) => {
+      const asset = findAssetById(props.project, assetId);
+      return {
+        channel,
+        assetId,
+        name: asset?.name || assetId,
+        path: asset?.path || "素材路径缺失"
+      };
+    })
+);
 
 /** 重新开始预览。 */
 function restart(): void {
@@ -70,8 +105,25 @@ defineExpose({
     <el-alert v-if="errorMessage" :title="errorMessage" type="error" :closable="false" show-icon />
     <div v-else-if="snapshot" class="preview-grid">
       <div class="preview-stage">
-        <div class="preview-meta">背景：{{ snapshot.backgroundAssetId || "无" }}</div>
-        <div class="preview-meta">角色：{{ snapshot.characters.length ? snapshot.characters.map((item) => item.characterId).join(", ") : "无" }}</div>
+        <div class="preview-meta">
+          背景：{{ backgroundAsset ? `${backgroundAsset.name} / ${backgroundAsset.path}` : snapshot.backgroundAssetId || "无" }}
+        </div>
+        <div class="preview-meta">
+          角色：
+          <span v-if="displayedCharacters.length">
+            <span v-for="character in displayedCharacters" :key="character.characterId" class="inline-item">
+              {{ character.characterName }} / {{ character.expressionName }} / {{ character.assetPath }}
+            </span>
+          </span>
+          <span v-else>无</span>
+        </div>
+        <div class="preview-meta">
+          音频：
+          <span v-if="displayedAudio.length">
+            <span v-for="audio in displayedAudio" :key="audio.channel" class="inline-item">{{ audio.channel }}: {{ audio.name }} / {{ audio.path }}</span>
+          </span>
+          <span v-else>无</span>
+        </div>
         <div class="preview-dialogue">
           <strong>{{ snapshot.isEnded ? "预览已结束" : snapshot.speaker || "旁白" }}</strong>
           <p>{{ snapshot.isEnded ? "预览已结束" : snapshot.text }}</p>

@@ -12,8 +12,18 @@ function createProject(): VNProject {
     name: "测试工程",
     version: "0.1.0",
     startScriptId: "start",
-    assets: { items: [] },
-    characters: [{ id: "lin", name: "林澄" }],
+    assets: {
+      items: [
+        { id: "classroom", name: "教室", type: "background", path: "assets/background/classroom.png" }
+      ]
+    },
+    characters: [
+      {
+        id: "lin",
+        name: "林澄",
+        expressions: []
+      }
+    ],
     scripts: [
       {
         id: "start",
@@ -162,8 +172,8 @@ describe("VNRuntime", () => {
     expect(restoredSnapshot.variables.stay).toBe(true);
     expect(restoredSnapshot.backgroundAssetId).toBe("bg-classroom");
     expect(restoredSnapshot.characters).toEqual([
-      { characterId: "lincheng", assetId: "lincheng-normal", position: "center" }
+      { characterId: "lincheng", assetId: "lincheng-smile", expression: "smile", position: "center" }
     ]);
-    expect(restoredSnapshot.audio.bgm).toBe("bgm-test");
+    expect(restoredSnapshot.audio.bgm).toBe("bgm-main-theme");
   });
 });

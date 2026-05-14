@@ -6,7 +6,7 @@ import { deserializeProject, PROJECT_FORMAT, serializeProject } from "../src";
 
 /** 创建测试工程。 */
 function createProject(): VNProject {
-  return projectJson as VNProject;
+  return JSON.parse(JSON.stringify(projectJson)) as VNProject;
 }
 
 describe("vn-project serialization", () => {
@@ -40,6 +40,15 @@ describe("vn-project serialization", () => {
 
   it("反序列化后的项目可以通过 validateProject 校验", () => {
     const project = deserializeProject(serializeProject(createProject()));
+    expect(validateProject(project).valid).toBe(true);
+  });
+
+  it("带素材库和角色表情的项目可以导出并重新导入", () => {
+    const source = createProject();
+    const project = deserializeProject(serializeProject(source));
+    expect(project.assets.items).toHaveLength(source.assets.items.length);
+    expect(project.characters[0]?.expressions).toHaveLength(source.characters[0]?.expressions?.length);
+    expect(project.characters[0]?.expressions?.[0]?.assetId).toBe(source.characters[0]?.expressions?.[0]?.assetId);
     expect(validateProject(project).valid).toBe(true);
   });
 });

@@ -39,7 +39,7 @@ export function getNodeSummary(node: StoryNode): string {
   if (node.type === "narration") return node.text;
   if (node.type === "choice") return node.prompt ?? node.options.map((option) => option.text).join(" / ");
   if (node.type === "scene") return node.backgroundAssetId;
-  if (node.type === "showCharacter") return `${node.characterId} ${node.position ?? ""}`.trim();
+  if (node.type === "showCharacter") return `${node.characterId} ${node.expression ?? ""} ${node.position ?? ""}`.trim();
   if (node.type === "hideCharacter") return node.characterId;
   if (node.type === "jump") return `${node.target.scriptId}:${node.target.nodeId}`;
   if (node.type === "setVariable") return `${node.name} = ${String(node.value)}`;

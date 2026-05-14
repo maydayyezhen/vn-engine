@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import type { ConditionBranch, NodeTarget, StoryNode, VariableValue, VNProject } from "@vn-engine/vn-schema";
+import type { ConditionBranch, NodeTarget, PlayAudioNode, StoryNode, VariableValue, VNProject } from "@vn-engine/vn-schema";
+import {
+  findAssetById,
+  findCharacterById,
+  findCharacterExpression,
+  getAudioOptions,
+  getBackgroundOptions,
+  getCharacterOptions,
+  getExpressionOptions
+} from "../services/resourceLookupService";
 import { updateChoiceOption, updateConditionNode, updateNode, type StoryNodePatch } from "../services/scriptEditService";
 
 /** 组件属性。 */
@@ -29,6 +38,9 @@ const conditionOperators: Array<{ label: string; value: ConditionBranch["operato
 
 /** 角色位置选项。 */
 const positions = ["left", "center", "right"] as const;
+
+/** 音频通道选项。 */
+const audioChannels: PlayAudioNode["channel"][] = ["bgm", "sfx", "voice"];
 
 /** 将表单字符串转换为基础变量值。 */
 function parseVariableValue(value: string): VariableValue {
@@ -129,6 +141,39 @@ function applyConditionPatch(patch: Parameters<typeof updateConditionNode>[1]): 
   const nextNode = updateConditionNode(props.node, patch);
   applyPatch(nextNode);
 }
+
+/** 更新角色显示节点的角色，并同步默认表情素材。 */
+function updateShowCharacter(characterId: string): void {
+  if (!props.node || props.node.type !== "showCharacter") return;
+  const expression = getExpressionOptions(props.project, characterId)[0];
+  applyPatch({
+    characterId,
+    expression: expression?.id,
+    assetId: expression?.assetId
+  });
+}
+
+/** 更新角色显示节点的表情，并同步立绘素材。 */
+function updateShowExpression(expressionId: string): void {
+  if (!props.node || props.node.type !== "showCharacter") return;
+  const expression = findCharacterExpression(props.project, props.node.characterId, expressionId);
+  applyPatch({
+    expression: expressionId,
+    assetId: expression?.assetId
+  });
+}
+
+/** 获取当前资源缺失警告。 */
+function getMissingResourceWarning(): string {
+  if (!props.node) return "";
+  if (props.node.type === "scene" && !findAssetById(props.project, props.node.backgroundAssetId)) return "当前背景素材不存在。";
+  if (props.node.type === "showCharacter") {
+    if (!findCharacterById(props.project, props.node.characterId)) return "当前角色不存在。";
+    if (props.node.expression && !findCharacterExpression(props.project, props.node.characterId, props.node.expression)) return "当前表情不存在。";
+  }
+  if (props.node.type === "playAudio" && !findAssetById(props.project, props.node.assetId)) return "当前音频素材不存在。";
+  return "";
+}
 </script>
 
 <template>
@@ -136,6 +181,8 @@ function applyConditionPatch(patch: Parameters<typeof updateConditionNode>[1]): 
     <template #header>节点属性</template>
     <el-empty v-if="!node" description="请选择节点" />
     <el-form v-else label-position="top" class="property-form">
+      <el-alert v-if="getMissingResourceWarning()" :title="getMissingResourceWarning()" type="warning" :closable="false" show-icon />
+
       <el-form-item label="节点 id">
         <el-input :model-value="node.id" disabled />
       </el-form-item>
@@ -146,7 +193,7 @@ function applyConditionPatch(patch: Parameters<typeof updateConditionNode>[1]): 
       <template v-if="node.type === 'dialogue'">
         <el-form-item label="speakerId / characterId">
           <el-select :model-value="node.characterId" @update:model-value="(value: string) => applyPatch({ characterId: value })">
-            <el-option v-for="character in project.characters" :key="character.id" :label="character.name" :value="character.id" />
+            <el-option v-for="character in getCharacterOptions(project)" :key="character.id" :label="character.displayName || character.name" :value="character.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="text">
@@ -189,25 +236,22 @@ function applyConditionPatch(patch: Parameters<typeof updateConditionNode>[1]): 
 
       <template v-else-if="node.type === 'scene'">
         <el-form-item label="backgroundAssetId">
-          <el-select :model-value="node.backgroundAssetId" @update:model-value="(value: string) => applyPatch({ backgroundAssetId: value })">
-            <el-option
-              v-for="asset in project.assets.items.filter((item) => item.type === 'background')"
-              :key="asset.id"
-              :label="asset.name"
-              :value="asset.id"
-            />
+          <el-select :model-value="node.backgroundAssetId" filterable @update:model-value="(value: string) => applyPatch({ backgroundAssetId: value })">
+            <el-option v-for="asset in getBackgroundOptions(project)" :key="asset.id" :label="`${asset.name} (${asset.id})`" :value="asset.id" />
           </el-select>
         </el-form-item>
       </template>
 
       <template v-else-if="node.type === 'showCharacter'">
         <el-form-item label="characterId">
-          <el-select :model-value="node.characterId" @update:model-value="(value: string) => applyPatch({ characterId: value })">
-            <el-option v-for="character in project.characters" :key="character.id" :label="character.name" :value="character.id" />
+          <el-select :model-value="node.characterId" filterable @update:model-value="updateShowCharacter">
+            <el-option v-for="character in getCharacterOptions(project)" :key="character.id" :label="`${character.displayName || character.name} (${character.id})`" :value="character.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="expression">
-          <el-input :model-value="node.expression" @update:model-value="(value: string) => applyPatch({ expression: value })" />
+          <el-select :model-value="node.expression" filterable @update:model-value="updateShowExpression">
+            <el-option v-for="expression in getExpressionOptions(project, node.characterId)" :key="expression.id" :label="`${expression.name} (${expression.id})`" :value="expression.id" />
+          </el-select>
         </el-form-item>
         <el-form-item label="position">
           <el-select :model-value="node.position" @update:model-value="(value: 'left' | 'center' | 'right') => applyPatch({ position: value })">
@@ -218,8 +262,32 @@ function applyConditionPatch(patch: Parameters<typeof updateConditionNode>[1]): 
 
       <template v-else-if="node.type === 'hideCharacter'">
         <el-form-item label="characterId">
-          <el-select :model-value="node.characterId" @update:model-value="(value: string) => applyPatch({ characterId: value })">
-            <el-option v-for="character in project.characters" :key="character.id" :label="character.name" :value="character.id" />
+          <el-select :model-value="node.characterId" filterable @update:model-value="(value: string) => applyPatch({ characterId: value })">
+            <el-option v-for="character in getCharacterOptions(project)" :key="character.id" :label="`${character.displayName || character.name} (${character.id})`" :value="character.id" />
+          </el-select>
+        </el-form-item>
+      </template>
+
+      <template v-else-if="node.type === 'playAudio'">
+        <el-form-item label="channel">
+          <el-select :model-value="node.channel" @update:model-value="(value: PlayAudioNode['channel']) => applyPatch({ channel: value })">
+            <el-option v-for="channel in audioChannels" :key="channel" :label="channel" :value="channel" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="assetId">
+          <el-select :model-value="node.assetId" filterable @update:model-value="(value: string) => applyPatch({ assetId: value })">
+            <el-option v-for="asset in getAudioOptions(project)" :key="asset.id" :label="`${asset.name} (${asset.id})`" :value="asset.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="loop">
+          <el-switch :model-value="node.loop" @update:model-value="(value: boolean) => applyPatch({ loop: value })" />
+        </el-form-item>
+      </template>
+
+      <template v-else-if="node.type === 'stopAudio'">
+        <el-form-item label="channel">
+          <el-select :model-value="node.channel" @update:model-value="(value: PlayAudioNode['channel']) => applyPatch({ channel: value })">
+            <el-option v-for="channel in audioChannels" :key="channel" :label="channel" :value="channel" />
           </el-select>
         </el-form-item>
       </template>
@@ -267,24 +335,18 @@ function applyConditionPatch(patch: Parameters<typeof updateConditionNode>[1]): 
           />
         </el-form-item>
         <el-form-item label="trueTarget">
-          <el-select
-            :model-value="getConditionBranch()?.target.nodeId"
-            @update:model-value="updateConditionTrueNode"
-          >
+          <el-select :model-value="getConditionBranch()?.target.nodeId" @update:model-value="updateConditionTrueNode">
             <el-option v-for="targetNode in getNodesForScript(getConditionBranch()?.target.scriptId || scriptId)" :key="targetNode.id" :label="targetNode.id" :value="targetNode.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="falseTarget">
-          <el-select
-            :model-value="getConditionFallback()?.nodeId"
-            @update:model-value="updateConditionFalseNode"
-          >
+          <el-select :model-value="getConditionFallback()?.nodeId" @update:model-value="updateConditionFalseNode">
             <el-option v-for="targetNode in getNodesForScript(getConditionFallback()?.scriptId || scriptId)" :key="targetNode.id" :label="targetNode.id" :value="targetNode.id" />
           </el-select>
         </el-form-item>
       </template>
 
-      <el-alert v-else title="该节点类型本轮暂不提供表单编辑" type="info" :closable="false" />
+      <el-alert v-else title="该节点类型本轮暂不提供表单编辑。" type="info" :closable="false" />
     </el-form>
   </el-card>
 </template>

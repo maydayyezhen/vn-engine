@@ -2,7 +2,9 @@
 
 ## 工程文件
 
-`project.vnproj.json` 是视觉小说工程入口文件，包含工程 id、名称、版本、起始脚本 id、素材库、角色列表和脚本列表。第一阶段示例中，播放器和编辑器会把 `scripts/*.vn.json` 加载后填入 `scripts` 字段。
+`project.vnproj.json` 是视觉小说工程入口文件，包含工程 id、名称、版本、起始脚本 id、素材库、角色列表和脚本列表。
+
+编辑器导出的 JSON 使用完整 `VNProject` 数据，必须包含 `scripts`、`characters`、`assets` 等字段。示例目录下仍保留 `scripts/start.vn.json`，用于模拟未来本地工程目录拆分。
 
 ## ProjectBundle 导入导出格式
 
@@ -25,7 +27,35 @@
 }
 ```
 
-导入时同时兼容 `ProjectBundle` 和裸 `VNProject`。`ProjectBundle.project` 必须是完整工程数据，包含 `scripts`、`characters`、`assets` 等字段。
+导入时同时兼容 `ProjectBundle` 和裸 `VNProject`。`ProjectBundle.project` 必须是完整工程数据。
+
+## 素材库
+
+`assets.items` 存放素材元数据：
+
+- `id`：素材唯一 id。
+- `name`：素材显示名称。
+- `type`：素材类型，支持 `background`、`character`、`bgm`、`sound`、`sfx`、`voice`、`image`、`other`。
+- `path`：素材路径或占位路径。
+- `description`：可选说明。
+
+当前素材仍是路径元数据，不包含真实图片或音频文件管理。
+
+## 角色与表情
+
+`characters` 存放角色数据：
+
+- `id`：角色唯一 id。
+- `name`：角色名称。
+- `displayName`：运行时显示名称。
+- `description`：角色说明。
+- `expressions`：角色表情列表。
+
+表情字段：
+
+- `id`：表情 id。
+- `name`：表情名称。
+- `assetId`：表情对应的角色图片素材 id。
 
 ## 脚本文件
 
@@ -41,7 +71,7 @@
 - `narration`：旁白，包含 `id`、`text`。
 - `choice`：选项，包含 `id`、`prompt`、`options`。
 - `scene`：背景切换，包含 `id`、`backgroundAssetId`。
-- `showCharacter`：角色登场，包含 `id`、`characterId`、`assetId`、`position`。
+- `showCharacter`：角色登场，包含 `id`、`characterId`、`assetId`、`expression`、`position`。
 - `hideCharacter`：角色隐藏，包含 `id`、`characterId`。
 - `playAudio`：播放音频，包含 `id`、`channel`、`assetId`、`loop`。
 - `stopAudio`：停止音频，包含 `id`、`channel`。
@@ -53,17 +83,16 @@
 
 `jump.target`、`choice.options[].target`、`condition.branches[].target` 和 `condition.fallbackTarget` 都使用 `{ "scriptId": "...", "nodeId": "..." }` 指向目标节点。
 
-第一阶段校验规则要求：
+资源引用规则：
 
-- 项目 id 不能为空。
-- `startScriptId` 必须存在。
-- 脚本 id 不能重复。
-- 同一工程内节点 id 不能重复。
-- jump 目标必须存在。
-- choice 选项跳转目标必须存在。
-- condition 分支跳转目标必须存在。
+- `SceneNode.backgroundAssetId` 必须引用存在的 `background` 素材。
+- `ShowCharacterNode.characterId` 必须引用存在的角色。
+- `ShowCharacterNode.expression` 必须引用该角色已有表情。
+- 角色表情的 `assetId` 必须引用存在的素材。
+- `PlayAudioNode.assetId` 必须引用 `bgm`、`sound`、`sfx` 或 `voice` 素材。
+- 素材 id、角色 id、脚本 id 和节点 id 不能重复。
 
-## 完整示例
+## 完整 JSON 示例
 
 ```json
 {
@@ -80,6 +109,7 @@
       "type": "showCharacter",
       "characterId": "lincheng",
       "assetId": "lincheng-normal",
+      "expression": "normal",
       "position": "center"
     },
     {

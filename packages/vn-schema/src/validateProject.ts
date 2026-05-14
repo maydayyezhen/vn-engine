@@ -1,5 +1,6 @@
-import type { ValidationIssue, VNProject, ValidationResult } from "./project";
+import type { AssetItem, AssetType } from "./asset";
 import type { NodeTarget, StoryNode } from "./node";
+import type { ValidationIssue, ValidationResult, VNProject } from "./project";
 
 /** 生成用于查找跳转目标的复合键。 */
 function targetKey(target: NodeTarget): string {
@@ -24,6 +25,22 @@ function collectTargets(node: StoryNode): NodeTarget[] {
   return [];
 }
 
+/** 判断素材是否属于音频类型。 */
+function isAudioAsset(asset: AssetItem | undefined): boolean {
+  return !!asset && ["bgm", "sound", "sfx", "voice"].includes(asset.type);
+}
+
+/** 查找素材。 */
+function findAsset(project: VNProject, assetId: string | undefined): AssetItem | undefined {
+  if (!assetId) return undefined;
+  return project.assets.items.find((asset) => asset.id === assetId);
+}
+
+/** 判断素材类型。 */
+function hasAssetOfType(project: VNProject, assetId: string, type: AssetType): boolean {
+  return findAsset(project, assetId)?.type === type;
+}
+
 /** 校验视觉小说工程的基础结构和引用关系。 */
 export function validateProject(project: VNProject): ValidationResult {
   /** 错误问题列表。 */
@@ -36,8 +53,31 @@ export function validateProject(project: VNProject): ValidationResult {
   const nodeIds = new Set<string>();
   /** 可跳转目标集合。 */
   const targets = new Set<string>();
+  /** 已出现的素材 id 集合。 */
+  const assetIds = new Set<string>();
+  /** 已出现的角色 id 集合。 */
+  const characterIds = new Set<string>();
 
   if (!project.id.trim()) errors.push(createError("项目 id 不能为空。"));
+
+  for (const asset of project.assets.items) {
+    if (assetIds.has(asset.id)) errors.push(createError(`素材 id 重复：${asset.id}`));
+    assetIds.add(asset.id);
+  }
+
+  for (const character of project.characters) {
+    if (characterIds.has(character.id)) errors.push(createError(`角色 id 重复：${character.id}`));
+    characterIds.add(character.id);
+
+    const expressionIds = new Set<string>();
+    for (const expression of character.expressions ?? []) {
+      if (expressionIds.has(expression.id)) errors.push(createError(`角色 ${character.id} 的表情 id 重复：${expression.id}`));
+      expressionIds.add(expression.id);
+      if (!findAsset(project, expression.assetId)) {
+        errors.push(createError(`角色 ${character.id} 的表情 ${expression.id} 引用的素材不存在：${expression.assetId}`));
+      }
+    }
+  }
 
   for (const script of project.scripts) {
     if (scriptIds.has(script.id)) errors.push(createError(`脚本 id 重复：${script.id}`, script.id));
@@ -60,6 +100,23 @@ export function validateProject(project: VNProject): ValidationResult {
         if (!targets.has(targetKey(target))) {
           errors.push(createError(`节点 ${node.id} 的跳转目标不存在：${targetKey(target)}`, script.id, node.id));
         }
+      }
+
+      if (node.type === "scene" && !hasAssetOfType(project, node.backgroundAssetId, "background")) {
+        errors.push(createError(`场景节点引用的背景素材不存在或类型不正确：${node.backgroundAssetId}`, script.id, node.id));
+      }
+
+      if (node.type === "showCharacter") {
+        const character = project.characters.find((item) => item.id === node.characterId);
+        if (!character) {
+          errors.push(createError(`角色登场节点引用的角色不存在：${node.characterId}`, script.id, node.id));
+        } else if (node.expression && !(character.expressions ?? []).some((expression) => expression.id === node.expression)) {
+          errors.push(createError(`角色 ${node.characterId} 不存在表情：${node.expression}`, script.id, node.id));
+        }
+      }
+
+      if (node.type === "playAudio" && !isAudioAsset(findAsset(project, node.assetId))) {
+        errors.push(createError(`音频节点引用的音频素材不存在或类型不正确：${node.assetId}`, script.id, node.id));
       }
     }
   }

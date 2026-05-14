@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import AssetLibraryPanel from "../components/AssetLibraryPanel.vue";
+import CharacterLibraryPanel from "../components/CharacterLibraryPanel.vue";
 import NodePropertyPanel from "../components/NodePropertyPanel.vue";
 import PreviewPanel from "../components/PreviewPanel.vue";
 import ProjectToolbar from "../components/ProjectToolbar.vue";
 import ProjectTree from "../components/ProjectTree.vue";
 import StoryNodeList from "../components/StoryNodeList.vue";
 import ValidationPanel from "../components/ValidationPanel.vue";
-import { editorStore, setDirty, setValidationResult } from "../stores/editorStore";
+import { editorStore, setActiveView, setDirty, setValidationResult, type EditorView } from "../stores/editorStore";
 import { currentNode, currentScript, projectStore, replaceProject, selectNode, selectScript, setProject } from "../stores/projectStore";
 import { loadDemoProject } from "../services/projectLoadService";
 import {
@@ -46,7 +48,7 @@ function loadProjectIntoEditor(project: VNProject, dirty: boolean): void {
   previewPanelRef.value?.restart();
 }
 
-/** 在 dirty 状态下确认是否丢弃当前修改。 */
+/** dirty 状态下确认是否丢弃当前修改。 */
 async function confirmDiscardIfDirty(actionName: string): Promise<boolean> {
   if (!editorStore.dirty) return true;
   try {
@@ -61,9 +63,15 @@ async function confirmDiscardIfDirty(actionName: string): Promise<boolean> {
   }
 }
 
+/** 切换主视图。 */
+function handleChangeView(view: EditorView): void {
+  setActiveView(view);
+}
+
 /** 切换脚本。 */
 function handleSelectScript(scriptId: string): void {
   selectScript(scriptId);
+  setActiveView("script");
 }
 
 /** 选择节点。 */
@@ -73,28 +81,33 @@ function handleSelectNode(nodeId: string): void {
 
 /** 新增对话节点。 */
 function handleAddDialogue(): void {
-  const nextProject = addDialogueNodeAfter(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId);
+  const currentNodeId = projectStore.selectedNodeId;
+  const nextProject = addDialogueNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
   applyProject(nextProject);
   const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
-  selectNode(script?.nodes.at((script.nodes.findIndex((node) => node.id === projectStore.selectedNodeId) ?? -1) + 1)?.id ?? script?.nodes.at(-1)?.id ?? null);
+  const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
+  selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
 }
 
 /** 新增旁白节点。 */
 function handleAddNarration(): void {
-  const nextProject = addNarrationNodeAfter(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId);
+  const currentNodeId = projectStore.selectedNodeId;
+  const nextProject = addNarrationNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
   applyProject(nextProject);
   const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
-  selectNode(script?.nodes.at((script.nodes.findIndex((node) => node.id === projectStore.selectedNodeId) ?? -1) + 1)?.id ?? script?.nodes.at(-1)?.id ?? null);
+  const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
+  selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
 }
 
 /** 复制当前节点。 */
 function handleDuplicateNode(): void {
   if (!projectStore.selectedNodeId) return;
-  const nextProject = duplicateNode(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId);
+  const currentNodeId = projectStore.selectedNodeId;
+  const nextProject = duplicateNode(projectStore.project, projectStore.selectedScriptId, currentNodeId);
   applyProject(nextProject);
   const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
-  const currentIndex = script?.nodes.findIndex((node) => node.id === projectStore.selectedNodeId) ?? -1;
-  selectNode(script?.nodes[currentIndex + 1]?.id ?? projectStore.selectedNodeId);
+  const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
+  selectNode(script?.nodes[currentIndex + 1]?.id ?? currentNodeId);
 }
 
 /** 删除当前节点。 */
@@ -187,6 +200,8 @@ onMounted(() => {
         :node-id="projectStore.selectedNodeId"
         :dirty="editorStore.dirty"
         :validation-result="editorStore.validationResult"
+        :active-view="editorStore.activeView"
+        @change-view="handleChangeView"
         @import-project="handleImportProject"
         @export-project="handleExportProject"
         @reset-demo="handleResetDemo"
@@ -194,33 +209,44 @@ onMounted(() => {
       />
       <input ref="fileInputRef" class="hidden-file-input" type="file" accept="application/json,.json,.vnproject.json" @change="handleImportFile" />
     </header>
-    <aside class="editor-panel editor-project-panel">
-      <ProjectTree :project="projectStore.project" :selected-script-id="projectStore.selectedScriptId" @select-script="handleSelectScript" />
-    </aside>
-    <main class="editor-panel editor-node-panel">
-      <StoryNodeList
-        :nodes="currentScript?.nodes ?? []"
-        :selected-node-id="projectStore.selectedNodeId"
-        @select-node="handleSelectNode"
-        @add-dialogue="handleAddDialogue"
-        @add-narration="handleAddNarration"
-        @duplicate-node="handleDuplicateNode"
-        @delete-node="handleDeleteNode"
-      />
+
+    <template v-if="editorStore.activeView === 'script'">
+      <aside class="editor-panel editor-project-panel">
+        <ProjectTree :project="projectStore.project" :selected-script-id="projectStore.selectedScriptId" @select-script="handleSelectScript" />
+      </aside>
+      <main class="editor-panel editor-node-panel">
+        <StoryNodeList
+          :nodes="currentScript?.nodes ?? []"
+          :selected-node-id="projectStore.selectedNodeId"
+          @select-node="handleSelectNode"
+          @add-dialogue="handleAddDialogue"
+          @add-narration="handleAddNarration"
+          @duplicate-node="handleDuplicateNode"
+          @delete-node="handleDeleteNode"
+        />
+      </main>
+      <aside class="editor-panel editor-property-panel">
+        <NodePropertyPanel
+          :project="projectStore.project"
+          :script-id="projectStore.selectedScriptId"
+          :node="currentNode"
+          @project-change="applyProject"
+        />
+      </aside>
+      <footer class="editor-panel editor-footer-panel">
+        <div class="footer-grid">
+          <PreviewPanel ref="previewPanelRef" :project="projectStore.project" />
+          <ValidationPanel :result="editorStore.validationResult" />
+        </div>
+      </footer>
+    </template>
+
+    <main v-else-if="editorStore.activeView === 'assets'" class="editor-panel editor-resource-panel">
+      <AssetLibraryPanel :project="projectStore.project" @project-change="applyProject" />
     </main>
-    <aside class="editor-panel editor-property-panel">
-      <NodePropertyPanel
-        :project="projectStore.project"
-        :script-id="projectStore.selectedScriptId"
-        :node="currentNode"
-        @project-change="applyProject"
-      />
-    </aside>
-    <footer class="editor-panel editor-footer-panel">
-      <div class="footer-grid">
-        <PreviewPanel ref="previewPanelRef" :project="projectStore.project" />
-        <ValidationPanel :result="editorStore.validationResult" />
-      </div>
-    </footer>
+
+    <main v-else class="editor-panel editor-resource-panel">
+      <CharacterLibraryPanel :project="projectStore.project" @project-change="applyProject" />
+    </main>
   </div>
 </template>

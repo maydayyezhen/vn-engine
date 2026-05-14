@@ -1,5 +1,6 @@
+export { findAssetById, getAssetsByType } from "./asset";
 export type { AssetItem, AssetLibrary, AssetType } from "./asset";
-export type { Character } from "./character";
+export type { Character, CharacterExpression } from "./character";
 export type {
   ChoiceNode,
   ChoiceOption,

@@ -8,7 +8,7 @@
     "dev:player": "pnpm --filter @vn-engine/player dev",
     "dev:editor": "pnpm --filter @vn-engine/editor dev",
     "build": "pnpm -r build",
-    "test": "pnpm --filter @vn-engine/vn-core test && pnpm --filter @vn-engine/vn-project test",
+    "test": "pnpm --filter @vn-engine/vn-schema test && pnpm --filter @vn-engine/vn-core test && pnpm --filter @vn-engine/vn-project test",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {

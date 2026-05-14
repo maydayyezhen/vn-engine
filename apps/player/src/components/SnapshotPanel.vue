@@ -15,7 +15,13 @@ defineProps<{
       <dt>背景</dt>
       <dd>{{ snapshot.backgroundAssetId || "无" }}</dd>
       <dt>角色</dt>
-      <dd>{{ snapshot.characters.length ? snapshot.characters.map((item) => item.characterId).join(", ") : "无" }}</dd>
+      <dd>
+        {{
+          snapshot.characters.length
+            ? snapshot.characters.map((item) => `${item.characterId}${item.expression ? `:${item.expression}` : ""}`).join(", ")
+            : "无"
+        }}
+      </dd>
       <dt>脚本</dt>
       <dd>{{ snapshot.currentScriptId }}</dd>
       <dt>节点</dt>

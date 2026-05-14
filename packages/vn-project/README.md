@@ -21,4 +21,4 @@ interface ProjectBundle {
 }
 ```
 
-当前导入导出仍是 Web 编辑器内的 JSON 文件能力，不是 Tauri 本地工程目录读写。下一阶段可以在 desktop 壳中复用本包逻辑，接入真实文件夹打开、保存和素材导入。
+`ProjectBundle.project` 会完整保留脚本、素材库、角色和角色表情映射。当前导入导出仍是 Web 编辑器内的 JSON 文件能力，不是 Tauri 本地工程目录读写。后续桌面壳会复用本包逻辑，接入真实文件夹打开、保存和素材导入。

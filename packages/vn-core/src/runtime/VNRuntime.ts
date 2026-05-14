@@ -139,7 +139,7 @@ export class VNRuntime {
     }
     if (node.type === "setVariable") this.variables.set(node.name, node.value);
     if (node.type === "scene") this.state.backgroundAssetId = node.backgroundAssetId;
-    if (node.type === "showCharacter") this.showCharacter(node.characterId, node.assetId, node.position);
+    if (node.type === "showCharacter") this.showCharacter(node.characterId, node.assetId, node.expression, node.position);
     if (node.type === "hideCharacter") this.hideCharacter(node.characterId);
     if (node.type === "playAudio") this.state.audio[node.channel] = node.assetId;
     if (node.type === "stopAudio") delete this.state.audio[node.channel];
@@ -167,9 +167,9 @@ export class VNRuntime {
   }
 
   /** 显示或更新角色状态。 */
-  private showCharacter(characterId: string, assetId?: string, position?: "left" | "center" | "right"): void {
+  private showCharacter(characterId: string, assetId?: string, expression?: string, position?: "left" | "center" | "right"): void {
     const current = this.state.characters.filter((item) => item.characterId !== characterId);
-    current.push({ characterId, assetId, position });
+    current.push({ characterId, assetId, expression, position });
     this.state.characters = current;
   }
 

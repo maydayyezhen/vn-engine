@@ -1,6 +1,9 @@
 import { reactive } from "vue";
 import type { ValidationResult } from "@vn-engine/vn-schema";
 
+/** 编辑器主视图类型。 */
+export type EditorView = "script" | "assets" | "characters";
+
 /** 节点属性面板状态。 */
 export interface PropertyPanelState {
   /** 面板是否处于展开状态。 */
@@ -15,6 +18,8 @@ export interface EditorStoreState {
   dirty: boolean;
   /** 右侧属性面板状态。 */
   propertyPanel: PropertyPanelState;
+  /** 当前编辑器主视图。 */
+  activeView: EditorView;
 }
 
 /** 全局编辑器界面 store。 */
@@ -27,7 +32,8 @@ export const editorStore = reactive<EditorStoreState>({
   dirty: false,
   propertyPanel: {
     expanded: true
-  }
+  },
+  activeView: "script"
 });
 
 /** 设置校验结果。 */
@@ -38,4 +44,9 @@ export function setValidationResult(result: ValidationResult): void {
 /** 标记内存态修改状态。 */
 export function setDirty(dirty: boolean): void {
   editorStore.dirty = dirty;
+}
+
+/** 设置当前主视图。 */
+export function setActiveView(activeView: EditorView): void {
+  editorStore.activeView = activeView;
 }
