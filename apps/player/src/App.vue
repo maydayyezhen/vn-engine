@@ -100,12 +100,22 @@ function next(): void {
 
 /** 选择选项。 */
 function choose(optionId: string): void {
-  if (gameMode.value !== "playing" || uiHidden.value) return;
+  if (gameMode.value !== "playing") return;
   const option = snapshot.value.choices.find((item) => item.id === optionId);
   if (option) playerHistory.pushChoice(snapshot.value, option.text);
   autoPlay.setEnabled(false);
   playerSettings.updateSettings({ autoPlayEnabled: false });
   snapshot.value = runtime.value.choose(optionId);
+}
+
+/** 隐藏 UI 时点击舞台继续推进；遇到选项或结局时恢复 UI。 */
+function handleHiddenStageClick(): void {
+  if (gameMode.value !== "playing" || !uiHidden.value) return;
+  if (snapshot.value.type === "choices" || snapshot.value.isEnded) {
+    uiHidden.value = false;
+    return;
+  }
+  next();
 }
 
 /** 重新开始当前剧情。 */
@@ -193,6 +203,9 @@ watch(
   snapshot,
   (value) => {
     if (gameMode.value !== "playing") return;
+    if (uiHidden.value && (value.type === "choices" || value.isEnded)) {
+      uiHidden.value = false;
+    }
     playerHistory.pushSnapshot(value);
     skipRead.markRead(value);
   },
@@ -221,7 +234,7 @@ onMounted(async () => {
 <template>
   <main class="player-shell" :class="shellClass">
     <section class="player-main">
-      <div class="stage-frame">
+      <div class="stage-frame" @click="handleHiddenStageClick">
         <GameStage :project="project" :snapshot="snapshot" :ui-hidden="uiHidden || gameMode === 'title'" @choose="choose" />
         <RuntimeToolbar
           v-if="gameMode === 'playing' && !uiHidden"
@@ -236,7 +249,8 @@ onMounted(async () => {
           @skip-read="skipReadNodes"
           @hide-ui="uiHidden = true"
         />
-        <button v-if="gameMode === 'playing' && uiHidden" type="button" class="restore-ui-button" @click="uiHidden = false">显示UI</button>
+        <div v-if="gameMode === 'playing' && uiHidden" class="hidden-ui-hint">点击画面继续，遇到选项会自动显示 UI</div>
+        <button v-if="gameMode === 'playing' && uiHidden" type="button" class="restore-ui-button" @click.stop="uiHidden = false">显示UI</button>
       </div>
 
       <PlayerControls
