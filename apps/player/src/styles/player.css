@@ -1,0 +1,143 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: #172033;
+  background: #111822;
+  font-family: Inter, "Microsoft YaHei", system-ui, sans-serif;
+}
+
+button {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 6px;
+  padding: 9px 15px;
+  color: #ffffff;
+  background: #2f5f8f;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #386fa7;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.player-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 14px;
+  min-height: 100vh;
+  padding: 14px;
+}
+
+.player-main {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 12px;
+  min-width: 0;
+}
+
+.game-stage {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: #0b111a;
+  overflow: hidden;
+}
+
+.pixi-stage-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: calc(100vh - 104px);
+}
+
+.pixi-vn-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.player-controls,
+.debug-panel {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 10px;
+}
+
+.control-hint {
+  color: #d9e5f5;
+  font-size: 14px;
+}
+
+.debug-panel {
+  overflow: auto;
+  min-width: 0;
+  color: #e8eef7;
+}
+
+.debug-panel.collapsed {
+  align-self: start;
+}
+
+.debug-toggle {
+  width: calc(100% - 20px);
+  margin: 10px;
+}
+
+.debug-content {
+  padding: 0 14px 14px;
+}
+
+.debug-content h2 {
+  margin: 4px 0 14px;
+  font-size: 18px;
+}
+
+.debug-content dl {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 10px;
+  margin: 0;
+}
+
+.debug-content dt {
+  color: #aebbd0;
+}
+
+.debug-content dd {
+  margin: 0;
+  min-width: 0;
+}
+
+@media (max-width: 920px) {
+  .player-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .pixi-stage-container {
+    max-height: none;
+  }
+}

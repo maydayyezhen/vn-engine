@@ -1,5 +1,5 @@
 import { VNRuntime } from "@vn-engine/vn-core";
-import type { VNProject, ScriptFile } from "@vn-engine/vn-schema";
+import type { ScriptFile, VNProject } from "@vn-engine/vn-schema";
 import projectJson from "../../../../examples/demo-game/project.vnproj.json";
 import startScriptJson from "../../../../examples/demo-game/scripts/start.vn.json";
 

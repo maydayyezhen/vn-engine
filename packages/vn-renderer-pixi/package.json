@@ -7,9 +7,15 @@
   "types": "./src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@vn-engine/vn-core": "workspace:*"
+    "@vn-engine/vn-core": "workspace:*",
+    "@vn-engine/vn-schema": "workspace:*",
+    "pixi.js": "^8.18.1"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.3"
   }
 }

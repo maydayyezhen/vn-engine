@@ -1,15 +1,21 @@
-/** PixiJS 渲染器占位对象。 */
-export interface PixiRendererPlaceholder {
-  /** 占位渲染器名称。 */
-  name: string;
-  /** 当前是否只是占位实现。 */
-  placeholder: true;
-}
-
-/** 创建第一阶段 PixiJS 渲染器占位对象。 */
-export function createPixiRendererPlaceholder(): PixiRendererPlaceholder {
-  return {
-    name: "vn-renderer-pixi-placeholder",
-    placeholder: true
-  };
-}
+export { PixiVNRenderer } from "./PixiVNRenderer";
+export { PixiAssetLoader } from "./assets/PixiAssetLoader";
+export { BackgroundLayer } from "./layers/BackgroundLayer";
+export { CharacterLayer } from "./layers/CharacterLayer";
+export { ChoiceLayer } from "./layers/ChoiceLayer";
+export { DialogueLayer } from "./layers/DialogueLayer";
+export { createPlaceholderTexture } from "./utils/createPlaceholderTexture";
+export {
+  resolveRenderResources,
+  resolveAudioResources,
+  resolveBackgroundResource,
+  resolveCharacterResources
+} from "./utils/resolveRenderResources";
+export type {
+  PixiVNRendererOptions,
+  ResolvedAudioResource,
+  ResolvedBackgroundResource,
+  ResolvedCharacterResource,
+  ResolvedRenderResources,
+  VNRenderSize
+} from "./types";
