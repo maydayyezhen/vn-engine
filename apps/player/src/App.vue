@@ -36,8 +36,6 @@ const gameMode = ref<GameMode>("title");
 const activePanel = ref<ActivePanel>(null);
 /** 存读档面板模式。 */
 const savePanelMode = ref<"save" | "load">("load");
-/** 是否隐藏运行时 UI。 */
-const uiHidden = ref(false);
 /** 当前项目 id。 */
 const projectId = computed(() => project.value.id);
 
@@ -57,11 +55,8 @@ const autoPlayDelay = computed(() => playerSettings.settings.value.autoPlayDelay
 const autoPlay = useAutoPlay(snapshot, autoPlayDelay, () => next());
 /** 页面 class。 */
 const shellClass = computed(() => ({
-  "is-title": gameMode.value === "title",
-  "is-ui-hidden": uiHidden.value
+  "is-title": gameMode.value === "title"
 }));
-/** 舞台内对话/选项 UI 是否隐藏；选项和结局始终保留在舞台内。 */
-const stageRuntimeUiHidden = computed(() => uiHidden.value && snapshot.value.type !== "choices" && !snapshot.value.isEnded);
 
 /** 应用设置到音频管理器。 */
 function applyAudioSettings(settings: RuntimeSettings): void {
@@ -80,7 +75,6 @@ function startNewGame(): void {
   snapshot.value = runtime.value.getSnapshot();
   gameMode.value = "playing";
   activePanel.value = null;
-  uiHidden.value = false;
   playerHistory.clear();
   applyAudioSettings(playerSettings.settings.value);
   autoPlay.setEnabled(playerSettings.settings.value.autoPlayEnabled);
@@ -123,7 +117,6 @@ function returnToTitle(): void {
   snapshot.value = runtime.value.getSnapshot();
   gameMode.value = "title";
   activePanel.value = null;
-  uiHidden.value = false;
 }
 
 /** 打开保存面板。 */
@@ -155,7 +148,6 @@ function loadFromSlot(slotId: string): void {
   snapshot.value = runtime.value.loadState(slot.state);
   gameMode.value = "playing";
   activePanel.value = null;
-  uiHidden.value = false;
   applyAudioSettings(playerSettings.settings.value);
   autoPlay.setEnabled(false);
 }
@@ -222,9 +214,9 @@ onMounted(async () => {
   <main class="player-shell" :class="shellClass">
     <section class="player-main">
       <div class="stage-frame" @click="handleStageClick">
-        <GameStage :project="project" :snapshot="snapshot" :ui-hidden="stageRuntimeUiHidden || gameMode === 'title'" @choose="choose" />
+        <GameStage :project="project" :snapshot="snapshot" :ui-hidden="gameMode === 'title'" @choose="choose" />
         <RuntimeToolbar
-          v-if="gameMode === 'playing' && !uiHidden"
+          v-if="gameMode === 'playing'"
           :auto-play-enabled="autoPlay.enabled.value"
           :skip-read-enabled="playerSettings.settings.value.skipReadEnabled"
           @save="openSavePanel"
@@ -234,10 +226,7 @@ onMounted(async () => {
           @menu="activePanel = 'pause'"
           @toggle-auto-play="toggleAutoPlay"
           @skip-read="skipReadNodes"
-          @hide-ui="uiHidden = true"
         />
-        <div v-if="gameMode === 'playing' && uiHidden && snapshot.type !== 'choices'" class="hidden-ui-hint">点击画面继续，选项会在舞台中显示</div>
-        <button v-if="gameMode === 'playing' && uiHidden" type="button" class="restore-ui-button" @click.stop="uiHidden = false">显示UI</button>
       </div>
     </section>
 

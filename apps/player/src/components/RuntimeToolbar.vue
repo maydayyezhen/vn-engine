@@ -16,7 +16,6 @@ defineEmits<{
   menu: [];
   toggleAutoPlay: [];
   skipRead: [];
-  hideUi: [];
 }>();
 </script>
 
@@ -28,7 +27,6 @@ defineEmits<{
     <button type="button" @click="$emit('settings')">设置</button>
     <button type="button" :class="{ active: autoPlayEnabled }" @click="$emit('toggleAutoPlay')">自动</button>
     <button type="button" :disabled="!skipReadEnabled" @click="$emit('skipRead')">快进</button>
-    <button type="button" @click="$emit('hideUi')">隐藏UI</button>
     <button type="button" @click="$emit('menu')">菜单</button>
   </nav>
 </template>

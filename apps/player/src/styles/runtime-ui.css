@@ -21,45 +21,13 @@
   backdrop-filter: blur(8px);
 }
 
-.runtime-toolbar button,
-.restore-ui-button {
+.runtime-toolbar button {
   padding: 7px 10px;
   font-size: 13px;
 }
 
 .runtime-toolbar button.active {
   background: #b7792e;
-}
-
-.restore-ui-button {
-  position: absolute;
-  z-index: 12;
-  top: 12px;
-  right: 12px;
-  background: rgba(15, 23, 34, 0.72);
-}
-
-.is-ui-hidden .stage-frame {
-  cursor: pointer;
-}
-
-.hidden-ui-hint {
-  position: absolute;
-  z-index: 11;
-  left: 50%;
-  bottom: 18px;
-  max-width: calc(100% - 32px);
-  padding: 7px 11px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  color: rgba(238, 245, 255, 0.9);
-  background: rgba(15, 23, 34, 0.58);
-  font-size: 13px;
-  line-height: 1.4;
-  text-align: center;
-  transform: translateX(-50%);
-  pointer-events: none;
-  backdrop-filter: blur(8px);
 }
 
 .runtime-overlay {
@@ -234,8 +202,7 @@
   margin: 0 0 12px 92px;
 }
 
-.player-shell.is-title,
-.player-shell.is-ui-hidden {
+.player-shell.is-title {
   grid-template-columns: 1fr;
 }
 
