@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { RuntimeSnapshot } from "@vn-engine/vn-core";
 import type { VNProject } from "@vn-engine/vn-schema";
 import { createChoiceBridge } from "../renderer/playerRenderBridge";
@@ -34,6 +34,22 @@ const pixi = usePixiVNRenderer(
   createChoiceBridge((optionId) => emit("choose", optionId)),
   () => emit("actionSequenceComplete")
 );
+
+const backgroundLabel = computed(() => props.snapshot.backgroundAssetId ?? props.snapshot.background?.assetId ?? "未设置背景");
+
+const speakerLabel = computed(() => {
+  if (props.snapshot.isEnded) return "结束";
+  if (!props.snapshot.speaker) return "旁白";
+  const character = props.project.characters.find((item) => item.id === props.snapshot.speaker);
+  return character?.displayName || character?.name || props.snapshot.speaker;
+});
+
+const shouldShowDialogueFallback = computed(() => Boolean(props.snapshot.text || props.snapshot.isEnded));
+
+function getCharacterName(characterId: string): string {
+  const character = props.project.characters.find((item) => item.id === characterId);
+  return character?.displayName || character?.name || characterId;
+}
 
 /** 渲染当前快照。 */
 async function renderCurrent(): Promise<void> {
@@ -81,5 +97,18 @@ onBeforeUnmount(() => {
 <template>
   <section class="game-stage" aria-label="视觉小说舞台">
     <div ref="containerRef" class="pixi-stage-container" />
+    <div class="dom-stage-overlay" aria-hidden="true">
+      <div class="dom-background-label">背景：{{ backgroundLabel }}</div>
+      <div class="dom-character-row">
+        <div v-for="character in snapshot.characters" :key="character.characterId" class="dom-character-card">
+          <strong>{{ getCharacterName(character.characterId) }}</strong>
+          <span>{{ character.expression || "默认" }}</span>
+        </div>
+      </div>
+      <div v-if="shouldShowDialogueFallback" class="dom-dialogue-box">
+        <strong>{{ speakerLabel }}</strong>
+        <p>{{ snapshot.isEnded ? "剧情已结束" : snapshot.text }}</p>
+      </div>
+    </div>
   </section>
 </template>

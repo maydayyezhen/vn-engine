@@ -37,6 +37,10 @@ export class PixiVNRenderer {
   private cameraAnimationToken = 0;
   /** 动作序列播放协调器。 */
   private readonly actionPlayer = new ActionPlayer();
+  /** 当前已启动的动作序列 key，避免重复 render 反复重置等待。 */
+  private activeActionSequenceKey: string | null = null;
+  /** 当前渲染序号，用于阻止过期异步 render 控制动作序列。 */
+  private renderSerial = 0;
 
   /** 创建 PixiJS 视觉小说渲染器。 */
   constructor(private readonly options: PixiVNRendererOptions = {}) {
@@ -81,10 +85,13 @@ export class PixiVNRenderer {
   /** 根据运行时快照和工程数据渲染画面。 */
   async render(snapshot: RuntimeSnapshot, project: VNProject, renderOptions: PixiVNRenderOptions = {}): Promise<void> {
     if (!this.app || !this.backgroundLayer || !this.characterLayer || !this.dialogueLayer || !this.choiceLayer) return;
+    const renderSerial = ++this.renderSerial;
     const resources = resolveRenderResources(project, snapshot);
 
     await this.backgroundLayer.render(resources.background, this.size);
+    if (renderSerial !== this.renderSerial) return;
     await this.characterLayer.render(resources.characters, this.size);
+    if (renderSerial !== this.renderSerial) return;
     this.applyCamera(resources.camera);
     this.dialogueLayer.container.visible = !renderOptions.hideRuntimeUi;
     this.choiceLayer.container.visible = !renderOptions.hideRuntimeUi;
@@ -93,9 +100,16 @@ export class PixiVNRenderer {
       this.choiceLayer.render(snapshot.type === "choices" ? snapshot.choices : [], this.size);
     }
     if (snapshot.pendingActions?.length) {
-      void this.actionPlayer.play(snapshot.pendingActions).then(() => {
-        this.options.onActionSequenceComplete?.();
-      });
+      const actionKey = this.createActionSequenceKey(snapshot);
+      if (actionKey !== this.activeActionSequenceKey) {
+        this.activeActionSequenceKey = actionKey;
+        void this.actionPlayer.play(snapshot.pendingActions).then(() => {
+          if (this.activeActionSequenceKey === actionKey) this.options.onActionSequenceComplete?.();
+        });
+      }
+    } else if (this.activeActionSequenceKey) {
+      this.activeActionSequenceKey = null;
+      this.actionPlayer.stop();
     }
   }
 
@@ -116,8 +130,17 @@ export class PixiVNRenderer {
     this.sceneRoot.scale.set(normalized.zoom);
   }
 
+  /** 创建动作序列 key，用于区分新演出节点和同一快照的重复渲染。 */
+  private createActionSequenceKey(snapshot: RuntimeSnapshot): string {
+    const actions = (snapshot.pendingActions ?? [])
+      .map((action) => `${action.parallelGroupId ?? ""}:${action.actionId}:${action.actionType}:${action.durationMs ?? ""}`)
+      .join("|");
+    return `${snapshot.currentScriptId}:${snapshot.currentNodeId}:${actions}`;
+  }
+
   destroy(): void {
     this.actionPlayer.destroy();
+    this.activeActionSequenceKey = null;
     this.assetLoader.clear();
     this.root.removeChildren();
     this.app?.destroy(true, { children: true, texture: false });
