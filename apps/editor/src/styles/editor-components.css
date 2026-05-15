@@ -515,6 +515,47 @@
   background: var(--editor-accent);
 }
 
+.resource-inspector-panel {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 0;
+  padding: 10px;
+}
+
+.resource-inspector-preview {
+  display: grid;
+  min-height: 112px;
+  overflow: hidden;
+  border: 1px solid var(--editor-border);
+  border-radius: 8px;
+  background: #0f1620;
+}
+
+.resource-inspector-form {
+  display: grid;
+  gap: 2px;
+}
+
+.resource-inspector-form .el-form-item {
+  margin-bottom: 9px;
+}
+
+.inspector-expression-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid var(--editor-border);
+  border-radius: 8px;
+  background: #111822;
+}
+
+.inspector-expression-row .asset-preview {
+  width: 84px;
+  justify-self: start;
+}
+
 .right-inspector-panel .character-library-panel {
   border: 0;
   border-radius: 0;

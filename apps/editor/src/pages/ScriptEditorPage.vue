@@ -2,12 +2,12 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { AssetItem, AssetType, NodeTarget, ValidationIssue, VNProject } from "@vn-engine/vn-schema";
-import AssetLibraryPanel from "../components/AssetLibraryPanel.vue";
-import CharacterLibraryPanel from "../components/CharacterLibraryPanel.vue";
+import AssetResourceInspectorPanel from "../components/AssetResourceInspectorPanel.vue";
+import CharacterResourceInspectorPanel from "../components/CharacterResourceInspectorPanel.vue";
 import NodePropertyPanel from "../components/NodePropertyPanel.vue";
 import PreviewPanel from "../components/PreviewPanel.vue";
 import StoryNodeList from "../components/StoryNodeList.vue";
-import VariableLibraryPanel from "../components/VariableLibraryPanel.vue";
+import VariableResourceInspectorPanel from "../components/VariableResourceInspectorPanel.vue";
 import WebExportPanel from "../components/WebExportPanel.vue";
 import AnimationWorkspace from "../workspaces/AnimationWorkspace.vue";
 import AssetPreviewPane from "../layout/AssetPreviewPane.vue";
@@ -32,9 +32,11 @@ import { isDesktopRuntime } from "../desktop/isDesktopRuntime";
 import { editorStore, setActiveView, setDirty, setValidationResult, type EditorView } from "../stores/editorStore";
 import { layoutStore, setInspectorTab, setPreviewZoom, setScriptDockTab, setStageTab } from "../stores/layoutStore";
 import { currentNode, currentScript, projectStore, replaceProject, selectNode, selectScript, setProject } from "../stores/projectStore";
-import { setResourceSearchQuery, workspaceStore } from "../stores/workspaceStore";
+import { setResourceSearchQuery, setWorkspaceSelection, workspaceStore } from "../stores/workspaceStore";
 import { canRedo, canUndo, popRedo, popUndo, pushHistory, resetHistory } from "../stores/historyStore";
-import { addAsset, createEmptyAsset } from "../services/assetEditService";
+import { addAsset, createEmptyAsset, deleteAsset } from "../services/assetEditService";
+import { addCharacter, createEmptyCharacter, deleteCharacter } from "../services/characterEditService";
+import { addVariable, createEmptyVariable, deleteVariable } from "../services/variableEditService";
 import { loadDemoProject, loadShowcaseProject } from "../services/projectLoadService";
 import {
   createProjectExportFileName,
@@ -93,17 +95,40 @@ const selectedNodeCanMoveUp = computed(() => canMoveNodeUp(projectStore.project,
 /** 当前节点是否可下移。 */
 const selectedNodeCanMoveDown = computed(() => canMoveNodeDown(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId));
 
+/** 当前资源树选中的素材。 */
+const selectedAsset = computed(() =>
+  workspaceStore.selection.kind === "asset" ? findAssetById(projectStore.project, workspaceStore.selection.id) : undefined
+);
+
+/** 当前资源树选中的角色。 */
+const selectedCharacter = computed(() =>
+  workspaceStore.selection.kind === "character" ? findCharacterById(projectStore.project, workspaceStore.selection.id) : undefined
+);
+
+/** 当前资源树选中的变量。 */
+const selectedVariable = computed(() =>
+  workspaceStore.selection.kind === "variable"
+    ? (projectStore.project.variables ?? []).find((variable) => variable.name === workspaceStore.selection.id)
+    : undefined
+);
+
 /** 当前选中对象在检查器中的说明。 */
 const inspectorSelectionLabel = computed(() => {
+  if (workspaceStore.selection.kind === "asset") return selectedAsset.value ? `${selectedAsset.value.name} / ${selectedAsset.value.id}` : "未选择素材";
+  if (workspaceStore.selection.kind === "character") return selectedCharacter.value ? `${selectedCharacter.value.displayName || selectedCharacter.value.name} / ${selectedCharacter.value.id}` : "未选择角色";
+  if (workspaceStore.selection.kind === "variable") return selectedVariable.value ? `变量 / ${selectedVariable.value.name}` : "未选择变量";
   if (editorStore.activeView === "script") return currentNode.value ? `${currentNode.value.type} / ${currentNode.value.id}` : "未选择节点";
-  if (editorStore.activeView === "assets") return "素材库";
-  if (editorStore.activeView === "characters") return "角色管理";
-  if (editorStore.activeView === "variables") return "变量管理";
-  return "导出 / 构建";
+  if (editorStore.activeView === "export") return "导出 / 构建";
+  return "属性面板";
 });
 
 /** 当前节点或工作区关联的素材，用于左下角快速预览。 */
 const focusedAsset = computed<AssetItem | undefined>(() => {
+  if (selectedAsset.value) return selectedAsset.value;
+  if (selectedCharacter.value) {
+    const expression = selectedCharacter.value.expressions?.[0];
+    return findAssetById(projectStore.project, expression?.assetId);
+  }
   const node = currentNode.value;
   if (!node) return projectStore.project.assets.items[0];
   if (node.type === "scene") return findAssetById(projectStore.project, node.backgroundAssetId);
@@ -151,6 +176,8 @@ function loadProjectIntoEditor(project: VNProject, dirty: boolean): void {
   resetHistory();
   setDirty(dirty);
   setValidationResult(validateCurrentProject(project));
+  setWorkspaceSelection({ kind: "script", id: project.startScriptId });
+  setInspectorTab("properties");
   previewPanelRef.value?.restart();
 }
 
@@ -173,10 +200,7 @@ async function confirmDiscardIfDirty(actionName: string): Promise<boolean> {
 function handleChangeView(view: EditorView): void {
   setActiveView(view);
   setScriptDockTab("script");
-  if (view === "assets") setInspectorTab("assets");
-  else if (view === "characters") setInspectorTab("characters");
-  else if (view === "variables") setInspectorTab("variables");
-  else if (view === "export") setInspectorTab("export");
+  if (view === "export") setInspectorTab("export");
   else setInspectorTab("properties");
 }
 
@@ -210,6 +234,105 @@ function handleMenuCommand(command: string): void {
 function handleSelectScript(scriptId: string): void {
   selectScript(scriptId);
   setActiveView("script");
+  setWorkspaceSelection({ kind: "script", id: scriptId });
+  setInspectorTab("properties");
+}
+
+/** 选择左侧资源树中的具体素材。 */
+function handleSelectAsset(assetId: string): void {
+  setWorkspaceSelection({ kind: "asset", id: assetId });
+  setInspectorTab("assets");
+}
+
+/** 选择左侧资源树中的具体角色。 */
+function handleSelectCharacter(characterId: string): void {
+  setWorkspaceSelection({ kind: "character", id: characterId });
+  setInspectorTab("characters");
+}
+
+/** 选择左侧资源树中的具体变量。 */
+function handleSelectVariable(variableName: string): void {
+  setWorkspaceSelection({ kind: "variable", id: variableName });
+  setInspectorTab("variables");
+}
+
+/** 从左侧资源树新增素材。 */
+function handleCreateAsset(assetType: AssetType): void {
+  if (desktopMode) {
+    void handleImportAssetFile(assetType);
+    return;
+  }
+  const asset = createEmptyAsset(assetType);
+  const nextProject = addAsset(projectStore.project, asset);
+  applyProject(nextProject);
+  setWorkspaceSelection({ kind: "asset", id: asset.id });
+  setInspectorTab("assets");
+}
+
+/** 从左侧资源树删除素材。 */
+async function handleDeleteAsset(assetId: string): Promise<void> {
+  try {
+    await ElMessageBox.confirm("删除素材不会自动清理节点引用，相关问题会由校验面板提示。继续删除？", "删除素材", {
+      confirmButtonText: "删除",
+      cancelButtonText: "取消",
+      type: "warning"
+    });
+  } catch {
+    return;
+  }
+  applyProject(deleteAsset(projectStore.project, assetId));
+  setWorkspaceSelection({ kind: "project" });
+  setInspectorTab("properties");
+}
+
+/** 从左侧资源树新增角色。 */
+function handleCreateCharacter(): void {
+  const character = createEmptyCharacter();
+  const nextProject = addCharacter(projectStore.project, character);
+  applyProject(nextProject);
+  setWorkspaceSelection({ kind: "character", id: character.id });
+  setInspectorTab("characters");
+}
+
+/** 从左侧资源树删除角色。 */
+async function handleDeleteCharacterFromTree(characterId: string): Promise<void> {
+  try {
+    await ElMessageBox.confirm("删除角色不会自动清理剧情节点引用，相关问题会由校验面板提示。继续删除？", "删除角色", {
+      confirmButtonText: "删除",
+      cancelButtonText: "取消",
+      type: "warning"
+    });
+  } catch {
+    return;
+  }
+  applyProject(deleteCharacter(projectStore.project, characterId));
+  setWorkspaceSelection({ kind: "project" });
+  setInspectorTab("properties");
+}
+
+/** 从左侧资源树新增变量。 */
+function handleCreateVariable(): void {
+  const variable = createEmptyVariable(projectStore.project.variables ?? []);
+  const nextProject = addVariable(projectStore.project, variable);
+  applyProject(nextProject);
+  setWorkspaceSelection({ kind: "variable", id: variable.name });
+  setInspectorTab("variables");
+}
+
+/** 从左侧资源树删除变量。 */
+async function handleDeleteVariableFromTree(variableName: string): Promise<void> {
+  try {
+    await ElMessageBox.confirm("删除变量不会自动清理条件或赋值节点引用，相关问题会由校验面板提示。继续删除？", "删除变量", {
+      confirmButtonText: "删除",
+      cancelButtonText: "取消",
+      type: "warning"
+    });
+  } catch {
+    return;
+  }
+  applyProject(deleteVariable(projectStore.project, variableName));
+  setWorkspaceSelection({ kind: "project" });
+  setInspectorTab("properties");
 }
 
 /** 选择节点。 */
@@ -584,6 +707,8 @@ async function handleImportAssetFile(assetType: AssetType): Promise<void> {
     path: result.data.relative_path
   };
   applyProject(addAsset(projectStore.project, asset));
+  setWorkspaceSelection({ kind: "asset", id: asset.id });
+  setInspectorTab("assets");
   ElMessage.success("素材已复制到工程 assets 并登记。");
 }
 
@@ -661,16 +786,23 @@ onBeforeUnmount(() => {
       <ResourceExplorer
         :project="projectStore.project"
         :selected-script-id="projectStore.selectedScriptId"
-        :active-view="editorStore.activeView"
+        :selection="workspaceStore.selection"
         :search-query="workspaceStore.resourceSearchQuery"
         @update-search-query="setResourceSearchQuery"
-        @change-view="handleChangeView"
-        @open-animations="handleOpenAnimations"
         @select-script="handleSelectScript"
+        @select-asset="handleSelectAsset"
+        @select-character="handleSelectCharacter"
+        @select-variable="handleSelectVariable"
         @create-script="handleCreateScript"
         @rename-script="handleRenameScript"
         @delete-script="handleDeleteScript"
         @set-start-script="handleSetStartScript"
+        @create-asset="handleCreateAsset"
+        @delete-asset="handleDeleteAsset"
+        @create-character="handleCreateCharacter"
+        @delete-character="handleDeleteCharacterFromTree"
+        @create-variable="handleCreateVariable"
+        @delete-variable="handleDeleteVariableFromTree"
       >
         <template #preview>
           <AssetPreviewPane :asset="focusedAsset" :assets="projectStore.project.assets.items" />
@@ -730,30 +862,6 @@ onBeforeUnmount(() => {
                 @update-filter-type="nodeFilterType = $event"
               />
             </template>
-
-            <template #animation>
-              <AnimationWorkspace />
-            </template>
-
-            <template #workspace>
-              <AssetLibraryPanel
-                v-if="editorStore.activeView === 'assets'"
-                :project="projectStore.project"
-                :desktop-mode="desktopMode"
-                @project-change="applyProject"
-                @import-asset-file="handleImportAssetFile"
-              />
-              <div v-else-if="editorStore.activeView === 'characters'" class="dock-placeholder">
-                <strong>角色管理</strong>
-                <span>角色管理已移到右侧属性面板。</span>
-              </div>
-              <VariableLibraryPanel
-                v-else-if="editorStore.activeView === 'variables'"
-                :project="projectStore.project"
-                @project-change="applyProject"
-              />
-              <WebExportPanel v-else :project="projectStore.project" />
-            </template>
           </ScriptDock>
         </template>
       </CenterStage>
@@ -763,9 +871,9 @@ onBeforeUnmount(() => {
       <RightInspector
         :selection-label="inspectorSelectionLabel"
         :active-tab="layoutStore.inspectorTab"
-        :show-asset-tab="editorStore.activeView === 'assets'"
-        :show-character-tab="editorStore.activeView === 'characters'"
-        :show-variable-tab="editorStore.activeView === 'variables'"
+        :show-asset-tab="workspaceStore.selection.kind === 'asset'"
+        :show-character-tab="workspaceStore.selection.kind === 'character'"
+        :show-variable-tab="workspaceStore.selection.kind === 'variable'"
         :show-export-tab="editorStore.activeView === 'export'"
         :show-animation-tab="layoutStore.inspectorTab === 'animations'"
         @update-active-tab="setInspectorTab"
@@ -785,22 +893,23 @@ onBeforeUnmount(() => {
           </div>
         </template>
         <template #assets>
-          <AssetLibraryPanel
+          <AssetResourceInspectorPanel
             :project="projectStore.project"
-            :desktop-mode="desktopMode"
+            :asset="selectedAsset"
             @project-change="applyProject"
-            @import-asset-file="handleImportAssetFile"
           />
         </template>
         <template #characters>
-          <CharacterLibraryPanel
+          <CharacterResourceInspectorPanel
             :project="projectStore.project"
+            :character="selectedCharacter"
             @project-change="applyProject"
           />
         </template>
         <template #variables>
-          <VariableLibraryPanel
+          <VariableResourceInspectorPanel
             :project="projectStore.project"
+            :variable="selectedVariable"
             @project-change="applyProject"
           />
         </template>
