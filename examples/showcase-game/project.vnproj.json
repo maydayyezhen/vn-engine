@@ -85,15 +85,15 @@
         "id": "prop-old-letter",
         "name": "旧信",
         "type": "prop",
-        "path": "/showcase-assets/prop/old_letter.svg",
-        "description": "项目脚本生成的占位道具。当前引擎暂无正式PropLayer。"
+        "path": "/showcase-assets/prop/old_letter.jpg",
+        "description": "Wikimedia Commons 真实旧信图片，用于 PropLayer 物品展示。"
       },
       {
         "id": "prop-cassette-tape",
         "name": "录音带",
         "type": "prop",
-        "path": "/showcase-assets/prop/cassette_tape.svg",
-        "description": "项目脚本生成的占位道具。当前引擎暂无正式PropLayer。"
+        "path": "/showcase-assets/prop/cassette_tape.jpg",
+        "description": "Wikimedia Commons 真实录音带图片，用于 PropLayer 物品展示。"
       },
       {
         "id": "bgm-showcase-theme",

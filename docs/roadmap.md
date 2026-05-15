@@ -140,7 +140,7 @@
 
 ## 第十五轮：Showcase Demo
 
-当前新增 `examples/showcase-game`，用于以完整短篇工程验证播放器、编辑器、动画模块、音频、变量分支、存档读档和 Web 导出包。Showcase 已接入 Potat0Master 背景、Xiael 透明角色部件组合、OpenGameArt BGM 和 Kenney 音效；语音和道具仍为本地技术占位，后续可继续替换。
+当前新增 `examples/showcase-game`，用于以完整短篇工程验证播放器、编辑器、动画模块、音频、变量分支、存档读档和 Web 导出包。Showcase 已接入 Potat0Master 背景、Xiael 透明角色部件组合、OpenGameArt BGM、Kenney 音效和 Wikimedia Commons 物品图片；语音仍为本地技术占位，后续可继续替换为真实配音。
 
 本轮没有新增引擎大功能，没有重做 UI，也没有接入 AI API。后续更适合继续补 PropLayer、正式素材导入体验和 UI/UX 总体重构。
 

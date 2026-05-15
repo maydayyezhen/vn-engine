@@ -23,8 +23,8 @@ const requiredFiles = [
   "audio/sound/page.ogg",
   "audio/sound/flash.ogg",
   "audio/voice/heroine_001.wav",
-  "prop/old_letter.svg",
-  "prop/cassette_tape.svg",
+  "prop/old_letter.jpg",
+  "prop/cassette_tape.jpg",
 ];
 
 async function copyDirectory(sourceDir, targetDir) {
@@ -55,7 +55,7 @@ async function main() {
   assertRequiredFiles();
   await copyDirectory(sourceAssetsDir, publicAssetsDir);
   console.log("Showcase assets synced to apps/player/public/showcase-assets.");
-  console.log("Real assets currently used: Potat0Master backgrounds, Xiael character sprite parts, OpenGameArt BGM, Kenney UI audio.");
+  console.log("Real assets currently used: Potat0Master backgrounds, Xiael character sprite parts, OpenGameArt BGM, Kenney UI audio, Wikimedia Commons prop photos.");
 }
 
 main().catch((error) => {

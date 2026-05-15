@@ -1,6 +1,6 @@
-# 无人站的潮汐信 Showcase Demo
+# 《无人站的潮汐信》Showcase Demo
 
-这是一个 3 到 5 分钟的视觉小说展示工程，用于验证当前引擎的实际制作效果。
+这是一个 3 到 5 分钟的视觉小说展示工程，用于验证当前引擎在真实素材下的实际效果。
 
 ## 已覆盖能力
 
@@ -17,14 +17,14 @@
 
 ## 素材状态
 
-当前主展示素材已替换为真实/半真实素材：
+当前 Showcase 主展示素材已经替换为真实或许可清楚的免费素材：
 
 - 背景：Potat0Master School Mini Pack 1。
 - 角色：Xiael Tia Sprite 透明 PNG 部件组合。
 - BGM：OpenGameArt CC0 音乐。
 - 音效：Kenney UI Audio CC0。
+- 物品：Wikimedia Commons 旧信和录音带图片。
 - 语音：本地生成技术占位。
-- 道具：本地生成 SVG 占位，已通过正式 prop 资源类型、ShowPropNode、HidePropNode 和 PropLayer 展示。
 
 完整来源见 `CREDITS.md`。
 
