@@ -158,7 +158,7 @@ onBeforeUnmount(() => {
 });
 
 defineExpose({
-  /** 暴露给顶部工具栏使用的重新开始预览动作。 */
+  /** 暴露给外部工作台使用的重新开始预览动作。 */
   restart
 });
 </script>

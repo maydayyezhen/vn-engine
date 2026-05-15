@@ -15,7 +15,6 @@ import AssetPreviewPane from "../layout/AssetPreviewPane.vue";
 import CenterStage from "../layout/CenterStage.vue";
 import EditorWorkbench from "../layout/EditorWorkbench.vue";
 import MainMenuBar from "../layout/MainMenuBar.vue";
-import MainToolBar from "../layout/MainToolBar.vue";
 import ResourceExplorer from "../layout/ResourceExplorer.vue";
 import RightInspector from "../layout/RightInspector.vue";
 import ScriptDock from "../layout/ScriptDock.vue";
@@ -513,7 +512,7 @@ async function handleLoadShowcase(): Promise<void> {
   ElMessage.success("已加载 Showcase Demo。");
 }
 
-/** 从顶部工具栏重新开始预览。 */
+/** 从顶部菜单或快捷入口重新开始预览。 */
 function handleRestartPreview(): void {
   previewPanelRef.value?.restart();
 }
@@ -650,28 +649,6 @@ onBeforeUnmount(() => {
         @change-view="handleChangeView"
       />
       <input ref="fileInputRef" class="hidden-file-input" type="file" accept="application/json,.json,.vnproject.json" @change="handleImportFile" />
-    </template>
-
-    <template #toolbar>
-      <MainToolBar
-        :project="projectStore.project"
-        :active-view="editorStore.activeView"
-        :dirty="editorStore.dirty"
-        :validation-result="editorStore.validationResult"
-        :desktop-mode="desktopMode"
-        :desktop-root="desktopProjectRoot"
-        :can-undo="canUndo"
-        :can-redo="canRedo"
-        @change-view="handleChangeView"
-        @create-desktop-project="handleCreateDesktopProject"
-        @open-desktop-project="handleOpenDesktopProject"
-        @save="handleShortcutSave"
-        @undo="handleUndo"
-        @redo="handleRedo"
-        @focus-search="focusNodeSearch"
-        @restart-preview="handleRestartPreview"
-        @export-desktop-web-game="handleExportDesktopWebGame"
-      />
     </template>
 
     <template #explorer>

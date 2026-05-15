@@ -16,7 +16,7 @@
 - 代码型动画模块：支持 `AnimationModule`、`AnimationRegistry` 和 `PlayAnimationNode`。
 - PropLayer 物品系统：支持 `AssetItem type="prop"`、`ShowPropNode`、`HidePropNode`、`snapshot.props`、prop 动画模块和 Web 导出。
 - Showcase Demo：`examples/showcase-game` 用于验证真实/半真实素材、动画模块、prop、音频、变量分支和 Web 导出。
-- 编辑器工作台 UI：`apps/editor` 已具备顶部菜单/工具栏、左侧资源管理器、中央大场景预览、脚本指令表、右侧检查器和底部状态栏。
+- 编辑器工作台 UI：`apps/editor` 已具备顶部菜单栏、左侧资源管理器、中央大场景预览、脚本指令表、右侧检查器和底部状态栏。
 
 ## 实验功能
 

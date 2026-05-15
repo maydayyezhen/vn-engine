@@ -6,7 +6,7 @@ body {
 
 .editor-workbench {
   display: grid;
-  grid-template-rows: var(--editor-menu-height) var(--editor-toolbar-height) minmax(0, 1fr) var(--editor-status-height);
+  grid-template-rows: var(--editor-menu-height) minmax(0, 1fr) var(--editor-status-height);
   width: 100vw;
   height: 100vh;
   min-width: 1180px;
@@ -15,7 +15,6 @@ body {
 }
 
 .workbench-menu,
-.workbench-toolbar,
 .workbench-statusbar {
   min-width: 0;
 }
