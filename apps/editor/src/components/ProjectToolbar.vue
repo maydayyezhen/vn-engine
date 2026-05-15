@@ -28,6 +28,7 @@ type ToolbarCommand =
   | "importProject"
   | "exportProject"
   | "resetDemo"
+  | "loadShowcase"
   | "createDesktopProject"
   | "openDesktopProject"
   | "saveDesktopProject"
@@ -41,6 +42,7 @@ const emit = defineEmits<{
   exportProject: [];
   /** 重置为 demo 项目。 */
   resetDemo: [];
+  loadShowcase: [];
   /** 重新开始预览。 */
   restartPreview: [];
   /** 新建桌面工程。 */
@@ -71,6 +73,7 @@ function handleCommand(command: string | number | object): void {
   if (value === "importProject") emit("importProject");
   if (value === "exportProject") emit("exportProject");
   if (value === "resetDemo") emit("resetDemo");
+  if (value === "loadShowcase") emit("loadShowcase");
   if (value === "createDesktopProject") emit("createDesktopProject");
   if (value === "openDesktopProject") emit("openDesktopProject");
   if (value === "saveDesktopProject") emit("saveDesktopProject");
@@ -116,6 +119,7 @@ function handleCommand(command: string | number | object): void {
                 <el-dropdown-item command="importProject">导入项目 JSON</el-dropdown-item>
                 <el-dropdown-item command="exportProject">导出项目 JSON</el-dropdown-item>
                 <el-dropdown-item divided command="resetDemo">重置为 demo</el-dropdown-item>
+                <el-dropdown-item command="loadShowcase">加载 Showcase Demo</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>

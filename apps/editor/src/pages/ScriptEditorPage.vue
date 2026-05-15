@@ -25,7 +25,7 @@ import { editorStore, setActiveView, setDirty, setValidationResult, type EditorV
 import { currentNode, currentScript, projectStore, replaceProject, selectNode, selectScript, setProject } from "../stores/projectStore";
 import { canRedo, canUndo, popRedo, popUndo, pushHistory, resetHistory } from "../stores/historyStore";
 import { addAsset, createEmptyAsset } from "../services/assetEditService";
-import { loadDemoProject } from "../services/projectLoadService";
+import { loadDemoProject, loadShowcaseProject } from "../services/projectLoadService";
 import {
   createProjectExportFileName,
   downloadProjectJson,
@@ -414,6 +414,15 @@ async function handleResetDemo(): Promise<void> {
   ElMessage.success("已重置为 demo 项目。");
 }
 
+/** 加载 Showcase Demo 项目。 */
+async function handleLoadShowcase(): Promise<void> {
+  if (!(await confirmDiscardIfDirty("加载 Showcase Demo"))) return;
+  loadProjectIntoEditor(loadShowcaseProject(), false);
+  desktopProjectRoot.value = null;
+  setActiveView("script");
+  ElMessage.success("已加载 Showcase Demo。");
+}
+
 /** 从顶部工具栏重新开始预览。 */
 function handleRestartPreview(): void {
   previewPanelRef.value?.restart();
@@ -558,6 +567,7 @@ onBeforeUnmount(() => {
         @import-project="handleImportProject"
         @export-project="handleExportProject"
         @reset-demo="handleResetDemo"
+        @load-showcase="handleLoadShowcase"
         @restart-preview="handleRestartPreview"
         @create-desktop-project="handleCreateDesktopProject"
         @open-desktop-project="handleOpenDesktopProject"

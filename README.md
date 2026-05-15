@@ -183,3 +183,30 @@ pnpm build
 `AnimationRegistry` 负责注册和查询动画模块。内置动画包括 `character.softEnter`、`character.nervousShake`、`character.breathe`、`camera.softZoom`、`camera.shakeLight`、`screen.flashWhite`、`screen.fadeToBlack` 和 `particle.snow`。编辑器根据动画模块的 `targetSlots` 和 `paramsSchema` 生成目标和参数表单；播放器把 `vn-core` 输出的一次性 pending animation 交给 `vn-renderer-pixi` 执行，完成后再由播放器调用运行时继续推进。
 
 本能力不是复杂关键帧时间轴、不是节点图、不是正式插件市场，也没有接入 AI API。`animations/custom` 目录仅用于可信代码的开发者模式实验。
+
+## Showcase Demo
+
+第十五轮新增 `examples/showcase-game`：`《无人站的潮汐信》Showcase Demo`。它用于验证当前引擎在接近真实项目时的实际表现，覆盖背景、透明角色立绘、多表情、BGM、音效、语音占位、变量分支、Label 跳转、`PlayAnimationNode`、存档读档和 Web 导出包。
+
+准备素材和浏览器访问副本：
+
+```bash
+pnpm prepare:showcase-assets
+```
+
+运行 Showcase：
+
+```bash
+pnpm dev:player:showcase
+```
+
+打开 `http://localhost:5173/?project=showcase`。编辑器顶部“项目操作”中也提供“加载 Showcase Demo”入口。
+
+导出 Showcase Web 包：
+
+```bash
+pnpm build
+pnpm export:showcase-web
+```
+
+导出目录为 `dist/export/showcase-web-game/`。当前仓库内置的是可运行的本地占位素材；真实素材替换说明见 `examples/showcase-game/MANUAL_DOWNLOAD.md`，素材来源与许可记录见 `examples/showcase-game/CREDITS.md`。

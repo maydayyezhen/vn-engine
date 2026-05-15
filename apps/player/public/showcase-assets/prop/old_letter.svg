@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320">
+  <rect width="480" height="320" fill="none"/>
+  <rect x="64" y="56" width="352" height="208" rx="18" fill="#f8fafc" stroke="#334155" stroke-width="8"/>
+  <text x="240" y="150" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="72" fill="#475569">✉</text>
+  <text x="240" y="218" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="32" fill="#0f172a">Old Letter</text>
+</svg>

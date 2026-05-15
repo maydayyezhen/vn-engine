@@ -1,0 +1,622 @@
+{
+  "id": "showcase-game",
+  "name": "无人站的潮汐信 Showcase Demo",
+  "version": "0.1.0",
+  "startScriptId": "start",
+  "variables": [
+    {
+      "name": "openedLetter",
+      "type": "boolean",
+      "defaultValue": false,
+      "description": "玩家是否打开旧信。"
+    },
+    {
+      "name": "affection",
+      "type": "number",
+      "defaultValue": 0,
+      "description": "短篇展示用好感度。"
+    },
+    {
+      "name": "endingHint",
+      "type": "string",
+      "defaultValue": "",
+      "description": "结尾提示文本。"
+    }
+  ],
+  "assets": {
+    "items": [
+      {
+        "id": "bg-station-evening",
+        "name": "黄昏无人站",
+        "type": "background",
+        "path": "/showcase-assets/background/station_evening.svg",
+        "description": "Showcase占位背景，可替换为Potat0Master真实素材。"
+      },
+      {
+        "id": "bg-classroom-day",
+        "name": "白日教室",
+        "type": "background",
+        "path": "/showcase-assets/background/classroom_day.svg",
+        "description": "Showcase占位背景，可替换为Potat0Master真实素材。"
+      },
+      {
+        "id": "bg-hallway-day",
+        "name": "白日走廊",
+        "type": "background",
+        "path": "/showcase-assets/background/hallway_day.svg",
+        "description": "Showcase占位背景，可替换为Potat0Master真实素材。"
+      },
+      {
+        "id": "bg-seaside-night",
+        "name": "夜色海边",
+        "type": "background",
+        "path": "/showcase-assets/background/seaside_night.svg",
+        "description": "Showcase占位背景，可替换为Potat0Master真实素材。"
+      },
+      {
+        "id": "heroine-normal",
+        "name": "潮见澪 普通",
+        "type": "character",
+        "path": "/showcase-assets/character/heroine/normal.svg",
+        "description": "项目脚本生成的透明占位立绘。"
+      },
+      {
+        "id": "heroine-smile",
+        "name": "潮见澪 微笑",
+        "type": "character",
+        "path": "/showcase-assets/character/heroine/smile.svg",
+        "description": "项目脚本生成的透明占位立绘。"
+      },
+      {
+        "id": "heroine-sad",
+        "name": "潮见澪 难过",
+        "type": "character",
+        "path": "/showcase-assets/character/heroine/sad.svg",
+        "description": "项目脚本生成的透明占位立绘。"
+      },
+      {
+        "id": "heroine-surprised",
+        "name": "潮见澪 惊讶",
+        "type": "character",
+        "path": "/showcase-assets/character/heroine/surprised.svg",
+        "description": "项目脚本生成的透明占位立绘。"
+      },
+      {
+        "id": "prop-old-letter",
+        "name": "旧信",
+        "type": "image",
+        "path": "/showcase-assets/prop/old_letter.svg",
+        "description": "项目脚本生成的占位道具。当前引擎暂无正式PropLayer。"
+      },
+      {
+        "id": "prop-cassette-tape",
+        "name": "录音带",
+        "type": "image",
+        "path": "/showcase-assets/prop/cassette_tape.svg",
+        "description": "项目脚本生成的占位道具。当前引擎暂无正式PropLayer。"
+      },
+      {
+        "id": "bgm-showcase-theme",
+        "name": "潮汐主题BGM",
+        "type": "bgm",
+        "path": "/showcase-assets/audio/bgm/showcase_theme.wav",
+        "description": "项目脚本生成的可复现占位BGM。"
+      },
+      {
+        "id": "bgm-memory-theme",
+        "name": "回忆主题BGM",
+        "type": "bgm",
+        "path": "/showcase-assets/audio/bgm/memory_theme.wav",
+        "description": "项目脚本生成的可复现占位BGM。"
+      },
+      {
+        "id": "sound-click",
+        "name": "点击提示音",
+        "type": "sound",
+        "path": "/showcase-assets/audio/sound/click.wav",
+        "description": "项目脚本生成的占位音效。"
+      },
+      {
+        "id": "sound-page",
+        "name": "翻页声",
+        "type": "sound",
+        "path": "/showcase-assets/audio/sound/page.wav",
+        "description": "项目脚本生成的占位音效。"
+      },
+      {
+        "id": "sound-flash",
+        "name": "闪回声",
+        "type": "sound",
+        "path": "/showcase-assets/audio/sound/flash.wav",
+        "description": "项目脚本生成的占位音效。"
+      },
+      {
+        "id": "voice-heroine-001",
+        "name": "潮见澪 占位语音",
+        "type": "voice",
+        "path": "/showcase-assets/audio/voice/heroine_001.wav",
+        "description": "项目脚本生成的占位语音，不使用TTS API。"
+      }
+    ]
+  },
+  "characters": [
+    {
+      "id": "mio",
+      "name": "潮见澪",
+      "displayName": "潮见澪",
+      "defaultAssetId": "heroine-normal",
+      "color": "#6aa7ff",
+      "description": "Showcase Demo女主角。",
+      "expressions": [
+        {
+          "id": "normal",
+          "name": "普通",
+          "assetId": "heroine-normal"
+        },
+        {
+          "id": "smile",
+          "name": "微笑",
+          "assetId": "heroine-smile"
+        },
+        {
+          "id": "sad",
+          "name": "难过",
+          "assetId": "heroine-sad"
+        },
+        {
+          "id": "surprised",
+          "name": "惊讶",
+          "assetId": "heroine-surprised"
+        }
+      ]
+    }
+  ],
+  "scripts": [
+    {
+      "id": "start",
+      "name": "无人站的潮汐信",
+      "nodes": [
+        {
+          "id": "label-start",
+          "type": "label",
+          "name": "start",
+          "description": "Showcase开场。"
+        },
+        {
+          "id": "scene-station",
+          "type": "scene",
+          "backgroundAssetId": "bg-station-evening",
+          "transition": "fade",
+          "transitionDurationMs": 700
+        },
+        {
+          "id": "play-bgm-showcase",
+          "type": "playAudio",
+          "channel": "bgm",
+          "assetId": "bgm-showcase-theme",
+          "loop": true
+        },
+        {
+          "id": "narration-line-1",
+          "type": "narration",
+          "text": "夏末的海风穿过无人站，像一封迟到很久的信。",
+          "textSpeed": 38,
+          "waitForClick": true
+        },
+        {
+          "id": "narration-line-2",
+          "type": "narration",
+          "text": "支线铁路明天废止。今天，是最后一班黄昏车。",
+          "textSpeed": 38,
+          "waitForClick": true
+        },
+        {
+          "id": "show-mio",
+          "type": "showCharacter",
+          "characterId": "mio",
+          "assetId": "heroine-normal",
+          "expression": "normal",
+          "position": "left",
+          "enterEffect": "none",
+          "transitionDurationMs": 0,
+          "scale": 1,
+          "opacity": 1,
+          "zIndex": 1,
+          "flipX": false
+        },
+        {
+          "id": "anim-mio-enter",
+          "type": "playAnimation",
+          "animationId": "character.softEnter",
+          "targets": {
+            "main": {
+              "type": "character",
+              "id": "mio"
+            }
+          },
+          "params": {
+            "durationMs": 800,
+            "offsetX": -160,
+            "startScale": 0.94,
+            "endScale": 1
+          },
+          "waitForCompletion": true,
+          "autoNext": true
+        },
+        {
+          "id": "voice-mio-001",
+          "type": "playAudio",
+          "channel": "voice",
+          "assetId": "voice-heroine-001",
+          "loop": false
+        },
+        {
+          "id": "dialogue-mio-greeting",
+          "type": "dialogue",
+          "characterId": "mio",
+          "text": "你真的来了。我还以为，这座车站会替我们把话都吞掉。",
+          "textSpeed": 42,
+          "waitForClick": true
+        },
+        {
+          "id": "set-affection-start",
+          "type": "setVariable",
+          "variableName": "affection",
+          "operator": "add",
+          "value": 1
+        },
+        {
+          "id": "show-mio-smile",
+          "type": "showCharacter",
+          "characterId": "mio",
+          "assetId": "heroine-smile",
+          "expression": "smile",
+          "position": "left",
+          "transitionDurationMs": 0,
+          "scale": 1,
+          "opacity": 1,
+          "zIndex": 1,
+          "flipX": false
+        },
+        {
+          "id": "dialogue-mio-smile",
+          "type": "dialogue",
+          "characterId": "mio",
+          "text": "别露出那种表情。只是废站，又不是世界末日。",
+          "textSpeed": 42,
+          "waitForClick": true
+        },
+        {
+          "id": "anim-camera-zoom",
+          "type": "playAnimation",
+          "animationId": "camera.softZoom",
+          "targets": {
+            "camera": {
+              "type": "camera"
+            }
+          },
+          "params": {
+            "durationMs": 650,
+            "zoom": 1.06
+          },
+          "waitForCompletion": false,
+          "autoNext": true
+        },
+        {
+          "id": "show-mio-sad",
+          "type": "showCharacter",
+          "characterId": "mio",
+          "assetId": "heroine-sad",
+          "expression": "sad",
+          "position": "left",
+          "transitionDurationMs": 0,
+          "scale": 1,
+          "opacity": 1,
+          "zIndex": 1,
+          "flipX": false
+        },
+        {
+          "id": "dialogue-mio-letter",
+          "type": "dialogue",
+          "characterId": "mio",
+          "text": "我在候车室找到一封旧信。署名……是三年前的你。",
+          "textSpeed": 42,
+          "waitForClick": true
+        },
+        {
+          "id": "sound-page",
+          "type": "playAudio",
+          "channel": "sound",
+          "assetId": "sound-page",
+          "loop": false
+        },
+        {
+          "id": "anim-screen-flash",
+          "type": "playAnimation",
+          "animationId": "screen.flashWhite",
+          "targets": {
+            "screen": {
+              "type": "screen"
+            }
+          },
+          "params": {
+            "durationMs": 420,
+            "intensity": 0.7
+          },
+          "waitForCompletion": true,
+          "autoNext": true
+        },
+        {
+          "id": "scene-classroom",
+          "type": "scene",
+          "backgroundAssetId": "bg-classroom-day",
+          "transition": "fade",
+          "transitionDurationMs": 500
+        },
+        {
+          "id": "narration-memory",
+          "type": "narration",
+          "text": "纸页翻开的瞬间，走廊尽头的蝉声又回到了耳边。",
+          "textSpeed": 36,
+          "waitForClick": true
+        },
+        {
+          "id": "scene-hallway",
+          "type": "scene",
+          "backgroundAssetId": "bg-hallway-day",
+          "transition": "slideLeft",
+          "transitionDurationMs": 500
+        },
+        {
+          "id": "show-mio-surprised",
+          "type": "showCharacter",
+          "characterId": "mio",
+          "assetId": "heroine-surprised",
+          "expression": "surprised",
+          "position": "center",
+          "transitionDurationMs": 0,
+          "scale": 1,
+          "opacity": 1,
+          "zIndex": 1,
+          "flipX": false
+        },
+        {
+          "id": "dialogue-mio-surprised",
+          "type": "dialogue",
+          "characterId": "mio",
+          "text": "原来那天你没有离开。你只是……没来得及说出口。",
+          "textSpeed": 42,
+          "waitForClick": true
+        },
+        {
+          "id": "anim-mio-shake",
+          "type": "playAnimation",
+          "animationId": "character.nervousShake",
+          "targets": {
+            "main": {
+              "type": "character",
+              "id": "mio"
+            }
+          },
+          "params": {
+            "durationMs": 450,
+            "amplitude": 10,
+            "repeat": 5
+          },
+          "waitForCompletion": true,
+          "autoNext": true
+        },
+        {
+          "id": "choice-letter",
+          "type": "choice",
+          "prompt": "旧信还在掌心。",
+          "options": [
+            {
+              "id": "open-letter",
+              "text": "打开那封信",
+              "setVariables": {
+                "openedLetter": true,
+                "endingHint": "letter"
+              },
+              "target": {
+                "scriptId": "start",
+                "label": "after-choice"
+              }
+            },
+            {
+              "id": "keep-letter",
+              "text": "先把它收起来",
+              "setVariables": {
+                "openedLetter": false,
+                "endingHint": "silence"
+              },
+              "target": {
+                "scriptId": "start",
+                "label": "after-choice"
+              }
+            }
+          ]
+        },
+        {
+          "id": "label-after-choice",
+          "type": "label",
+          "name": "after-choice",
+          "description": "选择后统一判断。"
+        },
+        {
+          "id": "condition-ending",
+          "type": "condition",
+          "condition": {
+            "kind": "and",
+            "conditions": [
+              {
+                "kind": "variable",
+                "variableName": "openedLetter",
+                "operator": "eq",
+                "value": true
+              },
+              {
+                "kind": "variable",
+                "variableName": "affection",
+                "operator": "gte",
+                "value": 1
+              }
+            ]
+          },
+          "trueTarget": {
+            "scriptId": "start",
+            "label": "ending-open"
+          },
+          "falseTarget": {
+            "scriptId": "start",
+            "label": "ending-keep"
+          }
+        },
+        {
+          "id": "label-ending-open",
+          "type": "label",
+          "name": "ending-open",
+          "description": "打开信结尾。"
+        },
+        {
+          "id": "scene-night-open",
+          "type": "scene",
+          "backgroundAssetId": "bg-seaside-night",
+          "transition": "fade",
+          "transitionDurationMs": 800
+        },
+        {
+          "id": "play-memory-bgm",
+          "type": "playAudio",
+          "channel": "bgm",
+          "assetId": "bgm-memory-theme",
+          "loop": true
+        },
+        {
+          "id": "show-mio-open-smile",
+          "type": "showCharacter",
+          "characterId": "mio",
+          "assetId": "heroine-smile",
+          "expression": "smile",
+          "position": "center",
+          "transitionDurationMs": 0,
+          "scale": 1,
+          "opacity": 1,
+          "zIndex": 1,
+          "flipX": false
+        },
+        {
+          "id": "dialogue-mio-open",
+          "type": "dialogue",
+          "characterId": "mio",
+          "text": "如果那封信还能抵达，那我们就不算真正错过。",
+          "textSpeed": 42,
+          "waitForClick": true
+        },
+        {
+          "id": "anim-fade-black-open",
+          "type": "playAnimation",
+          "animationId": "screen.fadeToBlack",
+          "targets": {
+            "screen": {
+              "type": "screen"
+            }
+          },
+          "params": {
+            "direction": "in",
+            "durationMs": 900,
+            "opacity": 0.75
+          },
+          "waitForCompletion": true,
+          "autoNext": true
+        },
+        {
+          "id": "stop-bgm-open",
+          "type": "stopAudio",
+          "channel": "bgm"
+        },
+        {
+          "id": "narration-ending-open",
+          "type": "narration",
+          "text": "最后一班车驶过海堤时，潮声把没说出口的话，轻轻还给了我们。",
+          "textSpeed": 34,
+          "waitForClick": true
+        },
+        {
+          "id": "jump-end-open",
+          "type": "jump",
+          "target": {
+            "scriptId": "start",
+            "label": "the-end"
+          }
+        },
+        {
+          "id": "label-ending-keep",
+          "type": "label",
+          "name": "ending-keep",
+          "description": "收起信结尾。"
+        },
+        {
+          "id": "scene-night-keep",
+          "type": "scene",
+          "backgroundAssetId": "bg-seaside-night",
+          "transition": "slideRight",
+          "transitionDurationMs": 800
+        },
+        {
+          "id": "show-mio-keep-sad",
+          "type": "showCharacter",
+          "characterId": "mio",
+          "assetId": "heroine-sad",
+          "expression": "sad",
+          "position": "center",
+          "transitionDurationMs": 0,
+          "scale": 1,
+          "opacity": 1,
+          "zIndex": 1,
+          "flipX": false
+        },
+        {
+          "id": "dialogue-mio-keep",
+          "type": "dialogue",
+          "characterId": "mio",
+          "text": "那就等明天吧。不是所有告别，都必须在今天拆封。",
+          "textSpeed": 42,
+          "waitForClick": true
+        },
+        {
+          "id": "hide-mio",
+          "type": "hideCharacter",
+          "characterId": "mio",
+          "exitEffect": "fadeOut",
+          "transitionDurationMs": 600
+        },
+        {
+          "id": "stop-bgm-keep",
+          "type": "stopAudio",
+          "channel": "bgm"
+        },
+        {
+          "id": "narration-ending-keep",
+          "type": "narration",
+          "text": "她的脚步声消失在站台尽头，旧信仍带着黄昏的温度。",
+          "textSpeed": 34,
+          "waitForClick": true
+        },
+        {
+          "id": "label-the-end",
+          "type": "label",
+          "name": "the-end",
+          "description": "Showcase结束。"
+        },
+        {
+          "id": "narration-end",
+          "type": "narration",
+          "text": "《无人站的潮汐信》Showcase Demo 完。",
+          "textSpeed": 34,
+          "waitForClick": true
+        }
+      ]
+    }
+  ]
+}

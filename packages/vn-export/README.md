@@ -23,3 +23,8 @@
 - 不接 Tauri 文件系统。
 - 不支持任意本地绝对路径素材复制。
 - 不把素材二进制或 base64 写进项目 JSON。
+## Showcase Web 导出
+
+根目录脚本 `pnpm export:showcase-web` 会把 `apps/player/dist`、Showcase 的 `ProjectBundle`、`game/export-manifest.json`、`game/CREDITS.md` 和 `apps/player/public/showcase-assets` 复制到 `dist/export/showcase-web-game/`。
+
+导出包仍需要通过静态服务器运行，不建议直接双击 `index.html`。当前 Showcase 使用 `/showcase-assets/...` 浏览器路径；真实素材替换后也需要保持导出包内路径可访问。

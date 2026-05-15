@@ -71,3 +71,13 @@ Demo 素材：
 播放器继续只通过 `vn-core` 推进剧情。遇到 `PlayAnimationNode` 时，`VNRuntime` 输出一次性 `pendingAnimations`；`GameStage` 把快照交给 `PixiVNRenderer`；渲染器通过 `AnimationRegistry` 查找并播放动画模块。若快照处于等待状态，播放器会在渲染器完成回调后调用 `VNRuntime.completeAnimation()`，渲染器不会直接推进剧情。
 
 存档使用稳定运行时状态，不保存 pending animation，也不会在读档后重播一次性动画。
+
+## Showcase Demo
+
+播放器支持通过 URL 参数加载内置 Showcase 工程：
+
+```text
+http://localhost:5173/?project=showcase
+```
+
+根目录脚本 `pnpm dev:player:showcase` 会启动同一个播放器开发服务。Showcase 资源的浏览器可访问副本由 `pnpm prepare:showcase-assets` 生成到 `apps/player/public/showcase-assets/`。

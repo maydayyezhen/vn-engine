@@ -6,11 +6,14 @@
   "type": "module",
   "scripts": {
     "dev:player": "pnpm --filter @vn-engine/player dev",
+    "dev:player:showcase": "pnpm --filter @vn-engine/player dev",
     "dev:editor": "pnpm --filter @vn-engine/editor dev",
     "dev:desktop": "pnpm --filter @vn-engine/desktop dev",
     "build:desktop": "pnpm --filter @vn-engine/desktop build",
     "generate:demo-audio": "node scripts/generate-demo-audio.mjs",
+    "prepare:showcase-assets": "node scripts/prepare-showcase-assets.mjs",
     "export:demo-web": "node scripts/export-demo-web-game.mjs",
+    "export:showcase-web": "node scripts/export-showcase-web-game.mjs",
     "build": "pnpm -r build",
     "test": "pnpm --filter @vn-engine/vn-schema test && pnpm --filter @vn-engine/vn-core test && pnpm --filter @vn-engine/vn-project test && pnpm --filter @vn-engine/vn-renderer-pixi test && pnpm --filter @vn-engine/vn-audio test && pnpm --filter @vn-engine/vn-ui-runtime test && pnpm --filter @vn-engine/vn-export test && pnpm --filter @vn-engine/player test && pnpm --filter @vn-engine/editor test",
     "typecheck": "pnpm -r typecheck"

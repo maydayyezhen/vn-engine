@@ -137,3 +137,9 @@
 当前新增 `AnimationModule + AnimationRegistry + PlayAnimationNode` 链路。可复用动画以 TypeScript 模块存在于 `vn-renderer-pixi`，项目 JSON 只引用 `animationId`、`targets` 和 `params`。编辑器根据动画元数据生成表单，播放器通过渲染器执行动画并在完成后由 `vn-core` 继续推进。
 
 已包含内置动画：角色柔和入场、角色轻抖、角色呼吸、镜头推进、镜头轻震、白色闪屏、淡出至黑、雪花粒子。当前仍不是关键帧时间轴、节点图、正式插件市场，也没有接入 AI API。
+
+## 第十五轮：Showcase Demo
+
+当前新增 `examples/showcase-game`，用于以完整短篇工程验证播放器、编辑器、动画模块、音频、变量分支、存档读档和 Web 导出包。Showcase 使用本地脚本生成的可运行占位素材，并提供 Potat0Master 与 Kenney 免费素材的手动替换说明和 credits 记录。
+
+本轮没有新增引擎大功能，没有重做 UI，也没有接入 AI API。后续更适合继续补 PropLayer、正式素材导入体验和 UI/UX 总体重构。

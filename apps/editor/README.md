@@ -70,3 +70,7 @@ Web 导出限制：
 编辑器现在支持新增和编辑 `PlayAnimationNode`。节点工具栏的“新增动画”会创建一个代码型动画节点，属性面板从 `vn-renderer-pixi` 的 `AnimationRegistry` 读取动画元数据，并根据 `targetSlots`、`paramsSchema` 自动生成目标和参数表单。
 
 当前动画模块编辑只保存 `animationId`、`targets`、`params`、`waitForCompletion` 和 `autoNext` 到项目 JSON。编辑器不会保存动画代码，也不会执行来自不可信来源的任意 JS。自定义动画代码需要放在 renderer 的可信代码目录中并经过 typecheck/build。
+
+## Showcase Demo
+
+编辑器顶部“项目操作”菜单提供“加载 Showcase Demo”。它会从 `examples/showcase-game` 读取完整项目和 `scripts/start.vn.json`，用于检查素材库、变量、剧情节点、动画节点和预览链路。
