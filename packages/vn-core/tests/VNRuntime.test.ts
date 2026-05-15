@@ -329,14 +329,21 @@ describe("VNRuntime", () => {
     const runtime = new VNRuntime(createPropProject());
     const first = runtime.start();
 
+    expect(first.currentNodeId).toBe("show-letter");
+    expect(first.isWaitingForActionCompletion).toBe(true);
     expect(first.props).toHaveLength(1);
     expect(first.props[0]).toMatchObject({ propId: "prop-letter", assetId: "prop-letter" });
-    expect(first.pendingAnimations[0]).toMatchObject({ animationId: "prop.revealCenter" });
+    expect(first.pendingAnimations[0]).toMatchObject({ animationId: "prop.revealCenter", waitForCompletion: true });
 
-    const second = runtime.next();
-    expect(second.currentNodeId).toBe("dialogue-second");
-    expect(second.props).toHaveLength(0);
-    expect(second.pendingAnimations.map((animation) => animation.animationId)).toEqual(["prop.fadeOut"]);
+    const dialogue = runtime.completeAnimation();
+    expect(dialogue.currentNodeId).toBe("dialogue-first");
+    expect(dialogue.props).toHaveLength(1);
+    expect(dialogue.pendingAnimations).toHaveLength(0);
+
+    const hide = runtime.next();
+    expect(hide.currentNodeId).toBe("hide-letter");
+    expect(hide.props).toHaveLength(0);
+    expect(hide.pendingAnimations.map((animation) => animation.animationId)).toEqual(["prop.fadeOut"]);
   });
 
   it("getState/loadState 能恢复物品静态状态且不重播入场动画", () => {
@@ -610,6 +617,49 @@ describe("VNRuntime", () => {
     const restored = new VNRuntime(project);
     const restoredSnapshot = restored.loadState(runtime.getState());
     expect(restoredSnapshot.pendingAnimations).toHaveLength(0);
+  });
+
+  it("ShowPropNode 带入场动画时会等待一次，普通对话不会重复触发", () => {
+    const runtime = new VNRuntime(createPropProject());
+    const waiting = runtime.start();
+    expect(waiting.currentNodeId).toBe("show-letter");
+    expect(waiting.type).toBe("action");
+    expect(waiting.isWaitingForActionCompletion).toBe(true);
+    expect(waiting.props[0]).toMatchObject({ propId: "prop-letter", assetId: "prop-letter" });
+    expect(waiting.pendingAnimations[0]).toMatchObject({ animationId: "prop.revealCenter", waitForCompletion: true });
+
+    const blocked = runtime.next();
+    expect(blocked.currentNodeId).toBe("show-letter");
+
+    const dialogue = runtime.completeAnimation();
+    expect(dialogue.currentNodeId).toBe("dialogue-first");
+    expect(dialogue.props[0]).toMatchObject({ propId: "prop-letter" });
+    expect(dialogue.pendingAnimations).toHaveLength(0);
+
+    const hideWaiting = runtime.next();
+    expect(hideWaiting.currentNodeId).toBe("hide-letter");
+    expect(hideWaiting.isWaitingForActionCompletion).toBe(true);
+    expect(hideWaiting.pendingAnimations[0]).toMatchObject({ animationId: "prop.fadeOut", waitForCompletion: true });
+
+    const afterHide = runtime.completeAnimation();
+    expect(afterHide.currentNodeId).toBe("dialogue-second");
+    expect(afterHide.props).toHaveLength(0);
+    expect(afterHide.pendingAnimations).toHaveLength(0);
+  });
+
+  it("getSaveState/loadState 恢复物品时不会重播入场动画", () => {
+    const runtime = new VNRuntime(createPropProject());
+    runtime.start();
+    const saveState = runtime.getSaveState();
+    expect(saveState.isWaitingForActionCompletion).toBe(false);
+    expect(saveState.pendingAnimations).toHaveLength(0);
+    expect(saveState.props[0]).toMatchObject({ propId: "prop-letter" });
+
+    const restored = new VNRuntime(createPropProject());
+    const snapshot = restored.loadState(saveState);
+    expect(snapshot.currentNodeId).toBe("dialogue-first");
+    expect(snapshot.props[0]).toMatchObject({ propId: "prop-letter" });
+    expect(snapshot.pendingAnimations).toHaveLength(0);
   });
 
   it("DialogueNode 和 NarrationNode 不会重复携带角色入场 pendingEffects", () => {

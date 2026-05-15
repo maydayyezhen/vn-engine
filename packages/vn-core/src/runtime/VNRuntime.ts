@@ -200,6 +200,18 @@ export class VNRuntime {
         const shouldWait = this.applyPlayAnimation(node);
         if (shouldWait) return this.showPlayAnimation(node);
       }
+      if (node.type === "showProp") {
+        const shouldWait = this.showProp(node);
+        if (shouldWait) return this.showPropAnimation(node.enterAnimationId ?? node.id);
+        this.state.currentNodeIndex += 1;
+        continue;
+      }
+      if (node.type === "hideProp") {
+        const shouldWait = this.hideProp(node);
+        if (shouldWait) return this.showPropAnimation(node.exitAnimationId ?? node.id);
+        this.state.currentNodeIndex += 1;
+        continue;
+      }
       this.applyAutoNode(node);
     }
     return this.getSnapshot();
@@ -382,8 +394,6 @@ export class VNRuntime {
     }
     if (node.type === "showCharacter") this.showCharacter(node);
     if (node.type === "hideCharacter") this.hideCharacter(node.characterId, node.exitEffect ?? "none", node.transitionDurationMs ?? 300);
-    if (node.type === "showProp") this.showProp(node);
-    if (node.type === "hideProp") this.hideProp(node);
     if (node.type === "camera") {
       this.state.camera = {
         zoom: node.zoom ?? 1,
@@ -532,7 +542,7 @@ export class VNRuntime {
   }
 
   /** 显示或更新物品状态，并把入场动画作为一次性事件交给渲染器。 */
-  private showProp(node: ShowPropNode): void {
+  private showProp(node: ShowPropNode): boolean {
     const previous = this.state.props.find((item) => item.propId === node.propId);
     const display: RuntimePropDisplay = {
       propId: node.propId,
@@ -547,6 +557,7 @@ export class VNRuntime {
       flipX: node.flipX ?? false
     };
     this.state.props = [...this.state.props.filter((item) => item.propId !== node.propId), display];
+    let shouldWait = false;
     if (!previous && node.enterAnimationId) {
       this.state.pendingEffects.push({
         id: this.createRuntimeEffectId("showProp", node.propId),
@@ -562,20 +573,24 @@ export class VNRuntime {
         animationId: node.enterAnimationId,
         targets: { prop: { type: "prop", id: node.propId } },
         params: node.enterParams ? { ...node.enterParams } : undefined,
-        waitForCompletion: false,
+        waitForCompletion: true,
         autoNext: true
       });
+      this.state.isWaitingForActionCompletion = true;
+      shouldWait = true;
     }
     this.addDebugEvent("action", `显示物品：${node.propId}`, this.state.currentScriptId, node.id);
+    return shouldWait;
   }
 
   /** 隐藏物品状态，并把退场动画作为一次性事件交给渲染器。 */
-  private hideProp(node: HidePropNode): void {
+  private hideProp(node: HidePropNode): boolean {
     const prop = this.state.props.find((item) => item.propId === node.propId);
     if (!prop) {
       this.addDebugEvent("error", `隐藏物品失败，物品不存在：${node.propId}`, this.state.currentScriptId, node.id);
-      return;
+      return false;
     }
+    let shouldWait = false;
     if (node.exitAnimationId) {
       this.state.pendingEffects.push({
         id: this.createRuntimeEffectId("hideProp", node.propId),
@@ -591,12 +606,15 @@ export class VNRuntime {
         animationId: node.exitAnimationId,
         targets: { prop: { type: "prop", id: node.propId } },
         params: node.exitParams ? { ...node.exitParams } : undefined,
-        waitForCompletion: false,
+        waitForCompletion: true,
         autoNext: true
       });
+      this.state.isWaitingForActionCompletion = true;
+      shouldWait = true;
     }
     this.state.props = this.state.props.filter((item) => item.propId !== node.propId);
     this.addDebugEvent("action", `隐藏物品：${node.propId}`, this.state.currentScriptId, node.id);
+    return shouldWait;
   }
 
   /** 生成一次性演出效果 id。 */
@@ -639,6 +657,14 @@ export class VNRuntime {
     this.state.isWaitingChoice = false;
     this.state.variables = this.variables.snapshot();
     this.snapshot = this.createSnapshot("action", null, `动画：${node.animationId}`, []);
+    return this.getSnapshot();
+  }
+
+  /** 创建物品入场或退场动画等待快照。 */
+  private showPropAnimation(animationId: string): RuntimeSnapshot {
+    this.state.isWaitingChoice = false;
+    this.state.variables = this.variables.snapshot();
+    this.snapshot = this.createSnapshot("action", null, `动画：${animationId}`, []);
     return this.getSnapshot();
   }
 
