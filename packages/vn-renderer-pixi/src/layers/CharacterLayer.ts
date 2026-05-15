@@ -11,6 +11,8 @@ export class CharacterLayer {
 
   /** 当前动画编号，用于让旧动画失效。 */
   private animationToken = 0;
+  /** 当前静态角色渲染键，用于避免普通对话刷新时重建立绘。 */
+  private currentRenderKey = "";
   /** 已消费的一次性角色演出效果 id。 */
   private readonly consumedEffectIds = new Set<string>();
 
@@ -24,11 +26,16 @@ export class CharacterLayer {
 
   /** 根据当前角色显示状态渲染角色。 */
   async render(characters: ResolvedCharacterResource[], size: VNRenderSize): Promise<void> {
+    const sortedCharacters = sortCharactersByZIndex(characters);
+    const renderKey = createCharacterLayerRenderKey(sortedCharacters, size);
+    const hasFreshEffect = sortedCharacters.some((character) => Boolean(character.effectId && !this.consumedEffectIds.has(character.effectId)));
+    if (this.currentRenderKey === renderKey && !hasFreshEffect) return;
+
     this.animationToken += 1;
     const token = this.animationToken;
     this.container.removeChildren().forEach((child) => child.destroy({ children: true }));
 
-    for (const character of sortCharactersByZIndex(characters)) {
+    for (const character of sortedCharacters) {
       const alreadyConsumed = Boolean(character.effectId && this.consumedEffectIds.has(character.effectId));
       if (alreadyConsumed && character.exitEffect) continue;
       if (character.exitEffect === "none" || (character.exitEffect && (character.transitionDurationMs ?? 300) <= 0)) continue;
@@ -48,6 +55,7 @@ export class CharacterLayer {
       this.container.addChild(sprite);
     }
 
+    this.currentRenderKey = renderKey;
     this.container.sortableChildren = true;
     this.container.sortChildren();
   }
@@ -95,4 +103,26 @@ export class CharacterLayer {
     };
     requestAnimationFrame(tick);
   }
+}
+
+/** 创建角色层静态渲染键，不包含一次性入场/退场效果。 */
+export function createCharacterLayerRenderKey(characters: ResolvedCharacterResource[], size: VNRenderSize): string {
+  return JSON.stringify({
+    width: size.width,
+    height: size.height,
+    characters: characters.map((character) => ({
+      characterId: character.characterId,
+      expressionId: character.expressionId,
+      assetId: character.assetId,
+      path: character.path,
+      position: character.position,
+      x: character.x,
+      y: character.y,
+      scale: character.scale,
+      opacity: character.opacity,
+      zIndex: character.zIndex,
+      flipX: character.flipX,
+      exiting: Boolean(character.exitEffect)
+    }))
+  });
 }

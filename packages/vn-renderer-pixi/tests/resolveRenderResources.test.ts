@@ -3,6 +3,7 @@ import { VNRuntime } from "@vn-engine/vn-core";
 import type { ScriptFile, VNProject } from "@vn-engine/vn-schema";
 import projectJson from "../../../examples/demo-game/project.vnproj.json";
 import startScriptJson from "../../../examples/demo-game/scripts/start.vn.json";
+import { createCharacterLayerRenderKey } from "../src/layers/CharacterLayer";
 import { resolveAudioResources, resolveBackgroundResource, resolveCharacterResources, resolveRenderResources } from "../src";
 import { normalizeCameraState, normalizeTransition, resolveCharacterLayout, resolveCharacterX, sortCharactersByZIndex } from "../src/utils/presentationLayout";
 
@@ -76,6 +77,44 @@ describe("resolveRenderResources", () => {
     expect(audio[0]?.assetId).toBe("bgm-main-theme");
     expect(audio[0]?.path).toBe("/demo-assets/audio/bgm-demo.wav");
     expect(audio[0]?.exists).toBe(true);
+  });
+  it("角色层静态渲染键忽略一次性入场 effect，避免普通文本刷新重建立绘", () => {
+    const project = createProject();
+    const baseCharacter = {
+      characterId: "lincheng",
+      expression: "smile",
+      position: "center" as const,
+      scale: 1,
+      opacity: 1,
+      zIndex: 0,
+      flipX: false
+    };
+    const baseSnapshot = {
+      ...createStartedSnapshot(),
+      characters: [baseCharacter],
+      pendingEffects: []
+    };
+    const effectSnapshot = {
+      ...baseSnapshot,
+      pendingEffects: [
+        {
+          id: "effect-enter-1",
+          type: "showCharacter" as const,
+          characterId: "lincheng",
+          enterEffect: "fadeIn" as const,
+          transitionDurationMs: 300,
+          character: {
+            ...baseCharacter,
+            enterEffect: "fadeIn" as const,
+            transitionDurationMs: 300
+          }
+        }
+      ]
+    };
+    const size = { width: 1280, height: 720 };
+    expect(createCharacterLayerRenderKey(resolveCharacterResources(project, effectSnapshot), size)).toBe(
+      createCharacterLayerRenderKey(resolveCharacterResources(project, baseSnapshot), size)
+    );
   });
 });
 
