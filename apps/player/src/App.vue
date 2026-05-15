@@ -278,12 +278,6 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="player-shell" :class="shellClass">
-    <aside class="landscape-notice" aria-label="横屏提示">
-      <div>
-        <strong>请横屏游玩</strong>
-        <p>手机竖屏空间不足，横屏后可以完整显示背景、人物和对话框。</p>
-      </div>
-    </aside>
     <section v-if="gameMode === 'playing'" class="player-main">
       <div class="stage-frame" @click="handleStageClick">
         <GameStage
