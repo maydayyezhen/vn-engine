@@ -38,6 +38,7 @@ import {
   addDialogueNodeAfter,
   addLabelNodeAfter,
   addNarrationNodeAfter,
+  addPlayAnimationNodeAfter,
   deleteNode,
   duplicateNode,
   selectSafeNodeAfterDelete,
@@ -260,6 +261,16 @@ function handleAddCamera(): void {
 function handleAddActionSequence(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addActionSequenceNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
+  applyProject(nextProject);
+  const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
+  const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
+  selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
+}
+
+/** 新增代码型动画节点。 */
+function handleAddPlayAnimation(): void {
+  const currentNodeId = projectStore.selectedNodeId;
+  const nextProject = addPlayAnimationNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
   applyProject(nextProject);
   const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
   const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
@@ -584,6 +595,7 @@ onBeforeUnmount(() => {
           @add-narration="handleAddNarration"
           @add-camera="handleAddCamera"
           @add-action-sequence="handleAddActionSequence"
+          @add-play-animation="handleAddPlayAnimation"
           @add-label="handleAddLabel"
           @duplicate-node="handleCopyNode"
           @cut-node="handleCutNode"

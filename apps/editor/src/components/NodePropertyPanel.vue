@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CharacterEnterEffect, CharacterExitEffect, CharacterPosition, ConditionBranch, ConditionExpression, NodeTarget, PlayAudioNode, StoryNode, TransitionType, VariableValue, VNProject } from "@vn-engine/vn-schema";
+import { createDefaultAnimationRegistry, normalizeAnimationParams } from "@vn-engine/vn-renderer-pixi";
 import {
   findAssetById,
   findCharacterById,
@@ -13,6 +14,9 @@ import { updateChoiceOption, updateConditionNode, updateNode, type StoryNodePatc
 import ConditionEditor from "./condition/ConditionEditor.vue";
 import TargetSelector from "./target/TargetSelector.vue";
 import ActionSequenceEditor from "./action/ActionSequenceEditor.vue";
+import AnimationSelector from "./animation/AnimationSelector.vue";
+import AnimationTargetForm from "./animation/AnimationTargetForm.vue";
+import AnimationParamForm from "./animation/AnimationParamForm.vue";
 import { createDefaultVariableValue, findVariable } from "../services/variableEditService";
 
 /** 组件属性。 */
@@ -53,6 +57,8 @@ const exitEffects: CharacterExitEffect[] = ["none", "fadeOut", "slideOutLeft", "
 
 /** 音频通道选项。 */
 const audioChannels: PlayAudioNode["channel"][] = ["bgm", "sound", "voice"];
+/** 动画模块注册表。 */
+const animationRegistry = createDefaultAnimationRegistry();
 
 /** 将表单字符串转换为基础变量值。 */
 function parseVariableValue(value: string): VariableValue {
@@ -231,6 +237,25 @@ function getMissingResourceWarning(): string {
   if (props.node.type === "playAudio" && !findAssetById(props.project, props.node.assetId)) return "当前音频素材不存在。";
   return "";
 }
+
+/** 获取当前动画节点选择的动画模块。 */
+function getSelectedAnimation() {
+  return props.node?.type === "playAnimation" ? animationRegistry.get(props.node.animationId) : undefined;
+}
+
+/** 更新动画 id，并按模块默认值重置目标和参数。 */
+function updatePlayAnimationId(animationId: string): void {
+  const animation = animationRegistry.get(animationId);
+  const targets = Object.fromEntries((animation?.targetSlots ?? []).map((slot) => [
+    slot.key,
+    {
+      type: slot.type,
+      id: slot.type === "character" ? props.project.characters[0]?.id : undefined
+    }
+  ]));
+  const params = animation ? normalizeAnimationParams(animation.paramsSchema, {}) : {};
+  applyPatch({ animationId, targets, params });
+}
 </script>
 
 <template>
@@ -397,6 +422,29 @@ function getMissingResourceWarning(): string {
 
       <template v-else-if="node.type === 'actionSequence'">
         <ActionSequenceEditor :project="project" :node="node" @update-node="applyPatch" />
+      </template>
+
+      <template v-else-if="node.type === 'playAnimation'">
+        <el-form-item label="动画模块">
+          <AnimationSelector :model-value="node.animationId" @update:model-value="updatePlayAnimationId" />
+        </el-form-item>
+        <AnimationTargetForm
+          :project="project"
+          :animation="getSelectedAnimation()"
+          :targets="node.targets"
+          @update-targets="(targets) => applyPatch({ targets })"
+        />
+        <AnimationParamForm
+          :animation="getSelectedAnimation()"
+          :params="node.params ?? {}"
+          @update-params="(params) => applyPatch({ params })"
+        />
+        <el-form-item label="waitForCompletion">
+          <el-switch :model-value="node.waitForCompletion ?? true" @update:model-value="(value: boolean) => applyPatch({ waitForCompletion: value })" />
+        </el-form-item>
+        <el-form-item label="autoNext">
+          <el-switch :model-value="node.autoNext ?? true" @update:model-value="(value: boolean) => applyPatch({ autoNext: value })" />
+        </el-form-item>
       </template>
 
       <template v-else-if="node.type === 'playAudio'">

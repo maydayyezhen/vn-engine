@@ -26,3 +26,8 @@
 ## 变量、条件和调试日志
 
 `VNRuntime.start()` 会从 `project.variables` 初始化默认变量。`SetVariableNode` 支持 `set/add/subtract`，`ConditionEvaluator` 支持结构化条件表达式和 `and/or/not` 组合。跳转目标可以解析到节点或 `LabelNode`。运行时会记录最近 100 条变量、条件、跳转和错误日志，并通过 `RuntimeSnapshot.debugLog` 和 `getDebugLog()` 暴露给编辑器与播放器调试面板。
+## PlayAnimationNode 运行时规则
+
+`vn-core` 遇到 `PlayAnimationNode` 时只生成一次性 `pendingAnimations`，不执行 Pixi 动画，也不保存动画代码。`waitForCompletion=true` 时，快照会进入等待状态；播放器在渲染器完成回调后调用 `completeAnimation()` 继续剧情。
+
+`getSaveState()` 不保存 pending animation，也不会恢复到动画执行中间态。`loadState()` 后角色、背景、镜头等静态状态直接恢复，不会重播旧动画。

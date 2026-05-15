@@ -4,6 +4,9 @@ export type { Character, CharacterExpression } from "./character";
 export type {
   ChoiceNode,
   ChoiceOption,
+  AnimationTargetRef,
+  AnimationTargets,
+  AnimationTargetType,
   ActionSequenceNode,
   BaseVNAction,
   CameraNode,
@@ -27,6 +30,7 @@ export type {
   NodeTarget,
   NodeType,
   ParallelAction,
+  PlayAnimationNode,
   PlayAudioAction,
   PlayAudioNode,
   SceneNode,

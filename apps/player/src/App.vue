@@ -97,6 +97,13 @@ function handleActionSequenceComplete(): void {
   snapshot.value = runtime.value.completeActionSequence();
 }
 
+/** 渲染器通知代码型动画完成后继续推进剧情。 */
+function handleAnimationComplete(): void {
+  if (gameMode.value !== "playing") return;
+  if (!snapshot.value.isWaitingForActionCompletion) return;
+  snapshot.value = runtime.value.completeAnimation();
+}
+
 /** 选择选项。 */
 function choose(optionId: string): void {
   if (gameMode.value !== "playing") return;
@@ -252,6 +259,7 @@ onMounted(async () => {
           :ui-hidden="gameMode === 'title'"
           @choose="choose"
           @action-sequence-complete="handleActionSequenceComplete"
+          @animation-complete="handleAnimationComplete"
         />
         <RuntimeToolbar
           v-if="gameMode === 'playing'"

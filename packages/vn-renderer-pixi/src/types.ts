@@ -27,6 +27,8 @@ export interface PixiVNRendererOptions {
   onChoose?: (optionId: string) => void;
   /** 动作序列播放完成时触发的回调。 */
   onActionSequenceComplete?: () => void;
+  /** 代码型动画模块播放完成时触发的回调。 */
+  onAnimationComplete?: () => void;
 }
 
 /** 单次渲染附加选项。 */

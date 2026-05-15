@@ -29,6 +29,8 @@ const ACTION_TYPES = ["wait", "scene", "showCharacter", "hideCharacter", "moveCh
 const ACTION_EASINGS = ["linear", "easeIn", "easeOut", "easeInOut"] as const;
 /** 鍚堟硶闊抽閫氶亾闆嗗悎銆?*/
 const AUDIO_CHANNELS = ["bgm", "sound", "voice", "sfx"] as const;
+/** 合法动画目标类型集合。 */
+const ANIMATION_TARGET_TYPES = ["character", "background", "camera", "screen", "particle", "prop", "group"] as const;
 /** 变量名格式。 */
 const VARIABLE_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
@@ -258,6 +260,34 @@ function validateActionSequenceNode(project: VNProject, node: Extract<StoryNode,
   for (const action of node.actions) validateAction(project, action, actionIds, errors, warnings, scriptId, node.id);
 }
 
+/** 校验代码型动画模块播放节点的基础字段，不依赖 renderer 注册表。 */
+function validatePlayAnimationNode(project: VNProject, node: Extract<StoryNode, { type: "playAnimation" }>, errors: ValidationIssue[], warnings: ValidationIssue[], scriptId: string): void {
+  if (!node.animationId || typeof node.animationId !== "string") {
+    errors.push(createError("PlayAnimationNode 缺少 animationId。", scriptId, node.id));
+  }
+  if (!node.targets || typeof node.targets !== "object" || Object.keys(node.targets).length === 0) {
+    errors.push(createError("PlayAnimationNode 至少需要一个动画目标。", scriptId, node.id));
+    return;
+  }
+
+  for (const [slotKey, target] of Object.entries(node.targets)) {
+    if (!target || typeof target !== "object" || !isOneOf(target.type, ANIMATION_TARGET_TYPES)) {
+      errors.push(createError(`动画目标 ${slotKey} 的 type 非法。`, scriptId, node.id));
+      continue;
+    }
+    if ((target.type === "character" || target.type === "background") && !target.id) {
+      errors.push(createError(`动画目标 ${slotKey} 缺少 id。`, scriptId, node.id));
+      continue;
+    }
+    if (target.type === "character" && target.id && !project.characters.some((character) => character.id === target.id)) {
+      errors.push(createError(`动画目标 ${slotKey} 引用的角色不存在：${target.id}`, scriptId, node.id));
+    }
+    if (target.type === "background" && target.id && !findAsset(project, target.id)) {
+      warnings.push(createWarning(`动画目标 ${slotKey} 引用的背景素材不存在：${target.id}`, scriptId, node.id));
+    }
+  }
+}
+
 function collectTargets(node: StoryNode): NodeTarget[] {
   if (node.type === "jump") return [node.target];
   if (node.type === "choice") return node.options.map((option) => option.target);
@@ -440,6 +470,7 @@ export function validateProject(project: VNProject): ValidationResult {
 
       if (node.type === "setVariable") validateSetVariableNode(node, variables, errors, script.id);
       if (node.type === "actionSequence") validateActionSequenceNode(project, node, errors, warnings, script.id);
+      if (node.type === "playAnimation") validatePlayAnimationNode(project, node, errors, warnings, script.id);
 
       if (node.type === "choice") {
         for (const option of node.options) {

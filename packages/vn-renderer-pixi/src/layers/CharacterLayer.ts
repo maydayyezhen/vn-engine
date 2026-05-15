@@ -15,6 +15,8 @@ export class CharacterLayer {
   private currentRenderKey = "";
   /** 已消费的一次性角色演出效果 id。 */
   private readonly consumedEffectIds = new Set<string>();
+  /** 当前角色 id 到 Pixi 显示对象的映射，供动画模块定位目标。 */
+  private readonly spritesByCharacterId = new Map<string, Sprite>();
 
   /** 创建角色层。 */
   constructor(
@@ -34,6 +36,7 @@ export class CharacterLayer {
     this.animationToken += 1;
     const token = this.animationToken;
     this.container.removeChildren().forEach((child) => child.destroy({ children: true }));
+    this.spritesByCharacterId.clear();
 
     for (const character of sortedCharacters) {
       const alreadyConsumed = Boolean(character.effectId && this.consumedEffectIds.has(character.effectId));
@@ -53,11 +56,18 @@ export class CharacterLayer {
       sprite.zIndex = layout.zIndex;
       this.applyEntrance(sprite, character, size, token, alreadyConsumed);
       this.container.addChild(sprite);
+      this.spritesByCharacterId.set(character.characterId, sprite);
     }
 
     this.currentRenderKey = renderKey;
     this.container.sortableChildren = true;
     this.container.sortChildren();
+  }
+
+  /** 计算立绘基础适配缩放。 */
+  /** 获取当前角色显示对象，动画模块只通过该受限入口操作角色。 */
+  getCharacterSprite(characterId: string): Sprite | undefined {
+    return this.spritesByCharacterId.get(characterId);
   }
 
   /** 计算立绘基础适配缩放。 */

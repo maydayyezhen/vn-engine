@@ -37,6 +37,8 @@ const emit = defineEmits<{
   addCamera: [];
   /** 新增动作序列节点。 */
   addActionSequence: [];
+  /** 新增代码型动画节点。 */
+  addPlayAnimation: [];
   /** 新增标签节点。 */
   addLabel: [];
   /** 复制节点。 */
@@ -84,6 +86,7 @@ function handleRowClick(row: StoryNode): void {
           <el-button size="small" @click="$emit('addNarration')">新增旁白</el-button>
           <el-button size="small" @click="$emit('addCamera')">新增镜头</el-button>
           <el-button size="small" @click="$emit('addActionSequence')">新增动作序列</el-button>
+          <el-button size="small" @click="$emit('addPlayAnimation')">新增动画</el-button>
           <el-button size="small" @click="$emit('addLabel')">新增标签</el-button>
           <el-button size="small" :disabled="!selectedNodeId" @click="$emit('duplicateNode')">复制</el-button>
           <el-button size="small" :disabled="!selectedNodeId" @click="$emit('cutNode')">剪切</el-button>
@@ -110,6 +113,7 @@ function handleRowClick(row: StoryNode): void {
           <el-option label="场景" value="scene" />
           <el-option label="镜头" value="camera" />
           <el-option label="动作序列" value="actionSequence" />
+          <el-option label="代码动画" value="playAnimation" />
           <el-option label="标签" value="label" />
           <el-option label="角色" value="character" />
           <el-option label="音频" value="audio" />

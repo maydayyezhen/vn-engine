@@ -100,6 +100,25 @@
       ]
     },
     {
+      "id": "play-animation-soft-enter",
+      "type": "playAnimation",
+      "animationId": "character.softEnter",
+      "targets": {
+        "main": {
+          "type": "character",
+          "id": "lincheng"
+        }
+      },
+      "params": {
+        "durationMs": 650,
+        "offsetX": -140,
+        "startScale": 0.94,
+        "endScale": 1
+      },
+      "waitForCompletion": false,
+      "autoNext": true
+    },
+    {
       "id": "narration-intro",
       "type": "narration",
       "text": "这是一个用于验证视觉小说运行时的测试故事。",
@@ -133,6 +152,22 @@
       "text": "你终于来了。我有些话想对你说。",
       "textSpeed": 42,
       "waitForClick": true
+    },
+    {
+      "id": "play-animation-camera-zoom",
+      "type": "playAnimation",
+      "animationId": "camera.softZoom",
+      "targets": {
+        "camera": {
+          "type": "camera"
+        }
+      },
+      "params": {
+        "durationMs": 500,
+        "zoom": 1.07
+      },
+      "waitForCompletion": false,
+      "autoNext": true
     },
     {
       "id": "camera-soft-zoom",

@@ -65,3 +65,8 @@ Web 导出限制：
 ## 变量和逻辑编辑
 
 编辑器新增变量管理视图，可新增、编辑和删除项目级变量。`SetVariableNode` 可以从变量列表选择变量和 `set/add/subtract` 运算符；`ConditionNode` 提供结构化条件编辑入口；`TargetSelector` 可选择脚本内节点或标签作为跳转目标；节点工具栏支持新增 `LabelNode`。调试预览会显示当前变量值和最近运行时逻辑日志。
+## 代码型动画节点编辑
+
+编辑器现在支持新增和编辑 `PlayAnimationNode`。节点工具栏的“新增动画”会创建一个代码型动画节点，属性面板从 `vn-renderer-pixi` 的 `AnimationRegistry` 读取动画元数据，并根据 `targetSlots`、`paramsSchema` 自动生成目标和参数表单。
+
+当前动画模块编辑只保存 `animationId`、`targets`、`params`、`waitForCompletion` 和 `autoNext` 到项目 JSON。编辑器不会保存动画代码，也不会执行来自不可信来源的任意 JS。自定义动画代码需要放在 renderer 的可信代码目录中并经过 typecheck/build。

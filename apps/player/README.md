@@ -66,3 +66,8 @@ Demo 素材：
 ## 剧情逻辑播放
 
 播放器继续只调用 `vn-core` 推进剧情。变量初始化、变量赋值、结构化条件、标签跳转和跳转日志都由核心运行时处理；播放器调试面板显示 `RuntimeSnapshot.variables` 和最近 `debugLog`，不在播放器中重复解释剧情节点。
+## PlayAnimation 播放链路
+
+播放器继续只通过 `vn-core` 推进剧情。遇到 `PlayAnimationNode` 时，`VNRuntime` 输出一次性 `pendingAnimations`；`GameStage` 把快照交给 `PixiVNRenderer`；渲染器通过 `AnimationRegistry` 查找并播放动画模块。若快照处于等待状态，播放器会在渲染器完成回调后调用 `VNRuntime.completeAnimation()`，渲染器不会直接推进剧情。
+
+存档使用稳定运行时状态，不保存 pending animation，也不会在读档后重播一次性动画。

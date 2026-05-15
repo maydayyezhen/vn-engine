@@ -63,7 +63,12 @@ const displayedAudio = computed(() =>
 async function ensureVisualRenderer(): Promise<PixiVNRenderer | null> {
   if (!visualContainerRef.value) return null;
   if (!visualRenderer.value) {
-    const renderer = new PixiVNRenderer({ width: 640, height: 360, onActionSequenceComplete: handleVisualActionSequenceComplete });
+    const renderer = new PixiVNRenderer({
+      width: 640,
+      height: 360,
+      onActionSequenceComplete: handleVisualActionSequenceComplete,
+      onAnimationComplete: handleVisualAnimationComplete
+    });
     await renderer.mount(visualContainerRef.value);
     visualRenderer.value = renderer;
   }
@@ -103,7 +108,14 @@ function next(): void {
 /** 画面预览动作序列完成后继续推进。 */
 function handleVisualActionSequenceComplete(): void {
   if (!runtime.value || !snapshot.value?.isWaitingForActionCompletion) return;
-  snapshot.value = nextPreview(runtime.value);
+  snapshot.value = runtime.value.completeActionSequence();
+  void renderVisualPreview();
+}
+
+/** 画面预览代码型动画完成后继续推进。 */
+function handleVisualAnimationComplete(): void {
+  if (!runtime.value || !snapshot.value?.isWaitingForActionCompletion) return;
+  snapshot.value = runtime.value.completeAnimation();
   void renderVisualPreview();
 }
 
@@ -209,6 +221,9 @@ defineExpose({
         </div>
         <div class="preview-meta">
           pendingActions：{{ snapshot.pendingActions.length }}
+        </div>
+        <div class="preview-meta">
+          pendingAnimations：{{ snapshot.pendingAnimations.length }}
         </div>
         <el-button size="small" :disabled="snapshot.isWaitingForActionCompletion || snapshot.type === 'choices' || snapshot.isEnded" @click="next">
           {{ snapshot.isWaitingForActionCompletion ? "演出中" : "下一步" }}

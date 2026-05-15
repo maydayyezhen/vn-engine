@@ -176,3 +176,10 @@ pnpm build
 ## 第十四轮：演出时间轴与动作序列
 
 当前支持 `ActionSequenceNode`，可在一个节点中保存顺序动作和 `parallel` 并行动作组。动作类型包括 `wait`、`scene`、`showCharacter`、`hideCharacter`、`moveCharacter`、`changeExpression`、`camera`、`playAudio`、`stopAudio`。`vn-core` 负责计算动作后的最终运行时状态并输出 `pendingActions`，`vn-renderer-pixi` 负责等待动作序列并通知完成，`apps/player` 收到完成回调后再推进剧情。当前仍不是复杂关键帧时间轴或曲线编辑器。
+## 代码型动画模块 MVP
+
+当前在第十四轮返修后新增了代码型动画模块 MVP：复杂可复用动画不再继续堆固定 `VNAction` 类型，而是由 `packages/vn-renderer-pixi` 中的 `AnimationModule` 代码模块实现。项目 JSON 只保存 `PlayAnimationNode.animationId`、`targets` 和 `params`，不保存动画代码、base64 或本地绝对路径。
+
+`AnimationRegistry` 负责注册和查询动画模块。内置动画包括 `character.softEnter`、`character.nervousShake`、`character.breathe`、`camera.softZoom`、`camera.shakeLight`、`screen.flashWhite`、`screen.fadeToBlack` 和 `particle.snow`。编辑器根据动画模块的 `targetSlots` 和 `paramsSchema` 生成目标和参数表单；播放器把 `vn-core` 输出的一次性 pending animation 交给 `vn-renderer-pixi` 执行，完成后再由播放器调用运行时继续推进。
+
+本能力不是复杂关键帧时间轴、不是节点图、不是正式插件市场，也没有接入 AI API。`animations/custom` 目录仅用于可信代码的开发者模式实验。

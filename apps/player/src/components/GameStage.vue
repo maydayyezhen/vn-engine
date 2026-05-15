@@ -21,6 +21,8 @@ const emit = defineEmits<{
   choose: [optionId: string];
   /** 动作序列播放完成。 */
   actionSequenceComplete: [];
+  /** 代码型动画模块播放完成。 */
+  animationComplete: [];
 }>();
 
 /** PixiJS 挂载容器。 */
@@ -32,7 +34,8 @@ let resizeObserver: ResizeObserver | null = null;
 
 const pixi = usePixiVNRenderer(
   createChoiceBridge((optionId) => emit("choose", optionId)),
-  () => emit("actionSequenceComplete")
+  () => emit("actionSequenceComplete"),
+  () => emit("animationComplete")
 );
 
 /** 渲染当前快照。 */

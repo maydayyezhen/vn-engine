@@ -36,12 +36,27 @@ export type NodeType =
   | "hideCharacter"
   | "camera"
   | "actionSequence"
+  | "playAnimation"
   | "label"
   | "playAudio"
   | "stopAudio"
   | "setVariable"
   | "condition"
   | "jump";
+
+/** 动画目标类型，项目 JSON 只保存引用，不保存动画代码。 */
+export type AnimationTargetType = "character" | "background" | "camera" | "screen" | "particle" | "prop" | "group";
+
+/** 动画目标引用，供 PlayAnimationNode 绑定角色、镜头或屏幕等目标。 */
+export interface AnimationTargetRef {
+  /** 目标类型。 */
+  type: AnimationTargetType;
+  /** 目标 id，角色和背景等具名目标需要填写。 */
+  id?: string;
+}
+
+/** 动画目标槽位映射，key 与动画模块的 targetSlots 对应。 */
+export type AnimationTargets = Record<string, AnimationTargetRef>;
 
 /** 背景转场类型。 */
 export type TransitionType = "none" | "fade" | "slideLeft" | "slideRight";
@@ -441,6 +456,24 @@ export interface ActionSequenceNode {
   waitForCompletion?: boolean;
 }
 
+/** 播放代码型动画模块的节点，动画本体由 renderer 注册表提供。 */
+export interface PlayAnimationNode {
+  /** 节点类型。 */
+  type: "playAnimation";
+  /** 节点唯一标识。 */
+  id: string;
+  /** 动画模块 id，例如 character.softEnter。 */
+  animationId: string;
+  /** 动画目标映射。 */
+  targets: AnimationTargets;
+  /** 动画参数，按动画模块 paramsSchema 保存。 */
+  params?: Record<string, unknown>;
+  /** 是否等待动画完成后再推进剧情。 */
+  waitForCompletion?: boolean;
+  /** 动画完成后是否自动进入下一节点。 */
+  autoNext?: boolean;
+}
+
 export interface PlayAudioNode {
   /** 节点类型。 */
   type: "playAudio";
@@ -533,6 +566,7 @@ export type StoryNode =
   | HideCharacterNode
   | CameraNode
   | ActionSequenceNode
+  | PlayAnimationNode
   | LabelNode
   | PlayAudioNode
   | StopAudioNode

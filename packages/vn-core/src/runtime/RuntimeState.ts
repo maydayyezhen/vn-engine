@@ -1,4 +1,4 @@
-import type { CharacterEnterEffect, CharacterExitEffect, CharacterPosition, TransitionType, VariableValue, VNEasing, VNActionType } from "@vn-engine/vn-schema";
+import type { AnimationTargets, CharacterEnterEffect, CharacterExitEffect, CharacterPosition, TransitionType, VariableValue, VNEasing, VNActionType } from "@vn-engine/vn-schema";
 
 /** 当前背景显示状态。 */
 export interface RuntimeBackgroundState {
@@ -60,6 +60,22 @@ export interface RuntimeActionEffect {
   parallelGroupId?: string;
   /** 动作参数快照。 */
   payload: Record<string, unknown>;
+}
+
+/** 等待渲染器播放的一次性代码型动画效果。 */
+export interface RuntimeAnimationEffect {
+  /** 一次性动画效果 id，用于避免 renderer 重复消费。 */
+  effectId: string;
+  /** 动画模块 id。 */
+  animationId: string;
+  /** 动画目标映射。 */
+  targets: AnimationTargets;
+  /** 动画参数快照。 */
+  params?: Record<string, unknown>;
+  /** 是否等待动画完成。 */
+  waitForCompletion: boolean;
+  /** 动画完成后是否自动继续剧情。 */
+  autoNext: boolean;
 }
 
 /** 当前显示的角色状态。 */
@@ -140,6 +156,8 @@ export interface RuntimeState {
   pendingEffects: RuntimeEffect[];
   /** 等待渲染器播放的动作序列效果。 */
   pendingActions: RuntimeActionEffect[];
+  /** 等待渲染器播放的一次性代码型动画效果。 */
+  pendingAnimations: RuntimeAnimationEffect[];
   /** 当前音频状态。 */
   audio: RuntimeAudioState;
   /** 当前变量表。 */

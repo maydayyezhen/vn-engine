@@ -508,6 +508,59 @@ describe("VNRuntime", () => {
     expect(snapshot.pendingActions).toHaveLength(0);
   });
 
+  it("PlayAnimationNode 会生成一次性 pending animation 并等待完成", () => {
+    const project = createProject();
+    project.scripts[0].nodes = [
+      {
+        id: "anim",
+        type: "playAnimation",
+        animationId: "character.softEnter",
+        targets: { main: { type: "character", id: "lin" } },
+        params: { durationMs: 300 },
+        waitForCompletion: true,
+        autoNext: true
+      },
+      { id: "text", type: "narration", text: "done" }
+    ];
+    const runtime = new VNRuntime(project);
+    const waiting = runtime.start();
+    expect(waiting.type).toBe("action");
+    expect(waiting.currentNodeId).toBe("anim");
+    expect(waiting.isWaitingForActionCompletion).toBe(true);
+    expect(waiting.pendingAnimations[0]).toMatchObject({ animationId: "character.softEnter", waitForCompletion: true });
+
+    expect(runtime.next().currentNodeId).toBe("anim");
+    const completed = runtime.completeAnimation();
+    expect(completed.currentNodeId).toBe("text");
+    expect(completed.pendingAnimations).toHaveLength(0);
+    expect(runtime.completeAnimation().currentNodeId).toBe("text");
+  });
+
+  it("PlayAnimationNode waitForCompletion=false 会挂到下一个快照且不会被存档重播", () => {
+    const project = createProject();
+    project.scripts[0].nodes = [
+      {
+        id: "anim",
+        type: "playAnimation",
+        animationId: "camera.softZoom",
+        targets: { camera: { type: "camera" } },
+        params: { zoom: 1.05 },
+        waitForCompletion: false,
+        autoNext: true
+      },
+      { id: "text", type: "narration", text: "done" }
+    ];
+    const runtime = new VNRuntime(project);
+    const snapshot = runtime.start();
+    expect(snapshot.currentNodeId).toBe("text");
+    expect(snapshot.isWaitingForActionCompletion).toBe(false);
+    expect(snapshot.pendingAnimations[0]).toMatchObject({ animationId: "camera.softZoom", waitForCompletion: false });
+
+    const restored = new VNRuntime(project);
+    const restoredSnapshot = restored.loadState(runtime.getState());
+    expect(restoredSnapshot.pendingAnimations).toHaveLength(0);
+  });
+
   it("DialogueNode 和 NarrationNode 不会重复携带角色入场 pendingEffects", () => {
     const runtime = new VNRuntime(createCharacterEffectProject());
     const first = runtime.start();

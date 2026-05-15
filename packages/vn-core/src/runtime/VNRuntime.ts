@@ -1,10 +1,10 @@
-import type { ActionSequenceNode, ChoiceOption, MoveCharacterAction, NodeTarget, SetVariableNode, ShowCharacterAction, ShowCharacterNode, StoryNode, VariableValue, VNAction, VNProject } from "@vn-engine/vn-schema";
+import type { ActionSequenceNode, ChoiceOption, MoveCharacterAction, NodeTarget, PlayAnimationNode, SetVariableNode, ShowCharacterAction, ShowCharacterNode, StoryNode, VariableValue, VNAction, VNProject } from "@vn-engine/vn-schema";
 import { validateProject } from "@vn-engine/vn-schema";
 import { ConditionEvaluator } from "../condition/ConditionEvaluator";
 import { findNodeByIndex, findNodeIndex, findScript } from "../utils/runtimeLookup";
 import { resolveRuntimeTarget } from "../utils/targetResolver";
 import { VariableStore } from "../variable/VariableStore";
-import type { RuntimeActionEffect, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeState } from "./RuntimeState";
+import type { RuntimeActionEffect, RuntimeAnimationEffect, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeState } from "./RuntimeState";
 import type { RuntimeSnapshot } from "./RuntimeSnapshot";
 
 /** 最小视觉小说运行时解释器。 */
@@ -56,9 +56,23 @@ export class VNRuntime {
     this.state.isWaitingForActionCompletion = false;
     this.state.pendingEffects = [];
     this.state.pendingActions = [];
+    this.state.pendingAnimations = [];
     this.state.currentNodeIndex += 1;
     const snapshot = this.processCurrentNode();
-    this.snapshot = { ...snapshot, pendingEffects: [] };
+    this.snapshot = { ...snapshot, pendingEffects: [], pendingAnimations: [] };
+    return this.getSnapshot();
+  }
+
+  /** 代码型动画播放完成后由 player 调用，确保 renderer 不直接推进剧情。 */
+  completeAnimation(): RuntimeSnapshot {
+    if (!this.state.isWaitingForActionCompletion) return this.getSnapshot();
+    this.state.isWaitingForActionCompletion = false;
+    this.state.pendingEffects = [];
+    this.state.pendingActions = [];
+    this.state.pendingAnimations = [];
+    this.state.currentNodeIndex += 1;
+    const snapshot = this.processCurrentNode();
+    this.snapshot = { ...snapshot, pendingEffects: [], pendingAnimations: [] };
     return this.getSnapshot();
   }
 
@@ -135,6 +149,7 @@ export class VNRuntime {
     state.isWaitingForActionCompletion = false;
     state.pendingEffects = [];
     state.pendingActions = [];
+    state.pendingAnimations = [];
     return state;
   }
 
@@ -152,6 +167,7 @@ export class VNRuntime {
       camera: this.createDefaultCameraState(),
       pendingEffects: [],
       pendingActions: [],
+      pendingAnimations: [],
       audio: {},
       variables: this.createDefaultVariables(),
       debugLog: [],
@@ -179,6 +195,10 @@ export class VNRuntime {
         const shouldWait = this.applyActionSequence(node);
         if (shouldWait) return this.showActionSequence(node);
       }
+      if (node.type === "playAnimation") {
+        const shouldWait = this.applyPlayAnimation(node);
+        if (shouldWait) return this.showPlayAnimation(node);
+      }
       this.applyAutoNode(node);
     }
     return this.getSnapshot();
@@ -202,6 +222,29 @@ export class VNRuntime {
     this.state.isWaitingForActionCompletion = shouldWait;
     this.addDebugEvent("action", `动作序列已应用：${node.name ?? node.id}`, this.state.currentScriptId, node.id);
     return shouldWait;
+  }
+
+  /** 应用代码型动画节点，并把动画请求作为一次性 pendingAnimation 交给 renderer。 */
+  private applyPlayAnimation(node: PlayAnimationNode): boolean {
+    const waitForCompletion = node.waitForCompletion ?? true;
+    const autoNext = node.autoNext ?? true;
+    const effect: RuntimeAnimationEffect = {
+      effectId: this.createRuntimeEffectId("playAnimation", node.animationId),
+      animationId: node.animationId,
+      targets: this.cloneAnimationTargets(node.targets),
+      params: node.params ? { ...node.params } : undefined,
+      waitForCompletion,
+      autoNext
+    };
+    this.state.pendingAnimations = [effect];
+    this.state.isWaitingForActionCompletion = waitForCompletion;
+    this.addDebugEvent("action", `播放动画模块：${node.animationId}`, this.state.currentScriptId, node.id);
+    return waitForCompletion;
+  }
+
+  /** 深拷贝动画目标映射，避免外部修改运行时快照。 */
+  private cloneAnimationTargets(targets: PlayAnimationNode["targets"]): PlayAnimationNode["targets"] {
+    return Object.fromEntries(Object.entries(targets ?? {}).map(([key, target]) => [key, { ...target }]));
   }
 
   /** 应用单个动作对最终运行时状态的影响。 */
@@ -520,6 +563,14 @@ export class VNRuntime {
     return this.getSnapshot();
   }
 
+  /** 创建代码型动画等待快照。 */
+  private showPlayAnimation(node: PlayAnimationNode): RuntimeSnapshot {
+    this.state.isWaitingChoice = false;
+    this.state.variables = this.variables.snapshot();
+    this.snapshot = this.createSnapshot("action", null, `动画：${node.animationId}`, []);
+    return this.getSnapshot();
+  }
+
   private showDialogue(speaker: string | null, text: string, textSpeed?: number, autoNext?: boolean, waitForClick?: boolean): RuntimeSnapshot {
     this.state.isWaitingChoice = false;
     this.state.variables = this.variables.snapshot();
@@ -562,6 +613,11 @@ export class VNRuntime {
       ...action,
       payload: { ...action.payload }
     }));
+    const pendingAnimations = this.state.pendingAnimations.map((animation) => ({
+      ...animation,
+      targets: this.cloneAnimationTargets(animation.targets),
+      params: animation.params ? { ...animation.params } : undefined
+    }));
     const snapshot: RuntimeSnapshot = {
       type,
       currentScriptId: this.state.currentScriptId,
@@ -572,6 +628,7 @@ export class VNRuntime {
       camera: { ...this.state.camera },
       pendingEffects,
       pendingActions,
+      pendingAnimations,
       speaker,
       text,
       choices: choices.map((choice) => ({ ...choice, setVariables: { ...choice.setVariables }, target: { ...choice.target } })),
@@ -583,6 +640,7 @@ export class VNRuntime {
     };
     this.state.pendingEffects = [];
     this.state.pendingActions = [];
+    this.state.pendingAnimations = [];
     return snapshot;
   }
 
@@ -600,6 +658,11 @@ export class VNRuntime {
       pendingActions: (state.pendingActions ?? []).map((action) => ({
         ...action,
         payload: { ...action.payload }
+      })),
+      pendingAnimations: (state.pendingAnimations ?? []).map((animation) => ({
+        ...animation,
+        targets: this.cloneAnimationTargets(animation.targets),
+        params: animation.params ? { ...animation.params } : undefined
       })),
       audio: { ...state.audio },
       variables: { ...state.variables },
@@ -621,6 +684,11 @@ export class VNRuntime {
       pendingActions: (snapshot.pendingActions ?? []).map((action) => ({
         ...action,
         payload: { ...action.payload }
+      })),
+      pendingAnimations: (snapshot.pendingAnimations ?? []).map((animation) => ({
+        ...animation,
+        targets: this.cloneAnimationTargets(animation.targets),
+        params: animation.params ? { ...animation.params } : undefined
       })),
       choices: snapshot.choices.map((choice) => ({ ...choice, setVariables: { ...choice.setVariables }, target: { ...choice.target } })),
       variables: { ...snapshot.variables },

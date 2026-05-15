@@ -1,5 +1,5 @@
 import type { ChoiceOption, VariableValue } from "@vn-engine/vn-schema";
-import type { RuntimeActionEffect, RuntimeAudioState, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeEffect } from "./RuntimeState";
+import type { RuntimeActionEffect, RuntimeAnimationEffect, RuntimeAudioState, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeEffect } from "./RuntimeState";
 
 /** 运行时快照类型，用于告诉 UI 当前应该展示什么。 */
 export type RuntimeSnapshotType = "dialogue" | "choices" | "action" | "ended";
@@ -24,6 +24,8 @@ export interface RuntimeSnapshot {
   pendingEffects: RuntimeEffect[];
   /** 等待渲染器播放的动作序列效果。 */
   pendingActions: RuntimeActionEffect[];
+  /** 等待渲染器播放的一次性代码型动画效果。 */
+  pendingAnimations: RuntimeAnimationEffect[];
   /** 当前说话人显示名称或角色 id，旁白为空。 */
   speaker: string | null;
   /** 当前文本内容。 */

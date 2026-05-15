@@ -30,3 +30,8 @@
 ## 动作序列结构
 
 `vn-schema` 现在定义 `ActionSequenceNode` 和 `VNAction`。动作类型包括 `wait`、`scene`、`showCharacter`、`hideCharacter`、`moveCharacter`、`changeExpression`、`camera`、`playAudio`、`stopAudio` 和 `parallel`。`validateProject` 会检查动作 id 重复、非法动作类型、异常 duration、资源引用、角色/表情引用、音频通道、空 parallel 和 custom 位置缺少坐标等问题。校验项在可定位时会附带 `scriptId`、`nodeId` 和 `actionId`。
+## PlayAnimationNode
+
+`PlayAnimationNode` 是代码型动画模块的剧情节点。schema 只校验基础字段：`animationId` 不能为空，`targets` 不能为空，目标类型必须有效；动画 id 是否已经注册由编辑器或播放器通过 `AnimationRegistry` 检查。
+
+项目 JSON 只保存动画引用和参数，不保存动画代码、不保存 base64，也不保存本地绝对路径。旧的 `ActionSequenceNode` 继续兼容，新的可复用定制动画优先使用 `PlayAnimationNode`。

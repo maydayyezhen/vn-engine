@@ -43,6 +43,7 @@ export function getNodeSummary(node: StoryNode): string {
   if (node.type === "hideCharacter") return node.characterId;
   if (node.type === "camera") return `zoom ${node.zoom ?? 1} offset ${node.offsetX ?? 0},${node.offsetY ?? 0}`;
   if (node.type === "actionSequence") return `${node.name ?? "动作序列"} / ${node.actions.length} actions`;
+  if (node.type === "playAnimation") return `${node.animationId} / ${Object.values(node.targets ?? {}).map((target) => target.id ?? target.type).join(", ")}`;
   if (node.type === "label") return `#${node.name}`;
   if (node.type === "jump") return `${node.target.scriptId}:${node.target.label ? `#${node.target.label}` : node.target.nodeId ?? ""}`;
   if (node.type === "setVariable") return `${node.variableName ?? node.name ?? ""} ${node.operator ?? "set"} ${String(node.value)}`;
@@ -114,6 +115,30 @@ export function addActionSequenceNodeAfter(project: VNProject, scriptId: string,
     type: "actionSequence",
     name: "新的动作序列",
     actions: [],
+    autoNext: true,
+    waitForCompletion: true
+  };
+  return insertNodeAfter(project, scriptId, afterNodeId, node);
+}
+
+/** 在当前节点后新增代码型动画节点。 */
+export function addPlayAnimationNodeAfter(project: VNProject, scriptId: string, afterNodeId: string | null): VNProject {
+  const node: StoryNode = {
+    id: createNodeId("playAnimation"),
+    type: "playAnimation",
+    animationId: "character.softEnter",
+    targets: {
+      main: {
+        type: "character",
+        id: project.characters[0]?.id ?? ""
+      }
+    },
+    params: {
+      durationMs: 700,
+      offsetX: -120,
+      startScale: 0.94,
+      endScale: 1
+    },
     autoNext: true,
     waitForCompletion: true
   };

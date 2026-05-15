@@ -15,6 +15,8 @@ export class BackgroundLayer {
   private currentRenderKey = "";
   /** 已消费的一次性背景转场效果 id。 */
   private readonly consumedEffectIds = new Set<string>();
+  /** 当前背景显示对象，供动画模块做受限访问。 */
+  private currentContent: Container | null = null;
 
   /** 创建背景层。 */
   constructor(
@@ -34,6 +36,7 @@ export class BackgroundLayer {
     this.animationToken += 1;
     this.container.removeChildren().forEach((child) => child.destroy({ children: true }));
     const content = new Container();
+    this.currentContent = content;
     const texture = await this.loader.loadTexture(resource.path);
 
     if (texture) {
@@ -57,6 +60,11 @@ export class BackgroundLayer {
     this.container.addChild(content);
     this.currentRenderKey = renderKey;
     this.applyTransition(content, resource, size, this.animationToken);
+  }
+
+  /** 获取当前背景显示对象。 */
+  getBackgroundSprite(): Container | undefined {
+    return this.currentContent ?? undefined;
   }
 
   /** 应用基础背景转场。 */

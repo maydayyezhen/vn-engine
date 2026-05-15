@@ -289,4 +289,40 @@ describe("validateProject action sequence fields", () => {
     }
     expect(validateProject(project).warnings.some((warning) => warning.actionId === show?.id)).toBe(true);
   });
+
+  it("合法 PlayAnimationNode 可以通过基础校验", () => {
+    const project = createProject();
+    project.scripts[0].nodes.push({
+      id: "play-animation",
+      type: "playAnimation",
+      animationId: "character.softEnter",
+      targets: { main: { type: "character", id: "lincheng" } },
+      params: { durationMs: 500 },
+      waitForCompletion: true,
+      autoNext: true
+    });
+    expect(validateProject(project).errors).toEqual([]);
+  });
+
+  it("PlayAnimationNode 缺少 animationId 会报错", () => {
+    const project = createProject();
+    project.scripts[0].nodes.push({
+      id: "play-animation",
+      type: "playAnimation",
+      animationId: "",
+      targets: { main: { type: "character", id: "lincheng" } }
+    });
+    expect(validateProject(project).errors.some((error) => error.nodeId === "play-animation" && error.message.includes("animationId"))).toBe(true);
+  });
+
+  it("PlayAnimationNode targets 为空会报错", () => {
+    const project = createProject();
+    project.scripts[0].nodes.push({
+      id: "play-animation",
+      type: "playAnimation",
+      animationId: "character.softEnter",
+      targets: {}
+    });
+    expect(validateProject(project).errors.some((error) => error.nodeId === "play-animation" && error.message.includes("动画目标"))).toBe(true);
+  });
 });

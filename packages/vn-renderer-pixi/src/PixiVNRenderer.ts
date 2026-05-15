@@ -8,6 +8,9 @@ import { ChoiceLayer } from "./layers/ChoiceLayer";
 import { DialogueLayer } from "./layers/DialogueLayer";
 import type { PixiVNRendererOptions, PixiVNRenderOptions, VNRenderSize } from "./types";
 import { ActionPlayer } from "./actions/ActionPlayer";
+import type { AnimationContext } from "./animations/types/AnimationContext";
+import { createDefaultAnimationRegistry } from "./animations/registry/createDefaultAnimationRegistry";
+import { normalizeAnimationParams } from "./animations/utils/normalizeAnimationParams";
 import { normalizeCameraState } from "./utils/presentationLayout";
 import { resolveRenderResources } from "./utils/resolveRenderResources";
 
@@ -23,6 +26,10 @@ export class PixiVNRenderer {
   private readonly sceneRoot = new Container();
   /** UI 容器，不受镜头效果影响。 */
   private readonly uiRoot = new Container();
+  /** 屏幕特效层，供代码型动画模块使用。 */
+  private readonly screenEffectLayer = new Container();
+  /** 粒子层，供代码型动画模块使用。 */
+  private readonly particleLayer = new Container();
   /** 资源加载器。 */
   private readonly assetLoader = new PixiAssetLoader();
   /** 背景层。 */
@@ -41,6 +48,12 @@ export class PixiVNRenderer {
   private activeActionSequenceKey: string | null = null;
   /** 已完成但 runtime 尚未推进前的动作序列 key，用于避免重复完成回调。 */
   private completedActionSequenceKey: string | null = null;
+  /** 动画模块注册表。 */
+  private readonly animationRegistry = createDefaultAnimationRegistry();
+  /** 已消费的一次性代码型动画 effectId。 */
+  private readonly consumedAnimationEffectIds = new Set<string>();
+  /** 当前正在播放的代码型动画 key。 */
+  private activeAnimationKey: string | null = null;
 
   /** 创建 PixiJS 视觉小说渲染器。 */
   constructor(private readonly options: PixiVNRendererOptions = {}) {
@@ -74,8 +87,10 @@ export class PixiVNRenderer {
 
     this.sceneRoot.addChild(this.backgroundLayer.container);
     this.sceneRoot.addChild(this.characterLayer.container);
+    this.sceneRoot.addChild(this.particleLayer);
     this.uiRoot.addChild(this.dialogueLayer.container);
     this.uiRoot.addChild(this.choiceLayer.container);
+    this.root.addChild(this.screenEffectLayer);
 
     app.canvas.className = "pixi-vn-canvas";
     container.innerHTML = "";
@@ -97,6 +112,7 @@ export class PixiVNRenderer {
       this.choiceLayer.render(snapshot.type === "choices" ? snapshot.choices : [], this.size);
     }
     this.playPendingActions(snapshot);
+    this.playPendingAnimations(snapshot);
   }
 
   /** 根据 pendingActions 播放动作序列，并保证同一快照只触发一次完成回调。 */
@@ -129,6 +145,59 @@ export class PixiVNRenderer {
     return `${snapshot.currentScriptId}:${snapshot.currentNodeId ?? ""}:${actionsKey}`;
   }
 
+  /** 根据 pendingAnimations 播放代码型动画模块，并保证同一 effectId 只消费一次。 */
+  private playPendingAnimations(snapshot: RuntimeSnapshot): void {
+    const animations = (snapshot.pendingAnimations ?? []).filter((animation) => !this.consumedAnimationEffectIds.has(animation.effectId));
+    if (!animations.length) {
+      this.activeAnimationKey = null;
+      return;
+    }
+    const key = animations.map((animation) => `${animation.effectId}:${animation.animationId}`).join("|");
+    if (key === this.activeAnimationKey) return;
+    this.activeAnimationKey = key;
+    const context = this.createAnimationContext();
+
+    void Promise.all(
+      animations.map(async (animation) => {
+        this.consumedAnimationEffectIds.add(animation.effectId);
+        const module = this.animationRegistry.get(animation.animationId);
+        if (!module) {
+          context.log(`动画模块不存在：${animation.animationId}`);
+          return;
+        }
+        const params = normalizeAnimationParams(module.paramsSchema, animation.params);
+        try {
+          await module.play(context, {
+            effectId: animation.effectId,
+            animationId: animation.animationId,
+            targets: animation.targets,
+            params
+          });
+        } catch (error) {
+          context.log(`动画模块执行失败：${animation.animationId} ${String(error)}`);
+        }
+      })
+    ).then(() => {
+      if (this.activeAnimationKey !== key) return;
+      this.activeAnimationKey = null;
+      if (animations.some((animation) => animation.waitForCompletion)) this.options.onAnimationComplete?.();
+    });
+  }
+
+  /** 创建动画模块可使用的受限上下文。 */
+  private createAnimationContext(): AnimationContext {
+    return {
+      getCharacterSprite: (characterId) => this.characterLayer?.getCharacterSprite(characterId),
+      getBackgroundSprite: () => this.backgroundLayer?.getBackgroundSprite(),
+      getCameraContainer: () => this.sceneRoot,
+      getScreenEffectLayer: () => this.screenEffectLayer,
+      getParticleLayer: () => this.particleLayer,
+      getStageSize: () => ({ ...this.size }),
+      wait: (ms) => new Promise((resolve) => setTimeout(resolve, Math.max(0, ms))),
+      log: (message) => console.warn(`[vn-animation] ${message}`)
+    };
+  }
+
   /** 调整舞台尺寸。 */
   resize(width: number, height: number): void {
     if (!this.app) return;
@@ -150,6 +219,8 @@ export class PixiVNRenderer {
     this.actionPlayer.destroy();
     this.activeActionSequenceKey = null;
     this.completedActionSequenceKey = null;
+    this.activeAnimationKey = null;
+    this.consumedAnimationEffectIds.clear();
     this.assetLoader.clear();
     this.root.removeChildren();
     this.app?.destroy(true, { children: true, texture: false });

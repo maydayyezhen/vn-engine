@@ -42,3 +42,10 @@
 ## 基础演出渲染
 
 `vn-renderer-pixi` 支持背景 `none` / `fade` / `slideLeft` / `slideRight`，角色位置、自定义坐标、缩放、透明度、层级、水平翻转、基础入场和退场效果，以及基础镜头缩放、偏移和轻微震动。真实图片加载失败时仍使用占位图形渲染同样的演出参数。
+## 代码型动画模块
+
+渲染包现在提供 `AnimationModule`、`AnimationRegistry` 和内置动画集合。动画模块是受控的 TypeScript 代码文件，声明 `id`、`name`、`category`、`targetSlots`、`paramsSchema` 和 `play(ctx, payload)`。`vn-core` 不执行动画，只在 `PlayAnimationNode` 上输出一次性 pending animation；`PixiVNRenderer` 根据 `animationId` 查找模块并执行。
+
+内置动画包括 `character.softEnter`、`character.nervousShake`、`character.breathe`、`camera.softZoom`、`camera.shakeLight`、`screen.flashWhite`、`screen.fadeToBlack` 和 `particle.snow`。
+
+`animations/custom` 是实验性开发者模式目录，只适合可信代码。当前没有插件沙箱、签名系统或 AI API 接入。
