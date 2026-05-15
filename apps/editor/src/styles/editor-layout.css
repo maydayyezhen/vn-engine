@@ -21,7 +21,7 @@ body {
 
 .workbench-body {
   display: grid;
-  grid-template-columns: 280px minmax(620px, 1fr) 360px;
+  grid-template-columns: 280px minmax(0, 1fr) 360px;
   gap: 8px;
   min-width: 0;
   min-height: 0;
@@ -38,7 +38,7 @@ body {
 
 .center-stage {
   display: grid;
-  grid-template-rows: 34px minmax(280px, 54vh) minmax(220px, 1fr);
+  grid-template-rows: 34px minmax(0, 3fr) minmax(0, 2fr);
   gap: 8px;
   min-height: 0;
   height: 100%;
@@ -85,12 +85,23 @@ body {
 
 .right-inspector-panel {
   display: grid;
-  grid-template-rows: 36px 30px minmax(0, 1fr);
+  grid-template-rows: 34px 30px minmax(0, 1fr);
 }
 
 .resource-explorer {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: minmax(0, 3fr) minmax(190px, 2fr);
   gap: 10px;
   padding: 10px;
+}
+
+.resource-tree-pane,
+.resource-preview-pane {
+  min-height: 0;
+  overflow: auto;
+}
+
+.resource-preview-pane {
+  border-top: 1px solid var(--editor-border);
+  padding-top: 10px;
 }

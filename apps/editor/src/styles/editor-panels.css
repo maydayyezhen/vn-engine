@@ -1,5 +1,4 @@
 .main-menu-bar,
-.main-toolbar,
 .status-bar {
   display: flex;
   align-items: center;
@@ -23,10 +22,8 @@
 }
 
 .menu-button,
-.toolbar-tab,
 .stage-tabs button,
 .dock-tabs button,
-.inspector-tabs button,
 .resource-section-title,
 .resource-category-grid button,
 .row-menu-button,
@@ -46,10 +43,8 @@
 }
 
 .menu-button:hover,
-.toolbar-tab:hover,
 .stage-tabs button:hover,
-.dock-tabs button:hover,
-.inspector-tabs button:hover {
+.dock-tabs button:hover {
   background: var(--editor-bg-panel-soft);
 }
 
@@ -57,93 +52,10 @@
   color: var(--editor-text-muted);
 }
 
-.main-toolbar {
-  gap: 12px;
-  height: 100%;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--editor-border);
-  background: var(--editor-bg-elevated);
-}
-
-.toolbar-project,
-.toolbar-actions,
-.toolbar-switches {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.toolbar-project {
-  flex: 0 1 330px;
-}
-
-.toolbar-project-name {
-  max-width: 160px;
-  overflow: hidden;
-  color: var(--editor-text-strong);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.toolbar-actions {
-  flex: 0 0 auto;
-}
-
-.toolbar-switches {
-  flex: 0 0 auto;
-  padding: 3px;
-  border: 1px solid var(--editor-border);
-  border-radius: 7px;
-  background: #101722;
-}
-
-.toolbar-tab {
-  height: 26px;
-  padding: 0 10px;
-  border-radius: 5px;
-  font-size: 12px;
-}
-
-.toolbar-tab.active,
 .stage-tabs button.active,
-.dock-tabs button.active,
-.inspector-tabs button.active {
+.dock-tabs button.active {
   color: #ffffff;
   background: var(--editor-accent);
-}
-
-.toolbar-root {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--editor-text-muted);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.toolbar-pill {
-  flex: 0 0 auto;
-  padding: 2px 7px;
-  border-radius: 999px;
-  color: #09111b;
-  background: var(--editor-success);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.toolbar-pill.is-dirty {
-  background: var(--editor-warning);
-}
-
-.toolbar-pill.is-error {
-  color: #ffffff;
-  background: var(--editor-danger);
-}
-
-.toolbar-pill.is-mode {
-  color: var(--editor-text);
-  background: var(--editor-bg-panel-soft);
 }
 
 .status-bar {
@@ -155,6 +67,7 @@
   color: var(--editor-text-muted);
   font-size: 12px;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .status-bar .warn {
@@ -162,5 +75,22 @@
 }
 
 .status-bar .error {
+  color: var(--editor-danger);
+}
+
+.status-issue-button {
+  min-width: 0;
+  overflow: hidden;
+  border: 0;
+  color: var(--editor-warning);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.status-issue-button.error {
   color: var(--editor-danger);
 }

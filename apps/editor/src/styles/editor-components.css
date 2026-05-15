@@ -107,11 +107,10 @@
 }
 
 .asset-preview-pane {
-  margin-top: auto;
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 8px;
-  padding-top: 10px;
-  border-top: 1px solid var(--editor-border);
+  height: 100%;
 }
 
 .asset-preview-meta {
@@ -138,8 +137,7 @@
 }
 
 .stage-tabs,
-.dock-tabs,
-.inspector-tabs {
+.dock-tabs {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -151,8 +149,7 @@
 }
 
 .stage-tabs button,
-.dock-tabs button,
-.inspector-tabs button {
+.dock-tabs button {
   height: 26px;
   padding: 0 12px;
   border-radius: 5px;
@@ -251,9 +248,14 @@
   color: var(--editor-text-muted);
 }
 
-.inspector-tabs {
-  border-width: 0 0 1px;
-  border-radius: 0;
+.inspector-title {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--editor-border);
+  color: var(--editor-text-strong);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .inspector-selection {

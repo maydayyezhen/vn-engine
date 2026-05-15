@@ -7,7 +7,6 @@ import CharacterLibraryPanel from "../components/CharacterLibraryPanel.vue";
 import NodePropertyPanel from "../components/NodePropertyPanel.vue";
 import PreviewPanel from "../components/PreviewPanel.vue";
 import StoryNodeList from "../components/StoryNodeList.vue";
-import ValidationPanel from "../components/ValidationPanel.vue";
 import VariableLibraryPanel from "../components/VariableLibraryPanel.vue";
 import WebExportPanel from "../components/WebExportPanel.vue";
 import AnimationWorkspace from "../workspaces/AnimationWorkspace.vue";
@@ -31,7 +30,7 @@ import {
 } from "../desktop/desktopProjectBridge";
 import { isDesktopRuntime } from "../desktop/isDesktopRuntime";
 import { editorStore, setActiveView, setDirty, setValidationResult, type EditorView } from "../stores/editorStore";
-import { layoutStore, setInspectorTab, setPreviewZoom, setScriptDockTab, setStageTab } from "../stores/layoutStore";
+import { layoutStore, setPreviewZoom, setScriptDockTab, setStageTab } from "../stores/layoutStore";
 import { currentNode, currentScript, projectStore, replaceProject, selectNode, selectScript, setProject } from "../stores/projectStore";
 import { setResourceSearchQuery, workspaceStore } from "../stores/workspaceStore";
 import { canRedo, canUndo, popRedo, popUndo, pushHistory, resetHistory } from "../stores/historyStore";
@@ -174,14 +173,12 @@ async function confirmDiscardIfDirty(actionName: string): Promise<boolean> {
 function handleChangeView(view: EditorView): void {
   setActiveView(view);
   if (view !== "script") setScriptDockTab("script");
-  if (view === "script") setInspectorTab("properties");
 }
 
 /** 打开动画模块工作区。 */
 function handleOpenAnimations(): void {
   setActiveView("script");
   setScriptDockTab("animation");
-  setInspectorTab("events");
 }
 
 /** 处理顶部菜单命令。 */
@@ -755,11 +752,7 @@ onBeforeUnmount(() => {
     </template>
 
     <template #inspector>
-      <RightInspector
-        :active-tab="layoutStore.inspectorTab"
-        :selection-label="inspectorSelectionLabel"
-        @update-active-tab="setInspectorTab"
-      >
+      <RightInspector :selection-label="inspectorSelectionLabel">
         <template #properties>
           <NodePropertyPanel
             v-if="editorStore.activeView === 'script'"
@@ -771,11 +764,8 @@ onBeforeUnmount(() => {
           />
           <div v-else class="inspector-empty-state">
             <strong>{{ inspectorSelectionLabel }}</strong>
-            <span>该工作区的编辑表单位于中央下方。右侧检查器保留校验、事件和当前状态。</span>
+            <span>该工作区的编辑表单位于中央下方。校验摘要已移动到底部状态栏。</span>
           </div>
-        </template>
-        <template #events>
-          <ValidationPanel :result="editorStore.validationResult" @locate-issue="handleLocateValidationIssue" />
         </template>
       </RightInspector>
     </template>
@@ -789,6 +779,7 @@ onBeforeUnmount(() => {
         :validation-result="editorStore.validationResult"
         :desktop-mode="desktopMode"
         :preview-zoom="layoutStore.previewZoom"
+        @locate-issue="handleLocateValidationIssue"
       />
     </template>
   </EditorWorkbench>

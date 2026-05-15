@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { ValidationResult } from "@vn-engine/vn-schema";
+import { computed } from "vue";
+import type { ValidationIssue, ValidationResult } from "@vn-engine/vn-schema";
 
 /** 状态栏属性。 */
-defineProps<{
+const props = defineProps<{
   /** 项目名称。 */
   projectName: string;
   /** 当前脚本 id。 */
@@ -18,6 +19,15 @@ defineProps<{
   /** 当前预览缩放比例。 */
   previewZoom: number;
 }>();
+
+/** 状态栏事件。 */
+defineEmits<{
+  /** 定位状态栏显示的校验问题。 */
+  locateIssue: [issue: ValidationIssue];
+}>();
+
+/** 状态栏显示的第一条校验问题。 */
+const primaryIssue = computed(() => props.validationResult.errors[0] ?? props.validationResult.warnings[0]);
 </script>
 
 <template>
@@ -32,5 +42,14 @@ defineProps<{
     </span>
     <span>{{ desktopMode ? "桌面模式" : "Web模式" }}</span>
     <span>预览 {{ Math.round(previewZoom * 100) }}%</span>
+    <button
+      v-if="primaryIssue"
+      class="status-issue-button"
+      :class="{ error: primaryIssue.level === 'error' }"
+      :title="primaryIssue.message"
+      @click="$emit('locateIssue', primaryIssue)"
+    >
+      {{ primaryIssue.level === "error" ? "错误" : "警告" }}：{{ primaryIssue.message }}
+    </button>
   </div>
 </template>
