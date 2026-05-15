@@ -331,7 +331,7 @@
           "name": "旧信",
           "x": 640,
           "y": 340,
-          "scale": 0.95,
+          "scale": 0.18,
           "opacity": 1,
           "zIndex": 20,
           "rotation": -0.04,
@@ -339,8 +339,8 @@
           "enterAnimationId": "prop.revealCenter",
           "enterParams": {
             "durationMs": 550,
-            "startScale": 0.82,
-            "endScale": 0.95
+            "startScale": 0.14,
+            "endScale": 0.18
           }
         },
         {

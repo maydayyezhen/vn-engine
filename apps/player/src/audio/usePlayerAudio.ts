@@ -16,12 +16,25 @@ export function usePlayerAudio(project: Ref<VNProject>, snapshot: Ref<RuntimeSna
   const resources = ref<AudioResolvedResource[]>(resolveAudioState(snapshot.value, project.value));
   /** 当前音频错误。 */
   const errors = ref<AudioPlaybackError[]>([]);
+  /** Audio sync request version, used to skip stale queued snapshots. */
+  let syncVersion = 0;
+  /** Serialized audio sync queue, used to avoid overlapping play/stop races. */
+  let syncQueue = Promise.resolve();
 
   /** 同步当前运行时快照中的音频状态。 */
   async function sync(): Promise<void> {
-    const result = await syncAudioState(snapshot.value, project.value, audioManager);
-    resources.value = result.resources;
-    errors.value = result.errors;
+    const version = syncVersion + 1;
+    syncVersion = version;
+    syncQueue = syncQueue
+      .catch(() => undefined)
+      .then(async () => {
+        if (version !== syncVersion) return;
+        const result = await syncAudioState(snapshot.value, project.value, audioManager);
+        if (version !== syncVersion) return;
+        resources.value = result.resources;
+        errors.value = result.errors;
+      });
+    await syncQueue;
   }
 
   /** 设置主音量。 */

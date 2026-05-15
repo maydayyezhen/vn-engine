@@ -36,6 +36,10 @@ export async function syncAudioState(snapshot: RuntimeSnapshot, project: VNProje
       continue;
     }
 
+    if (audioManager.getCurrentAssetId(channel) === resource.assetId) {
+      continue;
+    }
+
     try {
       await audioManager.play({
         channel,
