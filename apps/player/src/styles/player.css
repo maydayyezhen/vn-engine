@@ -10,12 +10,6 @@ body {
   font-family: Inter, "Microsoft YaHei", system-ui, sans-serif;
 }
 
-html,
-body,
-#app {
-  min-height: 100%;
-}
-
 button {
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 6px;
@@ -49,7 +43,7 @@ pre {
 
 .player-main {
   display: grid;
-  align-content: start;
+  grid-template-rows: minmax(0, 1fr);
   min-width: 0;
 }
 
@@ -65,7 +59,6 @@ pre {
 
 .pixi-stage-container {
   width: 100%;
-  max-width: min(100%, calc((100dvh - 28px) * 16 / 9));
   aspect-ratio: 16 / 9;
   max-height: calc(100vh - 28px);
 }
@@ -216,15 +209,8 @@ pre {
     overflow-x: hidden;
   }
 
-  .stage-frame,
-  .game-stage {
-    width: 100%;
-  }
-
   .pixi-stage-container {
-    width: min(100%, calc((100dvh - 16px) * 16 / 9));
-    max-width: 100%;
-    max-height: calc(100dvh - 16px);
+    max-height: none;
   }
 }
 
@@ -240,15 +226,5 @@ pre {
   .player-controls {
     align-items: stretch;
     flex-direction: column;
-  }
-}
-
-@media (max-width: 560px) and (orientation: portrait) {
-  .player-shell {
-    align-content: start;
-  }
-
-  .game-stage {
-    place-items: start center;
   }
 }
