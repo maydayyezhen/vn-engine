@@ -11,7 +11,7 @@ import type { PixiVNRendererOptions, PixiVNRenderOptions, VNRenderSize } from ".
 import { ActionPlayer } from "./actions/ActionPlayer";
 import type { AnimationContext } from "./animations/types/AnimationContext";
 import { createDefaultAnimationRegistry } from "./animations/registry/createDefaultAnimationRegistry";
-import { normalizeAnimationParams } from "./animations/utils/normalizeAnimationParams";
+import { normalizeAnimationParams, numberParam } from "./animations/utils/normalizeAnimationParams";
 import { normalizeCameraState } from "./utils/presentationLayout";
 import { resolveRenderResources } from "./utils/resolveRenderResources";
 
@@ -153,13 +153,17 @@ export class PixiVNRenderer {
 
   /** 根据 pendingAnimations 播放代码型动画模块，并保证同一 effectId 只消费一次。 */
   private playPendingAnimations(snapshot: RuntimeSnapshot): void {
-    const animations = (snapshot.pendingAnimations ?? []).filter((animation) => !this.consumedAnimationEffectIds.has(animation.effectId));
-    if (!animations.length) {
+    const allAnimations = snapshot.pendingAnimations ?? [];
+    if (!allAnimations.length) {
       this.activeAnimationKey = null;
       return;
     }
-    const key = animations.map((animation) => `${animation.effectId}:${animation.animationId}`).join("|");
+    const key = allAnimations.map((animation) => `${animation.effectId}:${animation.animationId}`).join("|");
     if (key === this.activeAnimationKey) return;
+
+    const animations = allAnimations.filter((animation) => !this.consumedAnimationEffectIds.has(animation.effectId));
+    if (!animations.length) return;
+
     this.activeAnimationKey = key;
     const context = this.createAnimationContext();
 
@@ -173,12 +177,12 @@ export class PixiVNRenderer {
         }
         const params = normalizeAnimationParams(module.paramsSchema, animation.params);
         try {
-          await module.play(context, {
+          await this.playAnimationWithTimeout(animation.waitForCompletion, numberParam(params, "durationMs", 500), () => module.play(context, {
             effectId: animation.effectId,
             animationId: animation.animationId,
             targets: animation.targets,
             params
-          });
+          }));
         } catch (error) {
           context.log(`动画模块执行失败：${animation.animationId} ${String(error)}`);
         }
@@ -188,6 +192,19 @@ export class PixiVNRenderer {
       this.activeAnimationKey = null;
       if (animations.some((animation) => animation.waitForCompletion)) this.options.onAnimationComplete?.();
     });
+  }
+
+  /** 为等待型动画增加兜底超时，避免动画模块 Promise 挂起后阻塞剧情。 */
+  private async playAnimationWithTimeout(waitForCompletion: boolean, durationMs: number, play: () => Promise<void>): Promise<void> {
+    if (!waitForCompletion) {
+      await play();
+      return;
+    }
+    const timeoutMs = Math.min(Math.max(durationMs + 1000, 1500), 12000);
+    await Promise.race([
+      play(),
+      new Promise<void>((resolve) => setTimeout(resolve, timeoutMs))
+    ]);
   }
 
   /** 创建动画模块可使用的受限上下文。 */

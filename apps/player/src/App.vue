@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, shallowRef, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import type { RuntimeSnapshot, VNRuntime } from "@vn-engine/vn-core";
 import { VNRuntime as Runtime } from "@vn-engine/vn-core";
 import type { RuntimeSettings } from "@vn-engine/vn-ui-runtime";
@@ -55,10 +55,48 @@ const skipRead = useSkipRead(window.localStorage);
 const autoPlayDelay = computed(() => playerSettings.settings.value.autoPlayDelayMs);
 /** 自动播放控制。 */
 const autoPlay = useAutoPlay(snapshot, autoPlayDelay, () => next());
+/** Fallback timer for waiting animation completion. */
+let completionFallbackTimer: ReturnType<typeof setTimeout> | null = null;
 /** 页面 class。 */
 const shellClass = computed(() => ({
   "is-title": gameMode.value === "title"
 }));
+
+/** Clear the waiting animation fallback timer. */
+function clearCompletionFallback(): void {
+  if (!completionFallbackTimer) return;
+  clearTimeout(completionFallbackTimer);
+  completionFallbackTimer = null;
+}
+
+/** Calculate a conservative fallback delay from pending actions and animations. */
+function getCompletionFallbackDelay(value: RuntimeSnapshot): number {
+  const animationDurations = value.pendingAnimations.map((animation) => {
+    const duration = animation.params?.durationMs;
+    return typeof duration === "number" && Number.isFinite(duration) ? duration : 500;
+  });
+  const actionDuration = value.pendingActions.reduce((sum, action) => {
+    const duration = Number.isFinite(action.durationMs) ? Math.max(0, action.durationMs) : 500;
+    return sum + duration;
+  }, 0);
+  const maxAnimationDuration = animationDurations.length ? Math.max(...animationDurations) : 0;
+  return Math.min(Math.max(maxAnimationDuration, actionDuration) + 1500, 12000);
+}
+
+/** Complete the waiting state if the renderer completion callback is lost. */
+function scheduleCompletionFallback(value: RuntimeSnapshot): void {
+  clearCompletionFallback();
+  if (gameMode.value !== "playing" || !value.isWaitingForActionCompletion) return;
+
+  const nodeId = value.currentNodeId;
+  const shouldCompleteAnimation = value.pendingAnimations.length > 0;
+  const shouldCompleteByNodeType = value.type === "action" && value.text.includes("动画");
+  completionFallbackTimer = setTimeout(() => {
+    if (gameMode.value !== "playing") return;
+    if (!snapshot.value.isWaitingForActionCompletion || snapshot.value.currentNodeId !== nodeId) return;
+    snapshot.value = shouldCompleteAnimation || shouldCompleteByNodeType ? runtime.value.completeAnimation() : runtime.value.completeActionSequence();
+  }, getCompletionFallbackDelay(value));
+}
 
 /** 应用设置到音频管理器。 */
 function applyAudioSettings(settings: RuntimeSettings): void {
@@ -71,6 +109,7 @@ function applyAudioSettings(settings: RuntimeSettings): void {
 
 /** 进入新游戏。 */
 function startNewGame(): void {
+  clearCompletionFallback();
   playerAudio.stopAll();
   runtime.value = new Runtime(project.value);
   runtime.value.start();
@@ -94,6 +133,7 @@ function next(): void {
 function handleActionSequenceComplete(): void {
   if (gameMode.value !== "playing") return;
   if (!snapshot.value.isWaitingForActionCompletion) return;
+  clearCompletionFallback();
   snapshot.value = runtime.value.completeActionSequence();
 }
 
@@ -101,12 +141,14 @@ function handleActionSequenceComplete(): void {
 function handleAnimationComplete(): void {
   if (gameMode.value !== "playing") return;
   if (!snapshot.value.isWaitingForActionCompletion) return;
+  clearCompletionFallback();
   snapshot.value = runtime.value.completeAnimation();
 }
 
 /** 选择选项。 */
 function choose(optionId: string): void {
   if (gameMode.value !== "playing") return;
+  clearCompletionFallback();
   const option = snapshot.value.choices.find((item) => item.id === optionId);
   if (option) playerHistory.pushChoice(snapshot.value, option.text);
   autoPlay.setEnabled(false);
@@ -129,6 +171,7 @@ function restart(): void {
 
 /** 返回标题菜单。 */
 function returnToTitle(): void {
+  clearCompletionFallback();
   autoPlay.setEnabled(false);
   playerAudio.stopAll();
   runtime.value = new Runtime(project.value);
@@ -180,6 +223,7 @@ function saveToSlot(slotId: string): void {
 function loadFromSlot(slotId: string): void {
   const slot = playerSaves.load(slotId);
   if (!slot) return;
+  clearCompletionFallback();
   playerAudio.stopAll();
   if (slot.projectId !== project.value.id) return;
   runtime.value = new Runtime(project.value);
@@ -228,6 +272,7 @@ watch(
     if (gameMode.value !== "playing") return;
     playerHistory.pushSnapshot(value);
     skipRead.markRead(value);
+    scheduleCompletionFallback(value);
   },
   { immediate: false }
 );
@@ -246,6 +291,10 @@ onMounted(async () => {
   runtime.value = new Runtime(project.value);
   snapshot.value = runtime.value.getSnapshot();
   applyAudioSettings(playerSettings.settings.value);
+});
+
+onBeforeUnmount(() => {
+  clearCompletionFallback();
 });
 </script>
 
