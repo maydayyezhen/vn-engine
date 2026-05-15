@@ -1,6 +1,6 @@
 import type { RuntimeSnapshot } from "@vn-engine/vn-core";
 import type { AssetItem, VNProject } from "@vn-engine/vn-schema";
-import type { ResolvedAudioResource, ResolvedBackgroundResource, ResolvedCharacterResource, ResolvedRenderResources } from "../types";
+import type { ResolvedAudioResource, ResolvedBackgroundResource, ResolvedCharacterResource, ResolvedPropResource, ResolvedRenderResources } from "../types";
 
 /** 根据素材 id 查找素材。 */
 function findAsset(project: VNProject, assetId: string | undefined): AssetItem | undefined {
@@ -83,11 +83,43 @@ export function resolveAudioResources(project: VNProject, snapshot: RuntimeSnaps
     });
 }
 
+/** 解析当前物品资源列表。 */
+export function resolvePropResources(project: VNProject, snapshot: RuntimeSnapshot): ResolvedPropResource[] {
+  const displayMap = new Map<string, { display: RuntimeSnapshot["props"][number]; effectId?: string }>();
+  for (const display of snapshot.props ?? []) {
+    displayMap.set(display.propId, { display });
+  }
+  for (const effect of snapshot.pendingEffects ?? []) {
+    if (effect.prop) displayMap.set(effect.prop.propId, { display: effect.prop, effectId: effect.id });
+  }
+
+  return [...displayMap.values()].map(({ display, effectId }) => {
+    const asset = findAsset(project, display.assetId);
+    return {
+      effectId,
+      propId: display.propId,
+      assetId: display.assetId,
+      name: display.name || asset?.name || display.propId,
+      path: asset?.path,
+      x: display.x,
+      y: display.y,
+      scale: display.scale,
+      opacity: display.opacity,
+      zIndex: display.zIndex,
+      rotation: display.rotation,
+      flipX: display.flipX,
+      asset,
+      exists: Boolean(asset && asset.type === "prop")
+    };
+  });
+}
+
 /** 解析渲染当前快照所需的全部资源。 */
 export function resolveRenderResources(project: VNProject, snapshot: RuntimeSnapshot): ResolvedRenderResources {
   return {
     background: resolveBackgroundResource(project, snapshot),
     characters: resolveCharacterResources(project, snapshot),
+    props: resolvePropResources(project, snapshot),
     audio: resolveAudioResources(project, snapshot),
     camera: snapshot.camera ?? { zoom: 1, offsetX: 0, offsetY: 0, shake: false, shakeIntensity: 0, durationMs: 0 }
   };

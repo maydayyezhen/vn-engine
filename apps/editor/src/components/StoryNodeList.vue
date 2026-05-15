@@ -39,6 +39,10 @@ const emit = defineEmits<{
   addActionSequence: [];
   /** 新增代码型动画节点。 */
   addPlayAnimation: [];
+  /** 新增物品显示节点。 */
+  addShowProp: [];
+  /** 新增物品隐藏节点。 */
+  addHideProp: [];
   /** 新增标签节点。 */
   addLabel: [];
   /** 复制节点。 */
@@ -87,6 +91,8 @@ function handleRowClick(row: StoryNode): void {
           <el-button size="small" @click="$emit('addCamera')">新增镜头</el-button>
           <el-button size="small" @click="$emit('addActionSequence')">新增动作序列</el-button>
           <el-button size="small" @click="$emit('addPlayAnimation')">新增动画</el-button>
+          <el-button size="small" @click="$emit('addShowProp')">新增物品显示</el-button>
+          <el-button size="small" @click="$emit('addHideProp')">新增物品隐藏</el-button>
           <el-button size="small" @click="$emit('addLabel')">新增标签</el-button>
           <el-button size="small" :disabled="!selectedNodeId" @click="$emit('duplicateNode')">复制</el-button>
           <el-button size="small" :disabled="!selectedNodeId" @click="$emit('cutNode')">剪切</el-button>
@@ -116,6 +122,7 @@ function handleRowClick(row: StoryNode): void {
           <el-option label="代码动画" value="playAnimation" />
           <el-option label="标签" value="label" />
           <el-option label="角色" value="character" />
+          <el-option label="物品" value="prop" />
           <el-option label="音频" value="audio" />
           <el-option label="变量" value="variable" />
           <el-option label="条件" value="condition" />

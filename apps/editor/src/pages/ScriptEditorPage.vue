@@ -39,6 +39,8 @@ import {
   addLabelNodeAfter,
   addNarrationNodeAfter,
   addPlayAnimationNodeAfter,
+  addHidePropNodeAfter,
+  addShowPropNodeAfter,
   deleteNode,
   duplicateNode,
   selectSafeNodeAfterDelete,
@@ -271,6 +273,26 @@ function handleAddActionSequence(): void {
 function handleAddPlayAnimation(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addPlayAnimationNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
+  applyProject(nextProject);
+  const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
+  const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
+  selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
+}
+
+/** 新增物品显示节点。 */
+function handleAddShowProp(): void {
+  const currentNodeId = projectStore.selectedNodeId;
+  const nextProject = addShowPropNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
+  applyProject(nextProject);
+  const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
+  const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
+  selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
+}
+
+/** 新增物品隐藏节点。 */
+function handleAddHideProp(): void {
+  const currentNodeId = projectStore.selectedNodeId;
+  const nextProject = addHidePropNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
   applyProject(nextProject);
   const script = nextProject.scripts.find((item) => item.id === projectStore.selectedScriptId);
   const currentIndex = script?.nodes.findIndex((node) => node.id === currentNodeId) ?? -1;
@@ -606,6 +628,8 @@ onBeforeUnmount(() => {
           @add-camera="handleAddCamera"
           @add-action-sequence="handleAddActionSequence"
           @add-play-animation="handleAddPlayAnimation"
+          @add-show-prop="handleAddShowProp"
+          @add-hide-prop="handleAddHideProp"
           @add-label="handleAddLabel"
           @duplicate-node="handleCopyNode"
           @cut-node="handleCutNode"

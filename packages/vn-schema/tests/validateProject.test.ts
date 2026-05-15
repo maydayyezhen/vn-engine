@@ -64,6 +64,28 @@ describe("validateProject resource references", () => {
     project.characters.push({ ...project.characters[0], expressions: [] });
     expect(hasError(project, "角色 id 重复")).toBe(true);
   });
+
+  it("prop 资源和 ShowPropNode 合法时校验通过", () => {
+    const project = createProject();
+    project.assets.items.push({ id: "prop-letter", name: "旧信", type: "prop", path: "assets/prop/old_letter.png" });
+    project.scripts[0].nodes.push({ id: "show-prop", type: "showProp", propId: "prop-letter", assetId: "prop-letter", x: 640, y: 360, scale: 1, opacity: 1, zIndex: 10 });
+    expect(validateProject(project).valid).toBe(true);
+  });
+
+  it("ShowPropNode 引用不存在 prop 时校验报错", () => {
+    const project = createProject();
+    project.scripts[0].nodes.push({ id: "show-prop", type: "showProp", propId: "missing", assetId: "missing", scale: 1, opacity: 1 });
+    expect(hasError(project, "prop 素材不存在")).toBe(true);
+  });
+
+  it("ShowPropNode 数值非法时校验报错", () => {
+    const project = createProject();
+    project.assets.items.push({ id: "prop-letter", name: "旧信", type: "prop", path: "assets/prop/old_letter.png" });
+    project.scripts[0].nodes.push({ id: "show-prop", type: "showProp", propId: "prop-letter", assetId: "prop-letter", scale: 0, opacity: 2 });
+    const result = validateProject(project);
+    expect(result.errors.some((error) => error.message.includes("物品缩放"))).toBe(true);
+    expect(result.errors.some((error) => error.message.includes("物品透明度"))).toBe(true);
+  });
 });
 
 describe("validateProject presentation fields", () => {

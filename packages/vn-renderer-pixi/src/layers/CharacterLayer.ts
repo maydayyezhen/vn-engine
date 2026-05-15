@@ -35,8 +35,7 @@ export class CharacterLayer {
 
     this.animationToken += 1;
     const token = this.animationToken;
-    this.container.removeChildren().forEach((child) => child.destroy({ children: true }));
-    this.spritesByCharacterId.clear();
+    const nextEntries: Array<{ characterId: string; sprite: Sprite }> = [];
 
     for (const character of sortedCharacters) {
       const alreadyConsumed = Boolean(character.effectId && this.consumedEffectIds.has(character.effectId));
@@ -55,8 +54,20 @@ export class CharacterLayer {
       sprite.alpha = layout.opacity;
       sprite.zIndex = layout.zIndex;
       this.applyEntrance(sprite, character, size, token, alreadyConsumed);
+      nextEntries.push({ characterId: character.characterId, sprite });
+    }
+
+    const oldSprites = new Map(this.spritesByCharacterId);
+    this.container.removeChildren();
+    this.spritesByCharacterId.clear();
+
+    for (const { characterId, sprite } of nextEntries) {
       this.container.addChild(sprite);
-      this.spritesByCharacterId.set(character.characterId, sprite);
+      this.spritesByCharacterId.set(characterId, sprite);
+    }
+
+    for (const sprite of oldSprites.values()) {
+      sprite.destroy({ children: true });
     }
 
     this.currentRenderKey = renderKey;

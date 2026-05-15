@@ -41,6 +41,8 @@ export function getNodeSummary(node: StoryNode): string {
   if (node.type === "scene") return node.backgroundAssetId;
   if (node.type === "showCharacter") return `${node.characterId} ${node.expression ?? ""} ${node.position ?? ""}`.trim();
   if (node.type === "hideCharacter") return node.characterId;
+  if (node.type === "showProp") return `${node.propId} -> ${node.assetId}`;
+  if (node.type === "hideProp") return node.propId;
   if (node.type === "camera") return `zoom ${node.zoom ?? 1} offset ${node.offsetX ?? 0},${node.offsetY ?? 0}`;
   if (node.type === "actionSequence") return `${node.name ?? "动作序列"} / ${node.actions.length} actions`;
   if (node.type === "playAnimation") return `${node.animationId} / ${Object.values(node.targets ?? {}).map((target) => target.id ?? target.type).join(", ")}`;
@@ -141,6 +143,40 @@ export function addPlayAnimationNodeAfter(project: VNProject, scriptId: string, 
     },
     autoNext: true,
     waitForCompletion: true
+  };
+  return insertNodeAfter(project, scriptId, afterNodeId, node);
+}
+
+/** 在当前节点后新增物品显示节点。 */
+export function addShowPropNodeAfter(project: VNProject, scriptId: string, afterNodeId: string | null): VNProject {
+  const asset = project.assets.items.find((item) => item.type === "prop");
+  const node: StoryNode = {
+    id: createNodeId("showProp"),
+    type: "showProp",
+    propId: asset?.id ?? "prop_display",
+    assetId: asset?.id ?? "",
+    name: asset?.name,
+    x: 640,
+    y: 360,
+    scale: 1,
+    opacity: 1,
+    zIndex: 10,
+    rotation: 0,
+    flipX: false,
+    enterAnimationId: "prop.revealCenter",
+    enterParams: { durationMs: 500, startScale: 0.85, endScale: 1 }
+  };
+  return insertNodeAfter(project, scriptId, afterNodeId, node);
+}
+
+/** 在当前节点后新增物品隐藏节点。 */
+export function addHidePropNodeAfter(project: VNProject, scriptId: string, afterNodeId: string | null): VNProject {
+  const node: StoryNode = {
+    id: createNodeId("hideProp"),
+    type: "hideProp",
+    propId: "prop_display",
+    exitAnimationId: "prop.fadeOut",
+    exitParams: { durationMs: 350 }
   };
   return insertNodeAfter(project, scriptId, afterNodeId, node);
 }

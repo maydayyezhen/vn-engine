@@ -19,10 +19,10 @@ const emit = defineEmits<{
 }>();
 
 /** 可选素材类型。 */
-const assetTypes: AssetType[] = ["background", "character", "bgm", "sound", "sfx", "voice", "image", "other"];
+const assetTypes: AssetType[] = ["background", "character", "prop", "bgm", "sound", "sfx", "voice", "image", "other"];
 
 /** 桌面端文件导入按钮对应的素材类型。 */
-const desktopImportTypes: AssetType[] = ["background", "character", "bgm", "sound", "voice"];
+const desktopImportTypes: AssetType[] = ["background", "character", "prop", "bgm", "sound", "voice"];
 
 /** 新增素材元数据。 */
 function handleAddAsset(command: string | number | object): void {

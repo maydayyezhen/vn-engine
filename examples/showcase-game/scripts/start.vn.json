@@ -150,6 +150,52 @@
       "waitForClick": true
     },
     {
+      "id": "show-prop-old-letter",
+      "type": "showProp",
+      "propId": "prop-old-letter",
+      "assetId": "prop-old-letter",
+      "name": "旧信",
+      "x": 640,
+      "y": 340,
+      "scale": 0.95,
+      "opacity": 1,
+      "zIndex": 20,
+      "rotation": -0.04,
+      "flipX": false,
+      "enterAnimationId": "prop.revealCenter",
+      "enterParams": {
+        "durationMs": 550,
+        "startScale": 0.82,
+        "endScale": 0.95
+      }
+    },
+    {
+      "id": "anim-prop-letter-float",
+      "type": "playAnimation",
+      "animationId": "prop.floatOnce",
+      "targets": {
+        "prop": {
+          "type": "prop",
+          "id": "prop-old-letter"
+        }
+      },
+      "params": {
+        "durationMs": 700,
+        "amplitude": 16
+      },
+      "waitForCompletion": true,
+      "autoNext": true
+    },
+    {
+      "id": "hide-prop-old-letter",
+      "type": "hideProp",
+      "propId": "prop-old-letter",
+      "exitAnimationId": "prop.fadeOut",
+      "exitParams": {
+        "durationMs": 300
+      }
+    },
+    {
       "id": "sound-page",
       "type": "playAudio",
       "channel": "sound",

@@ -6,6 +6,7 @@ describe("AnimationRegistry", () => {
     const registry = createDefaultAnimationRegistry();
     expect(registry.get("character.softEnter")?.name).toBe("角色柔和入场");
     expect(registry.get("camera.softZoom")?.category).toBe("camera");
+    expect(registry.get("prop.revealCenter")?.category).toBe("prop");
     expect(registry.list().length).toBeGreaterThanOrEqual(builtinAnimations.length);
   });
 
@@ -18,6 +19,7 @@ describe("AnimationRegistry", () => {
   it("可以按 category 列出动画", () => {
     const registry = createDefaultAnimationRegistry();
     expect(registry.listByCategory("character").every((animation) => animation.category === "character")).toBe(true);
+    expect(registry.listByCategory("prop").map((animation) => animation.id)).toContain("prop.floatOnce");
   });
 
   it("缺失动画 id 时返回 undefined", () => {

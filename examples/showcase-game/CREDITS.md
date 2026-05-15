@@ -79,4 +79,4 @@ Download date: 2026-05-15
 - Files used:
   - `assets/prop/old_letter.svg`
   - `assets/prop/cassette_tape.svg`
-- Note: The engine does not yet have a formal PropLayer. Props are registered as image metadata and represented by narration/screen animation.
+- Note: These are technical placeholder prop assets. They are registered as `AssetItem type="prop"` and displayed through ShowPropNode / HidePropNode and PropLayer.

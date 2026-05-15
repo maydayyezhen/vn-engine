@@ -1,10 +1,10 @@
-import type { ActionSequenceNode, ChoiceOption, MoveCharacterAction, NodeTarget, PlayAnimationNode, SetVariableNode, ShowCharacterAction, ShowCharacterNode, StoryNode, VariableValue, VNAction, VNProject } from "@vn-engine/vn-schema";
+import type { ActionSequenceNode, ChoiceOption, HidePropNode, MoveCharacterAction, NodeTarget, PlayAnimationNode, SetVariableNode, ShowCharacterAction, ShowCharacterNode, ShowPropNode, StoryNode, VariableValue, VNAction, VNProject } from "@vn-engine/vn-schema";
 import { validateProject } from "@vn-engine/vn-schema";
 import { ConditionEvaluator } from "../condition/ConditionEvaluator";
 import { findNodeByIndex, findNodeIndex, findScript } from "../utils/runtimeLookup";
 import { resolveRuntimeTarget } from "../utils/targetResolver";
 import { VariableStore } from "../variable/VariableStore";
-import type { RuntimeActionEffect, RuntimeAnimationEffect, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeState } from "./RuntimeState";
+import type { RuntimeActionEffect, RuntimeAnimationEffect, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimePropDisplay, RuntimeState } from "./RuntimeState";
 import type { RuntimeSnapshot } from "./RuntimeSnapshot";
 
 /** 最小视觉小说运行时解释器。 */
@@ -164,6 +164,7 @@ export class VNRuntime {
       backgroundAssetId: undefined,
       background: undefined,
       characters: [],
+      props: [],
       camera: this.createDefaultCameraState(),
       pendingEffects: [],
       pendingActions: [],
@@ -381,6 +382,8 @@ export class VNRuntime {
     }
     if (node.type === "showCharacter") this.showCharacter(node);
     if (node.type === "hideCharacter") this.hideCharacter(node.characterId, node.exitEffect ?? "none", node.transitionDurationMs ?? 300);
+    if (node.type === "showProp") this.showProp(node);
+    if (node.type === "hideProp") this.hideProp(node);
     if (node.type === "camera") {
       this.state.camera = {
         zoom: node.zoom ?? 1,
@@ -528,6 +531,74 @@ export class VNRuntime {
     this.state.characters = this.state.characters.filter((item) => item.characterId !== characterId);
   }
 
+  /** 显示或更新物品状态，并把入场动画作为一次性事件交给渲染器。 */
+  private showProp(node: ShowPropNode): void {
+    const previous = this.state.props.find((item) => item.propId === node.propId);
+    const display: RuntimePropDisplay = {
+      propId: node.propId,
+      assetId: node.assetId,
+      name: node.name,
+      x: node.x ?? 640,
+      y: node.y ?? 360,
+      scale: node.scale ?? 1,
+      opacity: node.opacity ?? 1,
+      zIndex: node.zIndex ?? 0,
+      rotation: node.rotation ?? 0,
+      flipX: node.flipX ?? false
+    };
+    this.state.props = [...this.state.props.filter((item) => item.propId !== node.propId), display];
+    if (!previous && node.enterAnimationId) {
+      this.state.pendingEffects.push({
+        id: this.createRuntimeEffectId("showProp", node.propId),
+        type: "showProp",
+        propId: node.propId,
+        animationId: node.enterAnimationId,
+        animationParams: node.enterParams ? { ...node.enterParams } : undefined,
+        transitionDurationMs: 0,
+        prop: { ...display }
+      });
+      this.state.pendingAnimations.push({
+        effectId: this.createRuntimeEffectId("propAnimation", node.propId),
+        animationId: node.enterAnimationId,
+        targets: { prop: { type: "prop", id: node.propId } },
+        params: node.enterParams ? { ...node.enterParams } : undefined,
+        waitForCompletion: false,
+        autoNext: true
+      });
+    }
+    this.addDebugEvent("action", `显示物品：${node.propId}`, this.state.currentScriptId, node.id);
+  }
+
+  /** 隐藏物品状态，并把退场动画作为一次性事件交给渲染器。 */
+  private hideProp(node: HidePropNode): void {
+    const prop = this.state.props.find((item) => item.propId === node.propId);
+    if (!prop) {
+      this.addDebugEvent("error", `隐藏物品失败，物品不存在：${node.propId}`, this.state.currentScriptId, node.id);
+      return;
+    }
+    if (node.exitAnimationId) {
+      this.state.pendingEffects.push({
+        id: this.createRuntimeEffectId("hideProp", node.propId),
+        type: "hideProp",
+        propId: node.propId,
+        animationId: node.exitAnimationId,
+        animationParams: node.exitParams ? { ...node.exitParams } : undefined,
+        transitionDurationMs: 0,
+        prop: { ...prop }
+      });
+      this.state.pendingAnimations.push({
+        effectId: this.createRuntimeEffectId("propAnimation", node.propId),
+        animationId: node.exitAnimationId,
+        targets: { prop: { type: "prop", id: node.propId } },
+        params: node.exitParams ? { ...node.exitParams } : undefined,
+        waitForCompletion: false,
+        autoNext: true
+      });
+    }
+    this.state.props = this.state.props.filter((item) => item.propId !== node.propId);
+    this.addDebugEvent("action", `隐藏物品：${node.propId}`, this.state.currentScriptId, node.id);
+  }
+
   /** 生成一次性演出效果 id。 */
   private createRuntimeEffectId(type: string, targetId: string): string {
     return `${type}_${targetId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -607,7 +678,9 @@ export class VNRuntime {
   ): RuntimeSnapshot {
     const pendingEffects = this.state.pendingEffects.map((effect) => ({
       ...effect,
-      character: effect.character ? { ...effect.character } : undefined
+      character: effect.character ? { ...effect.character } : undefined,
+      prop: effect.prop ? { ...effect.prop } : undefined,
+      animationParams: effect.animationParams ? { ...effect.animationParams } : undefined
     }));
     const pendingActions = this.state.pendingActions.map((action) => ({
       ...action,
@@ -625,6 +698,7 @@ export class VNRuntime {
       backgroundAssetId: this.state.backgroundAssetId,
       background: this.state.background ? { ...this.state.background } : undefined,
       characters: this.state.characters.map((item) => ({ ...item })),
+      props: this.state.props.map((item) => ({ ...item })),
       camera: { ...this.state.camera },
       pendingEffects,
       pendingActions,
@@ -650,10 +724,13 @@ export class VNRuntime {
       ...state,
       background: state.background ? { ...state.background } : undefined,
       characters: state.characters.map((item) => ({ ...item })),
+      props: (state.props ?? []).map((item) => ({ ...item })),
       camera: { ...(state.camera ?? this.createDefaultCameraState()) },
       pendingEffects: (state.pendingEffects ?? []).map((effect) => ({
         ...effect,
-        character: effect.character ? { ...effect.character } : undefined
+        character: effect.character ? { ...effect.character } : undefined,
+        prop: effect.prop ? { ...effect.prop } : undefined,
+        animationParams: effect.animationParams ? { ...effect.animationParams } : undefined
       })),
       pendingActions: (state.pendingActions ?? []).map((action) => ({
         ...action,
@@ -676,10 +753,13 @@ export class VNRuntime {
       ...snapshot,
       background: snapshot.background ? { ...snapshot.background } : undefined,
       characters: snapshot.characters.map((item) => ({ ...item })),
+      props: (snapshot.props ?? []).map((item) => ({ ...item })),
       camera: { ...snapshot.camera },
       pendingEffects: snapshot.pendingEffects.map((effect) => ({
         ...effect,
-        character: effect.character ? { ...effect.character } : undefined
+        character: effect.character ? { ...effect.character } : undefined,
+        prop: effect.prop ? { ...effect.prop } : undefined,
+        animationParams: effect.animationParams ? { ...effect.animationParams } : undefined
       })),
       pendingActions: (snapshot.pendingActions ?? []).map((action) => ({
         ...action,

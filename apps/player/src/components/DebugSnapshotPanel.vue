@@ -41,6 +41,8 @@ const expanded = ref(true);
         <dd>{{ snapshot.backgroundAssetId || "无" }}</dd>
         <dt>角色</dt>
         <dd><pre>{{ JSON.stringify(snapshot.characters, null, 2) }}</pre></dd>
+        <dt>物品</dt>
+        <dd><pre>{{ JSON.stringify(snapshot.props, null, 2) }}</pre></dd>
         <dt>音频状态</dt>
         <dd><pre>{{ JSON.stringify(snapshot.audio, null, 2) }}</pre></dd>
         <dt>音频资源</dt>

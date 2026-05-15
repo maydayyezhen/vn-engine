@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import type { AnimationTargets, VNProject } from "@vn-engine/vn-schema";
 import type { AnimationModule } from "@vn-engine/vn-renderer-pixi";
-import { getBackgroundOptions, getCharacterOptions } from "../../services/resourceLookupService";
+import { getBackgroundOptions, getCharacterOptions, getPropOptions } from "../../services/resourceLookupService";
 
 /** 组件属性。 */
 const props = defineProps<{
@@ -24,6 +24,8 @@ const emit = defineEmits<{
 const characterOptions = computed(() => getCharacterOptions(props.project));
 /** 背景选项。 */
 const backgroundOptions = computed(() => getBackgroundOptions(props.project));
+/** 物品选项。 */
+const propOptions = computed(() => getPropOptions(props.project));
 
 /** 更新指定槽位目标。 */
 function updateTarget(slotKey: string, type: AnimationTargets[string]["type"], id?: string): void {
@@ -54,6 +56,14 @@ function updateTarget(slotKey: string, type: AnimationTargets[string]["type"], i
           @update:model-value="(value: string) => updateTarget(slot.key, 'background', value)"
         >
           <el-option v-for="asset in backgroundOptions" :key="asset.id" :label="`${asset.name} (${asset.id})`" :value="asset.id" />
+        </el-select>
+        <el-select
+          v-else-if="slot.type === 'prop'"
+          :model-value="targets[slot.key]?.id"
+          filterable
+          @update:model-value="(value: string) => updateTarget(slot.key, 'prop', value)"
+        >
+          <el-option v-for="asset in propOptions" :key="asset.id" :label="`${asset.name} (${asset.id})`" :value="asset.id" />
         </el-select>
         <el-input v-else :model-value="slot.type" disabled @update:model-value="() => updateTarget(slot.key, slot.type)" />
         <el-text v-if="slot.description" size="small" type="info">{{ slot.description }}</el-text>

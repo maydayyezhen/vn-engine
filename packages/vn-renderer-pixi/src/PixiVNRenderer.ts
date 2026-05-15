@@ -6,6 +6,7 @@ import { BackgroundLayer } from "./layers/BackgroundLayer";
 import { CharacterLayer } from "./layers/CharacterLayer";
 import { ChoiceLayer } from "./layers/ChoiceLayer";
 import { DialogueLayer } from "./layers/DialogueLayer";
+import { PropLayer } from "./layers/PropLayer";
 import type { PixiVNRendererOptions, PixiVNRenderOptions, VNRenderSize } from "./types";
 import { ActionPlayer } from "./actions/ActionPlayer";
 import type { AnimationContext } from "./animations/types/AnimationContext";
@@ -36,6 +37,8 @@ export class PixiVNRenderer {
   private backgroundLayer: BackgroundLayer | null = null;
   /** 角色层。 */
   private characterLayer: CharacterLayer | null = null;
+  /** 物品层。 */
+  private propLayer: PropLayer | null = null;
   /** 对话层。 */
   private dialogueLayer: DialogueLayer | null = null;
   /** 选项层。 */
@@ -82,15 +85,17 @@ export class PixiVNRenderer {
     this.root.addChild(this.uiRoot);
     this.backgroundLayer = new BackgroundLayer(this.assetLoader, app.renderer);
     this.characterLayer = new CharacterLayer(this.assetLoader, app.renderer);
+    this.propLayer = new PropLayer(this.assetLoader, app.renderer);
     this.dialogueLayer = new DialogueLayer();
     this.choiceLayer = new ChoiceLayer(this.options.onChoose);
 
     this.sceneRoot.addChild(this.backgroundLayer.container);
     this.sceneRoot.addChild(this.characterLayer.container);
+    this.sceneRoot.addChild(this.propLayer.container);
+    this.sceneRoot.addChild(this.screenEffectLayer);
     this.sceneRoot.addChild(this.particleLayer);
     this.uiRoot.addChild(this.dialogueLayer.container);
     this.uiRoot.addChild(this.choiceLayer.container);
-    this.root.addChild(this.screenEffectLayer);
 
     app.canvas.className = "pixi-vn-canvas";
     container.innerHTML = "";
@@ -99,11 +104,12 @@ export class PixiVNRenderer {
 
   /** 根据运行时快照和工程数据渲染画面。 */
   async render(snapshot: RuntimeSnapshot, project: VNProject, renderOptions: PixiVNRenderOptions = {}): Promise<void> {
-    if (!this.app || !this.backgroundLayer || !this.characterLayer || !this.dialogueLayer || !this.choiceLayer) return;
+    if (!this.app || !this.backgroundLayer || !this.characterLayer || !this.propLayer || !this.dialogueLayer || !this.choiceLayer) return;
     const resources = resolveRenderResources(project, snapshot);
 
     await this.backgroundLayer.render(resources.background, this.size);
     await this.characterLayer.render(resources.characters, this.size);
+    await this.propLayer.render(resources.props);
     this.applyCamera(resources.camera);
     this.dialogueLayer.container.visible = !renderOptions.hideRuntimeUi;
     this.choiceLayer.container.visible = !renderOptions.hideRuntimeUi;
@@ -188,6 +194,7 @@ export class PixiVNRenderer {
   private createAnimationContext(): AnimationContext {
     return {
       getCharacterSprite: (characterId) => this.characterLayer?.getCharacterSprite(characterId),
+      getPropSprite: (propId) => this.propLayer?.getPropSprite(propId),
       getBackgroundSprite: () => this.backgroundLayer?.getBackgroundSprite(),
       getCameraContainer: () => this.sceneRoot,
       getScreenEffectLayer: () => this.screenEffectLayer,
@@ -222,11 +229,13 @@ export class PixiVNRenderer {
     this.activeAnimationKey = null;
     this.consumedAnimationEffectIds.clear();
     this.assetLoader.clear();
+    this.propLayer?.destroy();
     this.root.removeChildren();
     this.app?.destroy(true, { children: true, texture: false });
     this.app = null;
     this.backgroundLayer = null;
     this.characterLayer = null;
+    this.propLayer = null;
     this.dialogueLayer = null;
     this.choiceLayer = null;
   }

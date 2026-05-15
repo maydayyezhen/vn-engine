@@ -13,6 +13,7 @@ const STANDARD_DIRS: &[&str] = &[
     "scripts",
     "assets/background",
     "assets/character",
+    "assets/prop",
     "assets/audio/bgm",
     "assets/audio/sound",
     "assets/audio/voice",

@@ -35,3 +35,7 @@
 `PlayAnimationNode` 是代码型动画模块的剧情节点。schema 只校验基础字段：`animationId` 不能为空，`targets` 不能为空，目标类型必须有效；动画 id 是否已经注册由编辑器或播放器通过 `AnimationRegistry` 检查。
 
 项目 JSON 只保存动画引用和参数，不保存动画代码、不保存 base64，也不保存本地绝对路径。旧的 `ActionSequenceNode` 继续兼容，新的可复用定制动画优先使用 `PlayAnimationNode`。
+
+## Prop 支持
+
+Schema 已支持 `AssetType=prop`、`PropViewState`、`ShowPropNode` 和 `HidePropNode`。校验会检查 prop 素材路径、ShowPropNode 的 prop 资源引用、scale/opacity/zIndex 等基础字段。

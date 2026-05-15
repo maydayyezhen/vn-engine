@@ -29,6 +29,11 @@ export function getBackgroundOptions(project: VNProject): AssetItem[] {
   return getAssetsByType(project, "background");
 }
 
+/** 获取物品选项。 */
+export function getPropOptions(project: VNProject): AssetItem[] {
+  return getAssetsByType(project, "prop");
+}
+
 /** 获取音频选项。 */
 export function getAudioOptions(project: VNProject): AssetItem[] {
   return project.assets.items.filter((asset) => ["bgm", "sound", "sfx", "voice"].includes(asset.type));

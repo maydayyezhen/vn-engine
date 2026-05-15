@@ -4,6 +4,8 @@ import type { Container, Sprite } from "pixi.js";
 export interface AnimationContext {
   /** 获取指定角色的显示对象。 */
   getCharacterSprite(characterId: string): Sprite | undefined;
+  /** 获取指定物品的显示对象。 */
+  getPropSprite(propId: string): Sprite | undefined;
   /** 获取当前背景显示对象。 */
   getBackgroundSprite(assetId?: string): Container | undefined;
   /** 获取受镜头影响的画面容器。 */

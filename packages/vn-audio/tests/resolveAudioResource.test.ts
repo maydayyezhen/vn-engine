@@ -18,17 +18,22 @@ function createSnapshot(): RuntimeSnapshot {
     backgroundAssetId: "bg-classroom",
     background: { assetId: "bg-classroom", transition: "none", transitionDurationMs: 300 },
     characters: [],
+    props: [],
     camera: { zoom: 1, offsetX: 0, offsetY: 0, shake: false, shakeIntensity: 0, durationMs: 0 },
     pendingEffects: [],
+    pendingActions: [],
+    pendingAnimations: [],
     speaker: "lincheng",
     text: "测试",
     choices: [],
     variables: {},
+    debugLog: [],
     audio: {
       bgm: "bgm-main-theme",
       sound: "sound-door",
       voice: "voice-lincheng-001"
     },
+    isWaitingForActionCompletion: false,
     isEnded: false
   };
 }

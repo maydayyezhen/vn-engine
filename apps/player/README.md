@@ -81,3 +81,7 @@ http://localhost:5173/?project=showcase
 ```
 
 根目录脚本 `pnpm dev:player:showcase` 会启动同一个播放器开发服务。Showcase 资源的浏览器可访问副本由 `pnpm prepare:showcase-assets` 生成到 `apps/player/public/showcase-assets/`。
+
+## 物品播放
+
+播放器通过 `vn-core` 的 `snapshot.props` 和 `vn-renderer-pixi` 的 PropLayer 显示物品。Showcase 中旧信会作为独立 prop 展示，并可执行 prop 动画；读档恢复只还原静态 props，不重播已完成入场动画。

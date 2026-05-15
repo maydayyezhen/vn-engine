@@ -1,5 +1,5 @@
 /** 素材类型，用于区分图片、音频和其他资源。 */
-export type AssetType = "background" | "character" | "bgm" | "sound" | "sfx" | "voice" | "image" | "other";
+export type AssetType = "background" | "character" | "prop" | "bgm" | "sound" | "sfx" | "voice" | "image" | "other";
 
 /** 视觉小说工程中的单个素材条目。 */
 export interface AssetItem {

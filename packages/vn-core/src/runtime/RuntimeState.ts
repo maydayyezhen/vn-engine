@@ -30,7 +30,7 @@ export interface RuntimeCameraState {
 export interface RuntimeEffect {
   /** 演出效果类型。 */
   id: string;
-  type: "backgroundTransition" | "showCharacter" | "hideCharacter";
+  type: "backgroundTransition" | "showCharacter" | "hideCharacter" | "showProp" | "hideProp";
   /** 背景素材 id。 */
   backgroundAssetId?: string;
   /** 背景切换转场。 */
@@ -44,6 +44,14 @@ export interface RuntimeEffect {
   transitionDurationMs: number;
   /** 退场前角色显示状态。 */
   character?: RuntimeCharacterDisplay;
+  /** 目标物品显示对象 id。 */
+  propId?: string;
+  /** 物品动画模块 id。 */
+  animationId?: string;
+  /** 物品动画参数。 */
+  animationParams?: Record<string, unknown>;
+  /** 物品静态显示状态快照。 */
+  prop?: RuntimePropDisplay;
 }
 
 /** 等待渲染器播放的动作效果。 */
@@ -108,6 +116,30 @@ export interface RuntimeCharacterDisplay {
   transitionDurationMs?: number;
 }
 
+/** 当前显示的物品状态。 */
+export interface RuntimePropDisplay {
+  /** 物品显示对象 id。 */
+  propId: string;
+  /** 指向素材库中 prop 素材的 id。 */
+  assetId: string;
+  /** 物品显示名称。 */
+  name?: string;
+  /** 舞台横向坐标。 */
+  x: number;
+  /** 舞台纵向坐标。 */
+  y: number;
+  /** 缩放倍率。 */
+  scale: number;
+  /** 透明度。 */
+  opacity: number;
+  /** 显示层级。 */
+  zIndex: number;
+  /** 旋转角度。 */
+  rotation: number;
+  /** 是否水平翻转。 */
+  flipX: boolean;
+}
+
 /** 当前播放的音频状态。 */
 export interface RuntimeAudioState {
   /** 当前 BGM 素材 id。 */
@@ -150,6 +182,8 @@ export interface RuntimeState {
   background?: RuntimeBackgroundState;
   /** 当前显示的角色列表。 */
   characters: RuntimeCharacterDisplay[];
+  /** 当前显示的物品列表。 */
+  props: RuntimePropDisplay[];
   /** 当前镜头状态。 */
   camera: RuntimeCameraState;
   /** 待渲染的一次性演出效果。 */

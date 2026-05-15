@@ -24,11 +24,16 @@ export function createTestState(): RuntimeState {
     backgroundAssetId: "bg-classroom",
     background: { assetId: "bg-classroom", transition: "none", transitionDurationMs: 300 },
     characters: [{ characterId: "lincheng", expression: "smile", assetId: "lincheng-smile", position: "center", scale: 1, opacity: 1, zIndex: 0, flipX: false, enterEffect: "none", transitionDurationMs: 300 }],
+    props: [],
     camera: { zoom: 1, offsetX: 0, offsetY: 0, shake: false, shakeIntensity: 0, durationMs: 0 },
     pendingEffects: [],
+    pendingActions: [],
+    pendingAnimations: [],
     audio: { bgm: "bgm-main" },
     variables: { stay: true },
+    debugLog: [],
     isWaitingChoice: false,
+    isWaitingForActionCompletion: false,
     isEnded: false
   };
 }
@@ -42,13 +47,18 @@ export function createTestSnapshot(): RuntimeSnapshot {
     backgroundAssetId: "bg-classroom",
     background: { assetId: "bg-classroom", transition: "none", transitionDurationMs: 300 },
     characters: [{ characterId: "lincheng", expression: "smile", assetId: "lincheng-smile", position: "center", scale: 1, opacity: 1, zIndex: 0, flipX: false, enterEffect: "none", transitionDurationMs: 300 }],
+    props: [],
     camera: { zoom: 1, offsetX: 0, offsetY: 0, shake: false, shakeIntensity: 0, durationMs: 0 },
     pendingEffects: [],
+    pendingActions: [],
+    pendingAnimations: [],
     speaker: "林澄",
     text: "这里是测试文本。",
     choices: [],
     variables: { stay: true },
+    debugLog: [],
     audio: { bgm: "bgm-main" },
+    isWaitingForActionCompletion: false,
     isEnded: false
   };
 }

@@ -150,6 +150,18 @@ function validatePresentationNode(node: StoryNode, scriptId: string, errors: Val
     validateDuration(node.transitionDurationMs, "角色退场时长", errors, scriptId, node.id);
   }
 
+  if (node.type === "showProp") {
+    if (node.scale !== undefined && (!Number.isFinite(node.scale) || node.scale <= 0)) {
+      errors.push(createError("物品缩放必须大于 0。", scriptId, node.id));
+    }
+    if (node.opacity !== undefined && (!Number.isFinite(node.opacity) || node.opacity < 0 || node.opacity > 1)) {
+      errors.push(createError("物品透明度必须在 0 到 1 之间。", scriptId, node.id));
+    }
+    if (node.zIndex !== undefined && !Number.isFinite(node.zIndex)) {
+      warnings.push(createWarning("物品 zIndex 建议使用有效数字。", scriptId, node.id));
+    }
+  }
+
   if (node.type === "camera") {
     validateDuration(node.durationMs, "镜头效果时长", errors, scriptId, node.id);
     if (node.zoom !== undefined && (!Number.isFinite(node.zoom) || node.zoom <= 0 || node.zoom > 5)) {
@@ -275,7 +287,7 @@ function validatePlayAnimationNode(project: VNProject, node: Extract<StoryNode, 
       errors.push(createError(`动画目标 ${slotKey} 的 type 非法。`, scriptId, node.id));
       continue;
     }
-    if ((target.type === "character" || target.type === "background") && !target.id) {
+    if ((target.type === "character" || target.type === "background" || target.type === "prop") && !target.id) {
       errors.push(createError(`动画目标 ${slotKey} 缺少 id。`, scriptId, node.id));
       continue;
     }
@@ -285,6 +297,19 @@ function validatePlayAnimationNode(project: VNProject, node: Extract<StoryNode, 
     if (target.type === "background" && target.id && !findAsset(project, target.id)) {
       warnings.push(createWarning(`动画目标 ${slotKey} 引用的背景素材不存在：${target.id}`, scriptId, node.id));
     }
+  }
+}
+
+/** 校验物品显示和隐藏节点。 */
+function validatePropNode(project: VNProject, node: Extract<StoryNode, { type: "showProp" | "hideProp" }>, errors: ValidationIssue[], warnings: ValidationIssue[], scriptId: string): void {
+  if (node.type === "showProp") {
+    if (!node.propId) errors.push(createError("ShowPropNode 缺少 propId。", scriptId, node.id));
+    if (!hasAssetOfType(project, node.assetId, "prop")) {
+      errors.push(createError(`ShowPropNode 引用的 prop 素材不存在或类型不正确：${node.assetId}`, scriptId, node.id));
+    }
+  }
+  if (node.type === "hideProp" && !node.propId) {
+    warnings.push(createWarning("HidePropNode 缺少 propId，运行时会忽略该节点。", scriptId, node.id));
   }
 }
 
@@ -413,6 +438,7 @@ export function validateProject(project: VNProject): ValidationResult {
   const nodeIds = new Set<string>();
   const nodeTargets = new Set<string>();
   const labelTargets = new Set<string>();
+  const showPropIds = new Set<string>();
   const assetIds = new Set<string>();
   const characterIds = new Set<string>();
   const variables = validateVariables(project, errors);
@@ -422,6 +448,7 @@ export function validateProject(project: VNProject): ValidationResult {
   for (const asset of project.assets.items) {
     if (assetIds.has(asset.id)) errors.push(createError(`素材 id 重复：${asset.id}`));
     assetIds.add(asset.id);
+    if (asset.type === "prop" && !asset.path.trim()) errors.push(createError(`prop 素材路径不能为空：${asset.id}`));
   }
 
   for (const character of project.characters) {
@@ -454,6 +481,9 @@ export function validateProject(project: VNProject): ValidationResult {
         scriptLabels.add(node.name);
         labelTargets.add(labelTargetKey(script.id, node.name));
       }
+      if (node.type === "showProp" && node.propId) {
+        showPropIds.add(node.propId);
+      }
       validatePresentationNode(node, script.id, errors, warnings);
     }
   }
@@ -471,6 +501,10 @@ export function validateProject(project: VNProject): ValidationResult {
       if (node.type === "setVariable") validateSetVariableNode(node, variables, errors, script.id);
       if (node.type === "actionSequence") validateActionSequenceNode(project, node, errors, warnings, script.id);
       if (node.type === "playAnimation") validatePlayAnimationNode(project, node, errors, warnings, script.id);
+      if (node.type === "showProp" || node.type === "hideProp") validatePropNode(project, node, errors, warnings, script.id);
+      if (node.type === "hideProp" && node.propId && !showPropIds.has(node.propId)) {
+        warnings.push(createWarning(`HidePropNode 引用了工程中未显示过的物品：${node.propId}`, script.id, node.id));
+      }
 
       if (node.type === "choice") {
         for (const option of node.options) {

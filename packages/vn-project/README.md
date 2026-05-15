@@ -41,3 +41,7 @@ interface ProjectBundle {
 ## 脚本管理纯逻辑
 
 `vn-project` 现在提供多脚本编辑所需的纯逻辑辅助函数，包括创建安全脚本 id、创建脚本、确保项目至少有一个脚本、选择兜底脚本、重命名脚本、删除脚本和设置入口脚本。这些函数不依赖 Vue、Element Plus、DOM 或 Tauri，可同时供 Web 编辑器和桌面编辑器使用。
+
+## Prop 目录
+
+本地工程标准目录现在包含 `assets/prop/`。桌面导入 prop 图片后应复制到该目录，并在项目 JSON 中保存工程内相对路径。

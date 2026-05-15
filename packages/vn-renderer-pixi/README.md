@@ -49,3 +49,7 @@
 内置动画包括 `character.softEnter`、`character.nervousShake`、`character.breathe`、`camera.softZoom`、`camera.shakeLight`、`screen.flashWhite`、`screen.fadeToBlack` 和 `particle.snow`。
 
 `animations/custom` 是实验性开发者模式目录，只适合可信代码。当前没有插件沙箱、签名系统或 AI API 接入。
+
+## PropLayer
+
+渲染层已新增 `PropLayer`，位于角色层前、UI 层后。PropLayer 根据 `snapshot.props` 加载物品图片，失败时显示占位卡片，并支持 x/y/scale/opacity/zIndex/rotation/flipX。动画上下文提供 `getPropSprite()`，内置 prop 动画包括 `prop.revealCenter`、`prop.fadeOut`、`prop.floatOnce`。

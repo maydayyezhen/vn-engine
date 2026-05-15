@@ -44,6 +44,18 @@ const displayedCharacters = computed(() =>
   })
 );
 
+/** 当前物品资源解析结果。 */
+const displayedProps = computed(() =>
+  (snapshot.value?.props ?? []).map((item) => {
+    const asset = findAssetById(props.project, item.assetId);
+    return {
+      ...item,
+      assetName: asset?.name || item.name || item.assetId,
+      assetPath: asset?.path || "素材路径缺失"
+    };
+  })
+);
+
 /** 当前音频资源解析结果。 */
 const displayedAudio = computed(() =>
   Object.entries(snapshot.value?.audio ?? {})
@@ -202,6 +214,15 @@ defineExpose({
         </div>
         <div class="preview-meta">
           镜头：zoom {{ snapshot.camera.zoom }} / offset {{ snapshot.camera.offsetX }}, {{ snapshot.camera.offsetY }} / shake {{ snapshot.camera.shake ? "on" : "off" }}
+        </div>
+        <div class="preview-meta">
+          物品：
+          <span v-if="displayedProps.length">
+            <span v-for="prop in displayedProps" :key="prop.propId" class="inline-item">
+              {{ prop.propId }} / {{ prop.assetName }} / {{ prop.assetPath }}
+            </span>
+          </span>
+          <span v-else>无</span>
         </div>
         <div class="preview-meta">
           音频：

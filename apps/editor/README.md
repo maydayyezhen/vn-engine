@@ -74,3 +74,7 @@ Web 导出限制：
 ## Showcase Demo
 
 编辑器顶部“项目操作”菜单提供“加载 Showcase Demo”。它会从 `examples/showcase-game` 读取完整项目和 `scripts/start.vn.json`，用于检查素材库、变量、剧情节点、动画节点和预览链路。
+
+## 物品编辑
+
+编辑器素材库支持 `prop` 类型；节点工具栏支持新增物品显示和物品隐藏；属性面板可编辑 prop 资源、坐标、缩放、透明度、层级、旋转、翻转和入退场动画。PlayAnimationNode 的目标选择也支持 prop。

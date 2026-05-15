@@ -8,7 +8,8 @@ import {
   getAudioOptions,
   getBackgroundOptions,
   getCharacterOptions,
-  getExpressionOptions
+  getExpressionOptions,
+  getPropOptions
 } from "../services/resourceLookupService";
 import { updateChoiceOption, updateConditionNode, updateNode, type StoryNodePatch } from "../services/scriptEditService";
 import ConditionEditor from "./condition/ConditionEditor.vue";
@@ -226,6 +227,17 @@ function updateShowExpression(expressionId: string): void {
   });
 }
 
+/** 更新物品显示节点的素材。 */
+function updateShowPropAsset(assetId: string): void {
+  if (!props.node || props.node.type !== "showProp") return;
+  const asset = findAssetById(props.project, assetId);
+  applyPatch({
+    assetId,
+    propId: props.node.propId || assetId,
+    name: props.node.name || asset?.name
+  });
+}
+
 /** 获取当前资源缺失警告。 */
 function getMissingResourceWarning(): string {
   if (!props.node) return "";
@@ -235,6 +247,7 @@ function getMissingResourceWarning(): string {
     if (props.node.expression && !findCharacterExpression(props.project, props.node.characterId, props.node.expression)) return "当前表情不存在。";
   }
   if (props.node.type === "playAudio" && !findAssetById(props.project, props.node.assetId)) return "当前音频素材不存在。";
+  if (props.node.type === "showProp" && !findAssetById(props.project, props.node.assetId)) return "当前物品素材不存在。";
   return "";
 }
 
@@ -250,7 +263,7 @@ function updatePlayAnimationId(animationId: string): void {
     slot.key,
     {
       type: slot.type,
-      id: slot.type === "character" ? props.project.characters[0]?.id : undefined
+      id: slot.type === "character" ? props.project.characters[0]?.id : slot.type === "prop" ? getPropOptions(props.project)[0]?.id : undefined
     }
   ]));
   const params = animation ? normalizeAnimationParams(animation.paramsSchema, {}) : {};
@@ -396,6 +409,53 @@ function updatePlayAnimationId(animationId: string): void {
         </el-form-item>
         <el-form-item label="transitionDurationMs">
           <el-input-number :model-value="node.transitionDurationMs ?? 300" :min="0" :max="5000" @update:model-value="(value: number | undefined) => applyPatch({ transitionDurationMs: value ?? 300 })" />
+        </el-form-item>
+      </template>
+
+      <template v-else-if="node.type === 'showProp'">
+        <el-form-item label="prop resource">
+          <el-select :model-value="node.assetId" filterable @update:model-value="updateShowPropAsset">
+            <el-option v-for="asset in getPropOptions(project)" :key="asset.id" :label="`${asset.name} (${asset.id})`" :value="asset.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="propId">
+          <el-input :model-value="node.propId" @update:model-value="(value: string) => applyPatch({ propId: value })" />
+        </el-form-item>
+        <el-form-item label="name">
+          <el-input :model-value="node.name" @update:model-value="(value: string) => applyPatch({ name: value })" />
+        </el-form-item>
+        <el-form-item label="x / y">
+          <div class="inline-fields">
+            <el-input-number :model-value="node.x ?? 640" @update:model-value="(value: number | undefined) => applyPatch({ x: value ?? 640 })" />
+            <el-input-number :model-value="node.y ?? 360" @update:model-value="(value: number | undefined) => applyPatch({ y: value ?? 360 })" />
+          </div>
+        </el-form-item>
+        <el-form-item label="scale">
+          <el-input-number :model-value="node.scale ?? 1" :min="0.1" :max="5" :step="0.1" @update:model-value="(value: number | undefined) => applyPatch({ scale: value ?? 1 })" />
+        </el-form-item>
+        <el-form-item label="opacity">
+          <el-input-number :model-value="node.opacity ?? 1" :min="0" :max="1" :step="0.05" @update:model-value="(value: number | undefined) => applyPatch({ opacity: value ?? 1 })" />
+        </el-form-item>
+        <el-form-item label="zIndex">
+          <el-input-number :model-value="node.zIndex ?? 10" @update:model-value="(value: number | undefined) => applyPatch({ zIndex: value ?? 10 })" />
+        </el-form-item>
+        <el-form-item label="rotation">
+          <el-input-number :model-value="node.rotation ?? 0" :step="0.1" @update:model-value="(value: number | undefined) => applyPatch({ rotation: value ?? 0 })" />
+        </el-form-item>
+        <el-form-item label="flipX">
+          <el-switch :model-value="node.flipX ?? false" @update:model-value="(value: boolean) => applyPatch({ flipX: value })" />
+        </el-form-item>
+        <el-form-item label="enterAnimationId">
+          <AnimationSelector :model-value="node.enterAnimationId ?? 'prop.revealCenter'" @update:model-value="(value) => applyPatch({ enterAnimationId: value })" />
+        </el-form-item>
+      </template>
+
+      <template v-else-if="node.type === 'hideProp'">
+        <el-form-item label="propId">
+          <el-input :model-value="node.propId" @update:model-value="(value: string) => applyPatch({ propId: value })" />
+        </el-form-item>
+        <el-form-item label="exitAnimationId">
+          <AnimationSelector :model-value="node.exitAnimationId ?? 'prop.fadeOut'" @update:model-value="(value) => applyPatch({ exitAnimationId: value })" />
         </el-form-item>
       </template>
 

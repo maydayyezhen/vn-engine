@@ -114,12 +114,46 @@ export interface ResolvedAudioResource {
   exists: boolean;
 }
 
+/** 解析后的物品资源。 */
+export interface ResolvedPropResource {
+  /** 一次性物品演出效果 id。 */
+  effectId?: string;
+  /** 物品显示对象 id。 */
+  propId: string;
+  /** 物品素材 id。 */
+  assetId: string;
+  /** 物品显示名称。 */
+  name: string;
+  /** 物品资源路径。 */
+  path?: string;
+  /** 舞台横向坐标。 */
+  x: number;
+  /** 舞台纵向坐标。 */
+  y: number;
+  /** 缩放倍数。 */
+  scale: number;
+  /** 透明度。 */
+  opacity: number;
+  /** 显示层级。 */
+  zIndex: number;
+  /** 旋转角度。 */
+  rotation: number;
+  /** 是否水平翻转。 */
+  flipX: boolean;
+  /** 原始素材条目。 */
+  asset?: AssetItem;
+  /** 资源引用是否完整有效。 */
+  exists: boolean;
+}
+
 /** 解析后的渲染资源集合。 */
 export interface ResolvedRenderResources {
   /** 当前背景资源。 */
   background: ResolvedBackgroundResource;
   /** 当前角色资源列表。 */
   characters: ResolvedCharacterResource[];
+  /** 当前物品资源列表。 */
+  props: ResolvedPropResource[];
   /** 当前音频资源列表，本轮仅用于调试显示。 */
   audio: ResolvedAudioResource[];
   /** 当前镜头状态。 */

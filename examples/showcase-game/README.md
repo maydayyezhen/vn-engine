@@ -11,6 +11,8 @@
 - Scene / ShowCharacter / HideCharacter / Dialogue / Narration。
 - Choice / SetVariable / Condition / Label / Jump。
 - PlayAnimationNode 动画模块。
+- ShowPropNode / HidePropNode 物品展示。
+- PropLayer 物品画面层和 prop 动画模块。
 - 存档读档、自动播放、Web 导出包。
 
 ## 素材状态
@@ -22,7 +24,7 @@
 - BGM：OpenGameArt CC0 音乐。
 - 音效：Kenney UI Audio CC0。
 - 语音：本地生成技术占位。
-- 道具：本地生成 SVG 占位，等待后续 PropLayer。
+- 道具：本地生成 SVG 占位，已通过正式 prop 资源类型、ShowPropNode、HidePropNode 和 PropLayer 展示。
 
 完整来源见 `CREDITS.md`。
 

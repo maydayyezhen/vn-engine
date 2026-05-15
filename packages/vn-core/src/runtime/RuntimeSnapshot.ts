@@ -1,5 +1,5 @@
 import type { ChoiceOption, VariableValue } from "@vn-engine/vn-schema";
-import type { RuntimeActionEffect, RuntimeAnimationEffect, RuntimeAudioState, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeEffect } from "./RuntimeState";
+import type { RuntimeActionEffect, RuntimeAnimationEffect, RuntimeAudioState, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeEffect, RuntimePropDisplay } from "./RuntimeState";
 
 /** 运行时快照类型，用于告诉 UI 当前应该展示什么。 */
 export type RuntimeSnapshotType = "dialogue" | "choices" | "action" | "ended";
@@ -18,6 +18,8 @@ export interface RuntimeSnapshot {
   background?: RuntimeBackgroundState;
   /** 当前显示角色列表。 */
   characters: RuntimeCharacterDisplay[];
+  /** 当前显示物品列表。 */
+  props: RuntimePropDisplay[];
   /** 当前镜头状态。 */
   camera: RuntimeCameraState;
   /** 待渲染的一次性演出效果。 */

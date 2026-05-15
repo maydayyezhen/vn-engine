@@ -34,6 +34,8 @@ export type NodeType =
   | "scene"
   | "showCharacter"
   | "hideCharacter"
+  | "showProp"
+  | "hideProp"
   | "camera"
   | "actionSequence"
   | "playAnimation"
@@ -419,6 +421,76 @@ export interface HideCharacterNode {
   transitionDurationMs?: number;
 }
 
+/** 物品在画面中的静态显示状态。 */
+export interface PropViewState {
+  /** 物品显示对象 id，同一画面内用于更新或隐藏该物品。 */
+  propId: string;
+  /** 指向素材库中 type 为 prop 的素材 id。 */
+  assetId: string;
+  /** 物品显示名称。 */
+  name?: string;
+  /** 舞台横向坐标。 */
+  x: number;
+  /** 舞台纵向坐标。 */
+  y: number;
+  /** 物品缩放倍数。 */
+  scale: number;
+  /** 物品透明度，范围 0 到 1。 */
+  opacity: number;
+  /** 物品显示层级，数值越大越靠前。 */
+  zIndex: number;
+  /** 物品旋转角度，单位为弧度。 */
+  rotation?: number;
+  /** 是否水平翻转。 */
+  flipX?: boolean;
+}
+
+/** 显示或更新物品节点。 */
+export interface ShowPropNode {
+  /** 节点类型。 */
+  type: "showProp";
+  /** 节点唯一标识。 */
+  id: string;
+  /** 物品显示对象 id。 */
+  propId: string;
+  /** 指向素材库中 type 为 prop 的素材 id。 */
+  assetId: string;
+  /** 物品显示名称。 */
+  name?: string;
+  /** 舞台横向坐标。 */
+  x?: number;
+  /** 舞台纵向坐标。 */
+  y?: number;
+  /** 物品缩放倍数。 */
+  scale?: number;
+  /** 物品透明度，范围 0 到 1。 */
+  opacity?: number;
+  /** 物品显示层级，数值越大越靠前。 */
+  zIndex?: number;
+  /** 物品旋转角度，单位为弧度。 */
+  rotation?: number;
+  /** 是否水平翻转。 */
+  flipX?: boolean;
+  /** 可选的入场动画模块 id。 */
+  enterAnimationId?: string;
+  /** 入场动画参数。 */
+  enterParams?: Record<string, unknown>;
+}
+
+/** 隐藏物品节点。 */
+export interface HidePropNode {
+  /** 节点类型。 */
+  type: "hideProp";
+  /** 节点唯一标识。 */
+  id: string;
+  /** 要隐藏的物品显示对象 id。 */
+  propId: string;
+  /** 可选的退场动画模块 id。 */
+  exitAnimationId?: string;
+  /** 退场动画参数。 */
+  exitParams?: Record<string, unknown>;
+}
+
 /** 基础镜头节点，用于更新画面缩放、偏移和轻微震动状态。 */
 export interface CameraNode {
   /** 节点类型。 */
@@ -564,6 +636,8 @@ export type StoryNode =
   | SceneNode
   | ShowCharacterNode
   | HideCharacterNode
+  | ShowPropNode
+  | HidePropNode
   | CameraNode
   | ActionSequenceNode
   | PlayAnimationNode

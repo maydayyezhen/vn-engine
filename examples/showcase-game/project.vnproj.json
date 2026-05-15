@@ -84,14 +84,14 @@
       {
         "id": "prop-old-letter",
         "name": "旧信",
-        "type": "image",
+        "type": "prop",
         "path": "/showcase-assets/prop/old_letter.svg",
         "description": "项目脚本生成的占位道具。当前引擎暂无正式PropLayer。"
       },
       {
         "id": "prop-cassette-tape",
         "name": "录音带",
-        "type": "image",
+        "type": "prop",
         "path": "/showcase-assets/prop/cassette_tape.svg",
         "description": "项目脚本生成的占位道具。当前引擎暂无正式PropLayer。"
       },
@@ -322,6 +322,52 @@
           "text": "我在候车室找到一封旧信。署名……是三年前的你。",
           "textSpeed": 42,
           "waitForClick": true
+        },
+        {
+          "id": "show-prop-old-letter",
+          "type": "showProp",
+          "propId": "prop-old-letter",
+          "assetId": "prop-old-letter",
+          "name": "旧信",
+          "x": 640,
+          "y": 340,
+          "scale": 0.95,
+          "opacity": 1,
+          "zIndex": 20,
+          "rotation": -0.04,
+          "flipX": false,
+          "enterAnimationId": "prop.revealCenter",
+          "enterParams": {
+            "durationMs": 550,
+            "startScale": 0.82,
+            "endScale": 0.95
+          }
+        },
+        {
+          "id": "anim-prop-letter-float",
+          "type": "playAnimation",
+          "animationId": "prop.floatOnce",
+          "targets": {
+            "prop": {
+              "type": "prop",
+              "id": "prop-old-letter"
+            }
+          },
+          "params": {
+            "durationMs": 700,
+            "amplitude": 16
+          },
+          "waitForCompletion": true,
+          "autoNext": true
+        },
+        {
+          "id": "hide-prop-old-letter",
+          "type": "hideProp",
+          "propId": "prop-old-letter",
+          "exitAnimationId": "prop.fadeOut",
+          "exitParams": {
+            "durationMs": 300
+          }
         },
         {
           "id": "sound-page",

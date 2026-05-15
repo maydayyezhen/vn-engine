@@ -4,7 +4,7 @@ import type { ScriptFile, VNProject } from "@vn-engine/vn-schema";
 import projectJson from "../../../examples/demo-game/project.vnproj.json";
 import startScriptJson from "../../../examples/demo-game/scripts/start.vn.json";
 import { createCharacterLayerRenderKey } from "../src/layers/CharacterLayer";
-import { resolveAudioResources, resolveBackgroundResource, resolveCharacterResources, resolveRenderResources } from "../src";
+import { resolveAudioResources, resolveBackgroundResource, resolveCharacterResources, resolvePropResources, resolveRenderResources } from "../src";
 import { normalizeCameraState, normalizeTransition, resolveCharacterLayout, resolveCharacterX, sortCharactersByZIndex } from "../src/utils/presentationLayout";
 
 /** 创建 demo 工程数据。 */
@@ -77,6 +77,23 @@ describe("resolveRenderResources", () => {
     expect(audio[0]?.assetId).toBe("bgm-main-theme");
     expect(audio[0]?.path).toBe("/demo-assets/audio/bgm-demo.wav");
     expect(audio[0]?.exists).toBe(true);
+  });
+
+  it("能解析 prop 资源和缺失 prop 占位信息", () => {
+    const project = createProject();
+    project.assets.items.push({ id: "prop-letter", name: "旧信", type: "prop", path: "/demo-assets/prop/old_letter.png" });
+    const base = createStartedSnapshot();
+    const props = resolvePropResources(project, {
+      ...base,
+      props: [{ propId: "prop-letter", assetId: "prop-letter", x: 640, y: 360, scale: 1, opacity: 1, zIndex: 10, rotation: 0, flipX: false }]
+    });
+    expect(props[0]).toMatchObject({ propId: "prop-letter", assetId: "prop-letter", exists: true });
+
+    const missing = resolvePropResources(project, {
+      ...base,
+      props: [{ propId: "missing", assetId: "missing", x: 0, y: 0, scale: 1, opacity: 1, zIndex: 0, rotation: 0, flipX: false }]
+    });
+    expect(missing[0]?.exists).toBe(false);
   });
   it("角色层静态渲染键忽略一次性入场 effect，避免普通文本刷新重建立绘", () => {
     const project = createProject();

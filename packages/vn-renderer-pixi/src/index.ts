@@ -2,6 +2,7 @@ export { PixiVNRenderer } from "./PixiVNRenderer";
 export { PixiAssetLoader } from "./assets/PixiAssetLoader";
 export { BackgroundLayer } from "./layers/BackgroundLayer";
 export { CharacterLayer } from "./layers/CharacterLayer";
+export { PropLayer } from "./layers/PropLayer";
 export { ChoiceLayer } from "./layers/ChoiceLayer";
 export { DialogueLayer } from "./layers/DialogueLayer";
 export { ActionPlayer } from "./actions/ActionPlayer";
@@ -22,7 +23,8 @@ export {
   resolveRenderResources,
   resolveAudioResources,
   resolveBackgroundResource,
-  resolveCharacterResources
+  resolveCharacterResources,
+  resolvePropResources
 } from "./utils/resolveRenderResources";
 export {
   normalizeCameraState,
@@ -38,6 +40,7 @@ export type {
   ResolvedAudioResource,
   ResolvedBackgroundResource,
   ResolvedCharacterResource,
+  ResolvedPropResource,
   ResolvedRenderResources,
   VNRenderSize
 } from "./types";

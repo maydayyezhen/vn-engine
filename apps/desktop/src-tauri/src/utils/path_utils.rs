@@ -24,6 +24,7 @@ pub fn asset_subdir(asset_type: &str) -> &'static str {
     match asset_type {
         "background" => "assets/background",
         "character" => "assets/character",
+        "prop" => "assets/prop",
         "bgm" => "assets/audio/bgm",
         "sound" | "sfx" => "assets/audio/sound",
         "voice" => "assets/audio/voice",

@@ -120,6 +120,31 @@ function createBackgroundEffectProject(): VNProject {
   };
 }
 
+function createPropProject(): VNProject {
+  const project = createProject();
+  return {
+    ...project,
+    assets: {
+      items: [
+        ...project.assets.items,
+        { id: "prop-letter", name: "旧信", type: "prop", path: "assets/prop/old_letter.png" }
+      ]
+    },
+    scripts: [
+      {
+        id: "start",
+        name: "prop",
+        nodes: [
+          { id: "show-letter", type: "showProp", propId: "prop-letter", assetId: "prop-letter", x: 640, y: 360, scale: 1, opacity: 1, zIndex: 10, enterAnimationId: "prop.revealCenter" },
+          { id: "dialogue-first", type: "dialogue", characterId: "lin", text: "letter" },
+          { id: "hide-letter", type: "hideProp", propId: "prop-letter", exitAnimationId: "prop.fadeOut" },
+          { id: "dialogue-second", type: "dialogue", characterId: "lin", text: "hidden" }
+        ]
+      }
+    ]
+  };
+}
+
 describe("VNRuntime", () => {
   it("从起始脚本第一个可展示节点开始", () => {
     const runtime = new VNRuntime(createProject());
@@ -298,6 +323,32 @@ describe("VNRuntime", () => {
       enterEffect: "slideInLeft",
       transitionDurationMs: 500
     });
+  });
+
+  it("ShowPropNode 添加物品状态且普通对话不重复生成物品入场动画", () => {
+    const runtime = new VNRuntime(createPropProject());
+    const first = runtime.start();
+
+    expect(first.props).toHaveLength(1);
+    expect(first.props[0]).toMatchObject({ propId: "prop-letter", assetId: "prop-letter" });
+    expect(first.pendingAnimations[0]).toMatchObject({ animationId: "prop.revealCenter" });
+
+    const second = runtime.next();
+    expect(second.currentNodeId).toBe("dialogue-second");
+    expect(second.props).toHaveLength(0);
+    expect(second.pendingAnimations.map((animation) => animation.animationId)).toEqual(["prop.fadeOut"]);
+  });
+
+  it("getState/loadState 能恢复物品静态状态且不重播入场动画", () => {
+    const runtime = new VNRuntime(createPropProject());
+    const first = runtime.start();
+    const state = runtime.getState();
+    const restored = new VNRuntime(createPropProject());
+    const snapshot = restored.loadState(state);
+
+    expect(first.props).toHaveLength(1);
+    expect(snapshot.props).toHaveLength(1);
+    expect(snapshot.pendingAnimations).toEqual([]);
   });
 
   it("HideCharacterNode 会生成退场 pendingEffects", () => {

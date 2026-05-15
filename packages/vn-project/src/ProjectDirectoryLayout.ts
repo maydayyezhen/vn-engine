@@ -21,6 +21,8 @@ export interface ProjectDirectoryLayout {
   backgroundDir: string;
   /** 角色立绘素材目录相对路径。 */
   characterDir: string;
+  /** 物品素材目录相对路径。 */
+  propDir: string;
   /** BGM 素材目录相对路径。 */
   bgmDir: string;
   /** 音效素材目录相对路径。 */
@@ -40,6 +42,7 @@ export const PROJECT_DIRECTORY_LAYOUT: ProjectDirectoryLayout = {
   assetsDir: ASSETS_DIRECTORY_NAME,
   backgroundDir: "assets/background",
   characterDir: "assets/character",
+  propDir: "assets/prop",
   bgmDir: "assets/audio/bgm",
   soundDir: "assets/audio/sound",
   voiceDir: "assets/audio/voice",
@@ -52,6 +55,7 @@ export const STANDARD_PROJECT_DIRECTORIES = [
   PROJECT_DIRECTORY_LAYOUT.scriptsDir,
   PROJECT_DIRECTORY_LAYOUT.backgroundDir,
   PROJECT_DIRECTORY_LAYOUT.characterDir,
+  PROJECT_DIRECTORY_LAYOUT.propDir,
   PROJECT_DIRECTORY_LAYOUT.bgmDir,
   PROJECT_DIRECTORY_LAYOUT.soundDir,
   PROJECT_DIRECTORY_LAYOUT.voiceDir,
@@ -63,6 +67,7 @@ export const STANDARD_PROJECT_DIRECTORIES = [
 export function getAssetDirectoryForType(type: AssetType): string {
   if (type === "background") return PROJECT_DIRECTORY_LAYOUT.backgroundDir;
   if (type === "character") return PROJECT_DIRECTORY_LAYOUT.characterDir;
+  if (type === "prop") return PROJECT_DIRECTORY_LAYOUT.propDir;
   if (type === "bgm") return PROJECT_DIRECTORY_LAYOUT.bgmDir;
   if (type === "sound" || type === "sfx") return PROJECT_DIRECTORY_LAYOUT.soundDir;
   if (type === "voice") return PROJECT_DIRECTORY_LAYOUT.voiceDir;

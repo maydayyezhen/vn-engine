@@ -31,3 +31,7 @@
 `vn-core` 遇到 `PlayAnimationNode` 时只生成一次性 `pendingAnimations`，不执行 Pixi 动画，也不保存动画代码。`waitForCompletion=true` 时，快照会进入等待状态；播放器在渲染器完成回调后调用 `completeAnimation()` 继续剧情。
 
 `getSaveState()` 不保存 pending animation，也不会恢复到动画执行中间态。`loadState()` 后角色、背景、镜头等静态状态直接恢复，不会重播旧动画。
+
+## Prop 运行时状态
+
+`vn-core` 维护 `RuntimeState.props` 和 `RuntimeSnapshot.props`。`ShowPropNode` 更新物品静态状态并可生成一次性 prop 动画，`HidePropNode` 移除物品并可生成一次性退场动画。存档只保存静态 props，不保存待播放动画。

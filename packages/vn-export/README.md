@@ -28,3 +28,7 @@
 根目录脚本 `pnpm export:showcase-web` 会把 `apps/player/dist`、Showcase 的 `ProjectBundle`、`game/export-manifest.json`、`game/CREDITS.md` 和 `apps/player/public/showcase-assets` 复制到 `dist/export/showcase-web-game/`。
 
 导出包仍需要通过静态服务器运行，不建议直接双击 `index.html`。当前 Showcase 使用 `/showcase-assets/...` 浏览器路径；真实素材替换后也需要保持导出包内路径可访问。
+
+## Prop 导出
+
+Web 导出会把素材库中的 prop 资源作为普通素材引用收集到 manifest，并在导出包中按路径复制，项目 JSON 只保存资源元数据和路径。

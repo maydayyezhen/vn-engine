@@ -2,7 +2,7 @@ import type { StoryNode, VNProject } from "@vn-engine/vn-schema";
 import { getNodeSummary } from "./scriptEditService";
 
 /** 节点筛选类型。 */
-export type NodeFilterType = "all" | "dialogue" | "narration" | "choice" | "scene" | "camera" | "actionSequence" | "playAnimation" | "label" | "character" | "audio" | "variable" | "condition" | "jump";
+export type NodeFilterType = "all" | "dialogue" | "narration" | "choice" | "scene" | "camera" | "actionSequence" | "playAnimation" | "label" | "character" | "prop" | "audio" | "variable" | "condition" | "jump";
 
 /** 节点搜索筛选参数。 */
 export interface NodeSearchOptions {
@@ -24,6 +24,7 @@ export interface NodeSearchResult {
 export function matchNodeType(node: StoryNode, type: NodeFilterType): boolean {
   if (type === "all") return true;
   if (type === "character") return node.type === "showCharacter" || node.type === "hideCharacter";
+  if (type === "prop") return node.type === "showProp" || node.type === "hideProp";
   if (type === "audio") return node.type === "playAudio" || node.type === "stopAudio";
   if (type === "variable") return node.type === "setVariable";
   return node.type === type;
@@ -43,6 +44,8 @@ export function getNodeSearchText(project: VNProject, node: StoryNode): string {
   if (node.type === "label") parts.push(node.name, node.description ?? "");
   if (node.type === "actionSequence") parts.push(node.name ?? "", ...node.actions.map((action) => `${action.id} ${action.type}`));
   if (node.type === "playAnimation") parts.push(node.animationId, ...Object.values(node.targets ?? {}).map((target) => `${target.type} ${target.id ?? ""}`));
+  if (node.type === "showProp") parts.push(node.propId, node.assetId, node.name ?? "");
+  if (node.type === "hideProp") parts.push(node.propId, node.exitAnimationId ?? "");
   return parts.join(" ").toLowerCase();
 }
 
