@@ -664,7 +664,7 @@ onBeforeUnmount(() => {
         @set-start-script="handleSetStartScript"
       >
         <template #preview>
-          <AssetPreviewPane :asset="focusedAsset" />
+          <AssetPreviewPane :asset="focusedAsset" :assets="projectStore.project.assets.items" />
         </template>
       </ResourceExplorer>
     </template>
