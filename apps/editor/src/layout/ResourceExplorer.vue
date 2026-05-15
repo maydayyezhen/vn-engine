@@ -77,6 +77,15 @@ const scriptContextMenu = ref({
   scriptId: ""
 });
 
+/** 默认展开的资源树分组。 */
+const defaultExpandedFolderKeys = ["scripts", "characters", "backgrounds", "cg", "props"];
+
+/** 当前手动展开的资源树分组。 */
+const expandedFolderKeys = ref<string[]>([...defaultExpandedFolderKeys]);
+
+/** 当前选中的资源树分组。 */
+const selectedFolderKey = ref("scripts");
+
 /** 标准化搜索文本。 */
 const normalizedQuery = computed(() => props.searchQuery.trim().toLowerCase());
 
@@ -247,12 +256,34 @@ function openSection(section: ExplorerSection): void {
 }
 
 /** 点击资源树文件夹。 */
+function folderMatchesSearch(folder: ResourceFolder): boolean {
+  if (!normalizedQuery.value) return false;
+  return matchesQuery(folder.label) || Boolean(folder.items?.length);
+}
+
+function isFolderExpanded(folder: ResourceFolder): boolean {
+  if (normalizedQuery.value) return folderMatchesSearch(folder);
+  return expandedFolderKeys.value.includes(folder.key);
+}
+
+function toggleFolderExpanded(folder: ResourceFolder): void {
+  if (normalizedQuery.value) return;
+  if (expandedFolderKeys.value.includes(folder.key)) {
+    expandedFolderKeys.value = expandedFolderKeys.value.filter((key) => key !== folder.key);
+    return;
+  }
+  expandedFolderKeys.value = [...expandedFolderKeys.value, folder.key];
+}
+
 function handleFolderClick(folder: ResourceFolder): void {
+  selectedFolderKey.value = folder.key;
+  toggleFolderExpanded(folder);
   if (folder.section) openSection(folder.section);
 }
 
 /** 点击资源树叶子项。 */
-function handleItemClick(item: ResourceTreeItem): void {
+function handleItemClick(item: ResourceTreeItem, folder: ResourceFolder): void {
+  selectedFolderKey.value = folder.key;
   if (item.scriptId) {
     emit("selectScript", item.scriptId);
     return;
@@ -324,19 +355,19 @@ onBeforeUnmount(() => {
         </button>
 
         <div v-for="folder in resourceFolders" :key="folder.key" class="resource-tree-group" :class="`resource-tree-group--${folder.key}`">
-          <button class="resource-tree-folder" :class="{ active: folder.section === 'assets' ? activeView === 'assets' : folder.section === activeView }" @click="handleFolderClick(folder)">
-            <span class="tree-caret">{{ folder.expanded ? "⌄" : "›" }}</span>
+          <button class="resource-tree-folder" :class="{ active: selectedFolderKey === folder.key }" @click="handleFolderClick(folder)">
+            <span class="tree-caret">{{ isFolderExpanded(folder) ? "⌄" : "›" }}</span>
             <el-icon class="resource-tree-icon"><component :is="folder.icon" /></el-icon>
             <span>{{ folder.label }}</span>
           </button>
 
-          <div v-if="folder.expanded" class="resource-tree-children">
+          <div v-if="isFolderExpanded(folder)" class="resource-tree-children">
             <button
               v-for="item in folder.items"
               :key="`${folder.key}-${item.id}`"
               class="resource-tree-item"
               :class="[`resource-tree-item--${folder.key}`, { active: item.scriptId === selectedScriptId }]"
-              @click="handleItemClick(item)"
+              @click="handleItemClick(item, folder)"
               @contextmenu.prevent="openScriptContextMenu($event, item)"
             >
               <span class="tree-indent"></span>
