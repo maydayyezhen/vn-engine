@@ -172,15 +172,19 @@ async function confirmDiscardIfDirty(actionName: string): Promise<boolean> {
 /** 切换主视图。 */
 function handleChangeView(view: EditorView): void {
   setActiveView(view);
-  if (view !== "script") setScriptDockTab("script");
-  setInspectorTab(view === "characters" ? "characters" : "properties");
+  setScriptDockTab("script");
+  if (view === "assets") setInspectorTab("assets");
+  else if (view === "characters") setInspectorTab("characters");
+  else if (view === "variables") setInspectorTab("variables");
+  else if (view === "export") setInspectorTab("export");
+  else setInspectorTab("properties");
 }
 
 /** 打开动画模块工作区。 */
 function handleOpenAnimations(): void {
   setActiveView("script");
-  setScriptDockTab("animation");
-  setInspectorTab("properties");
+  setScriptDockTab("script");
+  setInspectorTab("animations");
 }
 
 /** 处理顶部菜单命令。 */
@@ -195,7 +199,10 @@ function handleMenuCommand(command: string): void {
   if (command === "undo") handleUndo();
   if (command === "redo") handleRedo();
   if (command === "restartPreview") handleRestartPreview();
-  if (command === "exportWeb") setActiveView("export");
+  if (command === "exportWeb") {
+    setActiveView("export");
+    setInspectorTab("export");
+  }
   if (command === "exportDesktopWebGame") void handleExportDesktopWebGame();
 }
 
@@ -756,7 +763,11 @@ onBeforeUnmount(() => {
       <RightInspector
         :selection-label="inspectorSelectionLabel"
         :active-tab="layoutStore.inspectorTab"
+        :show-asset-tab="editorStore.activeView === 'assets'"
         :show-character-tab="editorStore.activeView === 'characters'"
+        :show-variable-tab="editorStore.activeView === 'variables'"
+        :show-export-tab="editorStore.activeView === 'export'"
+        :show-animation-tab="layoutStore.inspectorTab === 'animations'"
         @update-active-tab="setInspectorTab"
       >
         <template #properties>
@@ -773,11 +784,31 @@ onBeforeUnmount(() => {
             <span>该工作区的编辑表单位于中央下方。校验摘要已移动到底部状态栏。</span>
           </div>
         </template>
+        <template #assets>
+          <AssetLibraryPanel
+            :project="projectStore.project"
+            :desktop-mode="desktopMode"
+            @project-change="applyProject"
+            @import-asset-file="handleImportAssetFile"
+          />
+        </template>
         <template #characters>
           <CharacterLibraryPanel
             :project="projectStore.project"
             @project-change="applyProject"
           />
+        </template>
+        <template #variables>
+          <VariableLibraryPanel
+            :project="projectStore.project"
+            @project-change="applyProject"
+          />
+        </template>
+        <template #export>
+          <WebExportPanel :project="projectStore.project" />
+        </template>
+        <template #animations>
+          <AnimationWorkspace />
         </template>
       </RightInspector>
     </template>

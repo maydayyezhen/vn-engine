@@ -7,7 +7,7 @@ export type StageTab = "preview" | "flow" | "portrait" | "ui";
 export type ScriptDockTab = "script" | "branch" | "timeline" | "animation";
 
 /** 右侧检查器当前激活的页签。 */
-export type InspectorTab = "properties" | "characters";
+export type InspectorTab = "properties" | "assets" | "characters" | "variables" | "export" | "animations";
 
 /** 编辑器布局状态。 */
 export interface LayoutStoreState {
