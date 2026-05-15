@@ -112,8 +112,6 @@ const contextMenu = ref<ResourceContextMenu>({ visible: false, x: 0, y: 0 });
 /** 标准化后的搜索文本。 */
 const normalizedQuery = computed(() => props.searchQuery.trim().toLowerCase());
 /** 项目根节点显示名称。 */
-const projectTitle = computed(() => props.project.name || props.project.id || "VN Project");
-
 /** 判断一组文本是否匹配当前搜索。 */
 function matchesQuery(...parts: Array<string | undefined>): boolean {
   if (!normalizedQuery.value) return true;
@@ -297,8 +295,8 @@ onBeforeUnmount(() => {
 <template>
   <section class="resource-explorer">
     <div class="resource-tree-pane">
-      <div class="panel-title-row resource-panel-title">
-        <strong>资源管理器</strong>
+    <div class="panel-title-row resource-panel-title">
+      <strong>资源管理器</strong>
       </div>
       <div class="resource-search-row">
         <el-input
@@ -312,12 +310,6 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="resource-tree">
-        <button class="resource-tree-root" @click="selectedFolderKey = 'scripts'">
-          <span class="tree-caret">▾</span>
-          <el-icon class="resource-tree-icon resource-tree-icon--folder"><Folder /></el-icon>
-          <span>{{ projectTitle }}</span>
-        </button>
-
         <div v-for="folder in resourceFolders" :key="folder.key" class="resource-tree-group" :class="`resource-tree-group--${folder.key}`">
           <button
             class="resource-tree-folder"
@@ -326,7 +318,14 @@ onBeforeUnmount(() => {
             @contextmenu.prevent.stop="openContextMenu($event, folder)"
           >
             <span class="tree-caret">{{ isFolderExpanded(folder) ? "▾" : "▸" }}</span>
-            <el-icon class="resource-tree-icon"><component :is="folder.icon" /></el-icon>
+            <el-icon class="resource-tree-icon">
+              <svg v-if="folder.key === 'sound'" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 10a1 1 0 0 1 1-1h3l3.8-2.9v10.8L7 15H4a1 1 0 0 1-1-1V10Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M15 8a5 5 0 0 1 0 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M19 5a9 9 0 0 1 0 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <component v-else :is="folder.icon" />
+            </el-icon>
             <span>{{ folder.label }}</span>
           </button>
 
@@ -344,7 +343,12 @@ onBeforeUnmount(() => {
                 <Document v-if="item.kind === 'script'" />
                 <User v-else-if="item.kind === 'character'" />
                 <Picture v-else-if="folder.key === 'backgrounds' || folder.key === 'cg'" />
-                <Headset v-else-if="folder.key === 'music' || folder.key === 'sound'" />
+                <svg v-else-if="folder.key === 'sound'" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M3 10a1 1 0 0 1 1-1h3l3.8-2.9v10.8L7 15H4a1 1 0 0 1-1-1V10Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M15 8a5 5 0 0 1 0 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M19 5a9 9 0 0 1 0 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <Headset v-else-if="folder.key === 'music'" />
                 <Box v-else-if="folder.key === 'props'" />
                 <DataLine v-else-if="item.kind === 'variable'" />
                 <Document v-else />
@@ -387,8 +391,5 @@ onBeforeUnmount(() => {
       </div>
     </teleport>
 
-    <div class="resource-preview-pane">
-      <slot name="preview" />
-    </div>
   </section>
 </template>

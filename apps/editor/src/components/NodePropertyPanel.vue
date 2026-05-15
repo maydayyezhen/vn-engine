@@ -292,7 +292,13 @@ function updatePlayAnimationId(animationId: string): void {
           </el-select>
         </el-form-item>
         <el-form-item label="text">
-          <el-input :model-value="node.text" type="textarea" :rows="4" @update:model-value="(value: string) => applyPatch({ text: value })" />
+          <el-input
+            :model-value="node.text"
+            class="panel-long-textarea"
+            type="textarea"
+            :autosize="{ minRows: 4, maxRows: 12 }"
+            @update:model-value="(value: string) => applyPatch({ text: value })"
+          />
         </el-form-item>
         <el-form-item label="textSpeed">
           <el-input-number :model-value="node.textSpeed ?? 30" :min="1" :max="200" @update:model-value="(value: number | undefined) => applyPatch({ textSpeed: value ?? 30 })" />
@@ -307,7 +313,13 @@ function updatePlayAnimationId(animationId: string): void {
 
       <template v-else-if="node.type === 'narration'">
         <el-form-item label="text">
-          <el-input :model-value="node.text" type="textarea" :rows="4" @update:model-value="(value: string) => applyPatch({ text: value })" />
+          <el-input
+            :model-value="node.text"
+            class="panel-long-textarea"
+            type="textarea"
+            :autosize="{ minRows: 4, maxRows: 12 }"
+            @update:model-value="(value: string) => applyPatch({ text: value })"
+          />
         </el-form-item>
         <el-form-item label="textSpeed">
           <el-input-number :model-value="node.textSpeed ?? 30" :min="1" :max="200" @update:model-value="(value: number | undefined) => applyPatch({ textSpeed: value ?? 30 })" />
@@ -583,7 +595,13 @@ function updatePlayAnimationId(animationId: string): void {
           <el-input :model-value="node.name" @update:model-value="(value: string) => applyPatch({ name: value })" />
         </el-form-item>
         <el-form-item label="description">
-          <el-input :model-value="node.description" type="textarea" :rows="3" @update:model-value="(value: string) => applyPatch({ description: value })" />
+          <el-input
+            :model-value="node.description"
+            class="panel-long-textarea"
+            type="textarea"
+            :autosize="{ minRows: 2, maxRows: 8 }"
+            @update:model-value="(value: string) => applyPatch({ description: value })"
+          />
         </el-form-item>
       </template>
 

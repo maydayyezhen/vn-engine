@@ -47,7 +47,13 @@ function handleUpdateVariable(patch: Partial<VNVariableDefinition>): void {
         <el-input v-else :model-value="String(variable.defaultValue)" size="small" @update:model-value="(value: string) => handleUpdateVariable({ defaultValue: value })" />
       </el-form-item>
       <el-form-item label="说明">
-        <el-input :model-value="variable.description" type="textarea" :rows="3" @update:model-value="(value: string) => handleUpdateVariable({ description: value })" />
+        <el-input
+          :model-value="variable.description"
+          class="panel-long-textarea"
+          type="textarea"
+          :autosize="{ minRows: 2, maxRows: 10 }"
+          @update:model-value="(value: string) => handleUpdateVariable({ description: value })"
+        />
       </el-form-item>
     </el-form>
     <div v-else class="inspector-empty-state">

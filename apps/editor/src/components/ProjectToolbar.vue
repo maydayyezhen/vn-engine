@@ -112,7 +112,7 @@ function handleCommand(command: string | number | object): void {
           <el-button size="small" type="primary" :disabled="!desktopMode" @click="$emit('saveDesktopProject')">保存</el-button>
           <el-button size="small" @click="$emit('restartPreview')">重启预览</el-button>
 
-          <el-dropdown trigger="click" @command="handleCommand">
+          <el-dropdown trigger="click" :teleported="false" popper-class="editor-topbar-dropdown-popper" @command="handleCommand">
             <el-button size="small">项目操作</el-button>
             <template #dropdown>
               <el-dropdown-menu>
@@ -124,7 +124,7 @@ function handleCommand(command: string | number | object): void {
             </template>
           </el-dropdown>
 
-          <el-dropdown trigger="click" @command="handleCommand">
+          <el-dropdown trigger="click" :teleported="false" popper-class="editor-topbar-dropdown-popper" @command="handleCommand">
             <el-button size="small">桌面工程</el-button>
             <template #dropdown>
               <el-dropdown-menu>

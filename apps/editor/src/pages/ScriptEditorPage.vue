@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { AssetItem, AssetType, NodeTarget, ValidationIssue, VNProject } from "@vn-engine/vn-schema";
@@ -10,7 +10,6 @@ import StoryNodeList from "../components/StoryNodeList.vue";
 import VariableResourceInspectorPanel from "../components/VariableResourceInspectorPanel.vue";
 import WebExportPanel from "../components/WebExportPanel.vue";
 import AnimationWorkspace from "../workspaces/AnimationWorkspace.vue";
-import AssetPreviewPane from "../layout/AssetPreviewPane.vue";
 import CenterStage from "../layout/CenterStage.vue";
 import EditorWorkbench from "../layout/EditorWorkbench.vue";
 import MainMenuBar from "../layout/MainMenuBar.vue";
@@ -71,58 +70,61 @@ import { createEditorShortcutHandler } from "../services/editorShortcutService";
 import { resolveTargetNodeId } from "../services/targetSelectService";
 import { findAssetById, findCharacterById, findCharacterExpression } from "../services/resourceLookupService";
 
-/** 预览面板组件实例。 */
+/** 棰勮闈㈡澘缁勪欢瀹炰緥銆?*/
 const previewPanelRef = ref<InstanceType<typeof PreviewPanel> | null>(null);
-/** 隐藏文件输入组件实例。 */
+/** 闅愯棌鏂囦欢杈撳叆缁勪欢瀹炰緥銆?*/
 const fileInputRef = ref<HTMLInputElement | null>(null);
-/** 当前是否处于 Tauri 桌面环境。 */
+/** 褰撳墠鏄惁澶勪簬 Tauri 妗岄潰鐜銆?*/
 const desktopMode = isDesktopRuntime();
-/** 当前打开的桌面工程根目录，仅用于 UI 展示。 */
+/** 褰撳墠鎵撳紑鐨勬闈㈠伐绋嬫牴鐩綍锛屼粎鐢ㄤ簬 UI 灞曠ず銆?*/
 const desktopProjectRoot = ref<string | null>(null);
-/** 节点搜索关键字。 */
+/** 鑺傜偣鎼滅储鍏抽敭瀛椼€?*/
 const nodeSearchQuery = ref("");
-/** 节点类型筛选。 */
+/** 鑺傜偣绫诲瀷绛涢€夈€?*/
 const nodeFilterType = ref<NodeFilterType>("all");
-/** 是否存在可粘贴节点。 */
+/** 鏄惁瀛樺湪鍙矘璐磋妭鐐广€?*/
 const clipboardAvailable = ref(hasClipboardNode());
-/** 当前脚本筛选后的节点。 */
+/** 工作台与中间面板实例：用于恢复初始布局 */
+const workbenchRef = ref<InstanceType<typeof EditorWorkbench> | null>(null);
+const centerStageRef = ref<InstanceType<typeof CenterStage> | null>(null);
+/** 褰撳墠鑴氭湰绛涢€夊悗鐨勮妭鐐广€?*/
 const filteredNodes = computed(() => filterNodes(projectStore.project, currentScript.value?.nodes ?? [], {
   query: nodeSearchQuery.value,
   type: nodeFilterType.value
 }));
-/** 当前节点是否可上移。 */
+/** 褰撳墠鑺傜偣鏄惁鍙笂绉汇€?*/
 const selectedNodeCanMoveUp = computed(() => canMoveNodeUp(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId));
-/** 当前节点是否可下移。 */
+/** 褰撳墠鑺傜偣鏄惁鍙笅绉汇€?*/
 const selectedNodeCanMoveDown = computed(() => canMoveNodeDown(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId));
 
-/** 当前资源树选中的素材。 */
+/** 褰撳墠璧勬簮鏍戦€変腑鐨勭礌鏉愩€?*/
 const selectedAsset = computed(() =>
   workspaceStore.selection.kind === "asset" ? findAssetById(projectStore.project, workspaceStore.selection.id) : undefined
 );
 
-/** 当前资源树选中的角色。 */
+/** 褰撳墠璧勬簮鏍戦€変腑鐨勮鑹层€?*/
 const selectedCharacter = computed(() =>
   workspaceStore.selection.kind === "character" ? findCharacterById(projectStore.project, workspaceStore.selection.id) : undefined
 );
 
-/** 当前资源树选中的变量。 */
+/** 褰撳墠璧勬簮鏍戦€変腑鐨勫彉閲忋€?*/
 const selectedVariable = computed(() =>
   workspaceStore.selection.kind === "variable"
     ? (projectStore.project.variables ?? []).find((variable) => variable.name === workspaceStore.selection.id)
     : undefined
 );
 
-/** 当前选中对象在检查器中的说明。 */
+/** 褰撳墠閫変腑瀵硅薄鍦ㄦ鏌ュ櫒涓殑璇存槑銆?*/
 const inspectorSelectionLabel = computed(() => {
-  if (workspaceStore.selection.kind === "asset") return selectedAsset.value ? `${selectedAsset.value.name} / ${selectedAsset.value.id}` : "未选择素材";
-  if (workspaceStore.selection.kind === "character") return selectedCharacter.value ? `${selectedCharacter.value.displayName || selectedCharacter.value.name} / ${selectedCharacter.value.id}` : "未选择角色";
-  if (workspaceStore.selection.kind === "variable") return selectedVariable.value ? `变量 / ${selectedVariable.value.name}` : "未选择变量";
-  if (editorStore.activeView === "script") return currentNode.value ? `${currentNode.value.type} / ${currentNode.value.id}` : "未选择节点";
-  if (editorStore.activeView === "export") return "导出 / 构建";
+  if (workspaceStore.selection.kind === "asset") return selectedAsset.value ? `${selectedAsset.value.name} / ${selectedAsset.value.id}` : "鏈€夋嫨绱犳潗";
+  if (workspaceStore.selection.kind === "character") return selectedCharacter.value ? `${selectedCharacter.value.displayName || selectedCharacter.value.name} / ${selectedCharacter.value.id}` : "鏈€夋嫨瑙掕壊";
+  if (workspaceStore.selection.kind === "variable") return selectedVariable.value ? `鍙橀噺 / ${selectedVariable.value.name}` : "鏈€夋嫨鍙橀噺";
+  if (editorStore.activeView === "script") return currentNode.value ? `${currentNode.value.type} / ${currentNode.value.id}` : "鏈€夋嫨鑺傜偣";
+  if (editorStore.activeView === "export") return "瀵煎嚭 / 鏋勫缓";
   return "属性面板";
 });
 
-/** 当前节点或工作区关联的素材，用于左下角快速预览。 */
+/** 褰撳墠鑺傜偣鎴栧伐浣滃尯鍏宠仈鐨勭礌鏉愶紝鐢ㄤ簬宸︿笅瑙掑揩閫熼瑙堛€?*/
 const focusedAsset = computed<AssetItem | undefined>(() => {
   if (selectedAsset.value) return selectedAsset.value;
   if (selectedCharacter.value) {
@@ -148,7 +150,7 @@ const focusedAsset = computed<AssetItem | undefined>(() => {
   return projectStore.project.assets.items[0];
 });
 
-/** 创建当前编辑历史快照。 */
+/** 鍒涘缓褰撳墠缂栬緫鍘嗗彶蹇収銆?*/
 function createHistorySnapshot() {
   return {
     project: projectStore.project,
@@ -157,12 +159,12 @@ function createHistorySnapshot() {
   };
 }
 
-/** 记录编辑前历史。 */
+/** 璁板綍缂栬緫鍓嶅巻鍙层€?*/
 function recordBeforeEdit(): void {
   pushHistory(createHistorySnapshot());
 }
 
-/** 应用新的工程内存态。 */
+/** 搴旂敤鏂扮殑宸ョ▼鍐呭瓨鎬併€?*/
 function applyProject(project: VNProject, recordHistory = true): void {
   if (recordHistory) recordBeforeEdit();
   setProject(project);
@@ -170,7 +172,7 @@ function applyProject(project: VNProject, recordHistory = true): void {
   setValidationResult(validateCurrentProject(project));
 }
 
-/** 应用导入、打开或重置后的工程。 */
+/** 搴旂敤瀵煎叆銆佹墦寮€鎴栭噸缃悗鐨勫伐绋嬨€?*/
 function loadProjectIntoEditor(project: VNProject, dirty: boolean): void {
   replaceProject(project);
   resetHistory();
@@ -181,13 +183,13 @@ function loadProjectIntoEditor(project: VNProject, dirty: boolean): void {
   previewPanelRef.value?.restart();
 }
 
-/** dirty 状态下确认是否丢弃当前修改。 */
+/** dirty 鐘舵€佷笅纭鏄惁涓㈠純褰撳墠淇敼銆?*/
 async function confirmDiscardIfDirty(actionName: string): Promise<boolean> {
   if (!editorStore.dirty) return true;
   try {
-    await ElMessageBox.confirm(`当前项目存在未保存修改，继续${actionName}会丢弃这些修改。`, "确认操作", {
-      confirmButtonText: "继续",
-      cancelButtonText: "取消",
+    await ElMessageBox.confirm(`褰撳墠椤圭洰瀛樺湪鏈繚瀛樹慨鏀癸紝缁х画${actionName}浼氫涪寮冭繖浜涗慨鏀广€俙, "纭鎿嶄綔", {
+      confirmButtonText: "缁х画",
+      cancelButtonText: "鍙栨秷",
       type: "warning"
     });
     return true;
@@ -196,7 +198,7 @@ async function confirmDiscardIfDirty(actionName: string): Promise<boolean> {
   }
 }
 
-/** 切换主视图。 */
+/** 鍒囨崲涓昏鍥俱€?*/
 function handleChangeView(view: EditorView): void {
   setActiveView(view);
   setScriptDockTab("script");
@@ -204,14 +206,14 @@ function handleChangeView(view: EditorView): void {
   else setInspectorTab("properties");
 }
 
-/** 打开动画模块工作区。 */
+/** 鎵撳紑鍔ㄧ敾妯″潡宸ヤ綔鍖恒€?*/
 function handleOpenAnimations(): void {
   setActiveView("script");
   setScriptDockTab("script");
   setInspectorTab("animations");
 }
 
-/** 处理顶部菜单命令。 */
+/** 澶勭悊椤堕儴鑿滃崟鍛戒护銆?*/
 function handleMenuCommand(command: string): void {
   if (command === "createDesktopProject") void handleCreateDesktopProject();
   if (command === "openDesktopProject") void handleOpenDesktopProject();
@@ -223,6 +225,11 @@ function handleMenuCommand(command: string): void {
   if (command === "undo") handleUndo();
   if (command === "redo") handleRedo();
   if (command === "restartPreview") handleRestartPreview();
+  if (command === "resetLayout") {
+    workbenchRef.value?.resetLayout();
+    centerStageRef.value?.resetLayout();
+    window.dispatchEvent(new Event("vn-editor-reset-layout"));
+  }
   if (command === "exportWeb") {
     setActiveView("export");
     setInspectorTab("export");
@@ -230,7 +237,7 @@ function handleMenuCommand(command: string): void {
   if (command === "exportDesktopWebGame") void handleExportDesktopWebGame();
 }
 
-/** 切换脚本。 */
+/** 鍒囨崲鑴氭湰銆?*/
 function handleSelectScript(scriptId: string): void {
   selectScript(scriptId);
   setActiveView("script");
@@ -238,25 +245,25 @@ function handleSelectScript(scriptId: string): void {
   setInspectorTab("properties");
 }
 
-/** 选择左侧资源树中的具体素材。 */
+/** 閫夋嫨宸︿晶璧勬簮鏍戜腑鐨勫叿浣撶礌鏉愩€?*/
 function handleSelectAsset(assetId: string): void {
   setWorkspaceSelection({ kind: "asset", id: assetId });
   setInspectorTab("assets");
 }
 
-/** 选择左侧资源树中的具体角色。 */
+/** 閫夋嫨宸︿晶璧勬簮鏍戜腑鐨勫叿浣撹鑹层€?*/
 function handleSelectCharacter(characterId: string): void {
   setWorkspaceSelection({ kind: "character", id: characterId });
   setInspectorTab("characters");
 }
 
-/** 选择左侧资源树中的具体变量。 */
+/** 閫夋嫨宸︿晶璧勬簮鏍戜腑鐨勫叿浣撳彉閲忋€?*/
 function handleSelectVariable(variableName: string): void {
   setWorkspaceSelection({ kind: "variable", id: variableName });
   setInspectorTab("variables");
 }
 
-/** 从左侧资源树新增素材。 */
+/** 浠庡乏渚ц祫婧愭爲鏂板绱犳潗銆?*/
 function handleCreateAsset(assetType: AssetType): void {
   if (desktopMode) {
     void handleImportAssetFile(assetType);
@@ -269,12 +276,12 @@ function handleCreateAsset(assetType: AssetType): void {
   setInspectorTab("assets");
 }
 
-/** 从左侧资源树删除素材。 */
+/** 浠庡乏渚ц祫婧愭爲鍒犻櫎绱犳潗銆?*/
 async function handleDeleteAsset(assetId: string): Promise<void> {
   try {
-    await ElMessageBox.confirm("删除素材不会自动清理节点引用，相关问题会由校验面板提示。继续删除？", "删除素材", {
-      confirmButtonText: "删除",
-      cancelButtonText: "取消",
+    await ElMessageBox.confirm("鍒犻櫎绱犳潗涓嶄細鑷姩娓呯悊鑺傜偣寮曠敤锛岀浉鍏抽棶棰樹細鐢辨牎楠岄潰鏉挎彁绀恒€傜户缁垹闄わ紵", "鍒犻櫎绱犳潗", {
+      confirmButtonText: "鍒犻櫎",
+      cancelButtonText: "鍙栨秷",
       type: "warning"
     });
   } catch {
@@ -285,7 +292,7 @@ async function handleDeleteAsset(assetId: string): Promise<void> {
   setInspectorTab("properties");
 }
 
-/** 从左侧资源树新增角色。 */
+/** 浠庡乏渚ц祫婧愭爲鏂板瑙掕壊銆?*/
 function handleCreateCharacter(): void {
   const character = createEmptyCharacter();
   const nextProject = addCharacter(projectStore.project, character);
@@ -294,12 +301,12 @@ function handleCreateCharacter(): void {
   setInspectorTab("characters");
 }
 
-/** 从左侧资源树删除角色。 */
+/** 浠庡乏渚ц祫婧愭爲鍒犻櫎瑙掕壊銆?*/
 async function handleDeleteCharacterFromTree(characterId: string): Promise<void> {
   try {
-    await ElMessageBox.confirm("删除角色不会自动清理剧情节点引用，相关问题会由校验面板提示。继续删除？", "删除角色", {
-      confirmButtonText: "删除",
-      cancelButtonText: "取消",
+    await ElMessageBox.confirm("鍒犻櫎瑙掕壊涓嶄細鑷姩娓呯悊鍓ф儏鑺傜偣寮曠敤锛岀浉鍏抽棶棰樹細鐢辨牎楠岄潰鏉挎彁绀恒€傜户缁垹闄わ紵", "鍒犻櫎瑙掕壊", {
+      confirmButtonText: "鍒犻櫎",
+      cancelButtonText: "鍙栨秷",
       type: "warning"
     });
   } catch {
@@ -310,7 +317,7 @@ async function handleDeleteCharacterFromTree(characterId: string): Promise<void>
   setInspectorTab("properties");
 }
 
-/** 从左侧资源树新增变量。 */
+/** 浠庡乏渚ц祫婧愭爲鏂板鍙橀噺銆?*/
 function handleCreateVariable(): void {
   const variable = createEmptyVariable(projectStore.project.variables ?? []);
   const nextProject = addVariable(projectStore.project, variable);
@@ -319,12 +326,12 @@ function handleCreateVariable(): void {
   setInspectorTab("variables");
 }
 
-/** 从左侧资源树删除变量。 */
+/** 浠庡乏渚ц祫婧愭爲鍒犻櫎鍙橀噺銆?*/
 async function handleDeleteVariableFromTree(variableName: string): Promise<void> {
   try {
-    await ElMessageBox.confirm("删除变量不会自动清理条件或赋值节点引用，相关问题会由校验面板提示。继续删除？", "删除变量", {
-      confirmButtonText: "删除",
-      cancelButtonText: "取消",
+    await ElMessageBox.confirm("鍒犻櫎鍙橀噺涓嶄細鑷姩娓呯悊鏉′欢鎴栬祴鍊艰妭鐐瑰紩鐢紝鐩稿叧闂浼氱敱鏍￠獙闈㈡澘鎻愮ず銆傜户缁垹闄わ紵", "鍒犻櫎鍙橀噺", {
+      confirmButtonText: "鍒犻櫎",
+      cancelButtonText: "鍙栨秷",
       type: "warning"
     });
   } catch {
@@ -335,12 +342,12 @@ async function handleDeleteVariableFromTree(variableName: string): Promise<void>
   setInspectorTab("properties");
 }
 
-/** 选择节点。 */
+/** 閫夋嫨鑺傜偣銆?*/
 function handleSelectNode(nodeId: string): void {
   selectNode(nodeId);
 }
 
-/** 恢复历史快照。 */
+/** 鎭㈠鍘嗗彶蹇収銆?*/
 function restoreHistorySnapshot(snapshot: ReturnType<typeof createHistorySnapshot>): void {
   replaceProject(snapshot.project);
   selectScript(snapshot.selectedScriptId);
@@ -350,26 +357,26 @@ function restoreHistorySnapshot(snapshot: ReturnType<typeof createHistorySnapsho
   previewPanelRef.value?.restart();
 }
 
-/** 撤销编辑。 */
+/** 鎾ら攢缂栬緫銆?*/
 function handleUndo(): void {
   const snapshot = popUndo(createHistorySnapshot());
   if (!snapshot) return;
   restoreHistorySnapshot(snapshot);
 }
 
-/** 重做编辑。 */
+/** 閲嶅仛缂栬緫銆?*/
 function handleRedo(): void {
   const snapshot = popRedo(createHistorySnapshot());
   if (!snapshot) return;
   restoreHistorySnapshot(snapshot);
 }
 
-/** 新建脚本。 */
+/** 鏂板缓鑴氭湰銆?*/
 async function handleCreateScript(): Promise<void> {
-  const result = await ElMessageBox.prompt("请输入脚本名称", "新建脚本", {
-    confirmButtonText: "新建",
-    cancelButtonText: "取消",
-    inputValue: "新脚本"
+  const result = await ElMessageBox.prompt("璇疯緭鍏ヨ剼鏈悕绉?, "鏂板缓鑴氭湰", {
+    confirmButtonText: "鏂板缓",
+    cancelButtonText: "鍙栨秷",
+    inputValue: "鏂拌剼鏈?
   }).catch(() => null);
   if (!result) return;
   recordBeforeEdit();
@@ -381,29 +388,29 @@ async function handleCreateScript(): Promise<void> {
   setValidationResult(validateCurrentProject(next.project));
 }
 
-/** 重命名脚本。 */
+/** 閲嶅懡鍚嶈剼鏈€?*/
 async function handleRenameScript(scriptId: string): Promise<void> {
   const script = projectStore.project.scripts.find((item) => item.id === scriptId);
   if (!script) return;
-  const result = await ElMessageBox.prompt("请输入新的脚本显示名称", "重命名脚本", {
-    confirmButtonText: "保存",
-    cancelButtonText: "取消",
+  const result = await ElMessageBox.prompt("璇疯緭鍏ユ柊鐨勮剼鏈樉绀哄悕绉?, "閲嶅懡鍚嶈剼鏈?, {
+    confirmButtonText: "淇濆瓨",
+    cancelButtonText: "鍙栨秷",
     inputValue: script.name || script.id
   }).catch(() => null);
   if (!result) return;
   applyProject(renameEditorScript(projectStore.project, scriptId, result.value));
 }
 
-/** 删除脚本。 */
+/** 鍒犻櫎鑴氭湰銆?*/
 async function handleDeleteScript(scriptId: string): Promise<void> {
   if (projectStore.project.scripts.length <= 1) {
-    ElMessage.warning("不能删除最后一个脚本。");
+    ElMessage.warning("涓嶈兘鍒犻櫎鏈€鍚庝竴涓剼鏈€?);
     return;
   }
   try {
-    await ElMessageBox.confirm("删除脚本后，引用它的跳转会由校验面板提示。继续删除？", "删除脚本", {
-      confirmButtonText: "删除",
-      cancelButtonText: "取消",
+    await ElMessageBox.confirm("鍒犻櫎鑴氭湰鍚庯紝寮曠敤瀹冪殑璺宠浆浼氱敱鏍￠獙闈㈡澘鎻愮ず銆傜户缁垹闄わ紵", "鍒犻櫎鑴氭湰", {
+      confirmButtonText: "鍒犻櫎",
+      cancelButtonText: "鍙栨秷",
       type: "warning"
     });
   } catch {
@@ -419,12 +426,12 @@ async function handleDeleteScript(scriptId: string): Promise<void> {
   setValidationResult(validateCurrentProject(result.project));
 }
 
-/** 设置入口脚本。 */
+/** 璁剧疆鍏ュ彛鑴氭湰銆?*/
 function handleSetStartScript(scriptId: string): void {
   applyProject(setEditorStartScript(projectStore.project, scriptId));
 }
 
-/** 新增对话节点。 */
+/** 鏂板瀵硅瘽鑺傜偣銆?*/
 function handleAddDialogue(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addDialogueNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
@@ -434,7 +441,7 @@ function handleAddDialogue(): void {
   selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
 }
 
-/** 新增旁白节点。 */
+/** 鏂板鏃佺櫧鑺傜偣銆?*/
 function handleAddNarration(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addNarrationNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
@@ -444,7 +451,7 @@ function handleAddNarration(): void {
   selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
 }
 
-/** 新增镜头节点。 */
+/** 鏂板闀滃ご鑺傜偣銆?*/
 function handleAddCamera(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addCameraNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
@@ -454,8 +461,8 @@ function handleAddCamera(): void {
   selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
 }
 
-/** 新增标签节点。 */
-/** 新增动作序列节点。 */
+/** 鏂板鏍囩鑺傜偣銆?*/
+/** 鏂板鍔ㄤ綔搴忓垪鑺傜偣銆?*/
 function handleAddActionSequence(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addActionSequenceNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
@@ -465,7 +472,7 @@ function handleAddActionSequence(): void {
   selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
 }
 
-/** 新增代码型动画节点。 */
+/** 鏂板浠ｇ爜鍨嬪姩鐢昏妭鐐广€?*/
 function handleAddPlayAnimation(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addPlayAnimationNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
@@ -475,7 +482,7 @@ function handleAddPlayAnimation(): void {
   selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
 }
 
-/** 新增物品显示节点。 */
+/** 鏂板鐗╁搧鏄剧ず鑺傜偣銆?*/
 function handleAddShowProp(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addShowPropNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
@@ -485,7 +492,7 @@ function handleAddShowProp(): void {
   selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
 }
 
-/** 新增物品隐藏节点。 */
+/** 鏂板鐗╁搧闅愯棌鑺傜偣銆?*/
 function handleAddHideProp(): void {
   const currentNodeId = projectStore.selectedNodeId;
   const nextProject = addHidePropNodeAfter(projectStore.project, projectStore.selectedScriptId, currentNodeId);
@@ -504,7 +511,7 @@ function handleAddLabel(): void {
   selectNode(script?.nodes[currentIndex + 1]?.id ?? script?.nodes.at(-1)?.id ?? null);
 }
 
-/** 复制当前节点。 */
+/** 澶嶅埗褰撳墠鑺傜偣銆?*/
 function handleDuplicateNode(): void {
   if (!projectStore.selectedNodeId) return;
   const currentNodeId = projectStore.selectedNodeId;
@@ -515,14 +522,14 @@ function handleDuplicateNode(): void {
   selectNode(script?.nodes[currentIndex + 1]?.id ?? currentNodeId);
 }
 
-/** 复制当前节点到内部剪贴板。 */
+/** 澶嶅埗褰撳墠鑺傜偣鍒板唴閮ㄥ壀璐存澘銆?*/
 function handleCopyNode(): void {
   if (!copyNode(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId)) return;
   clipboardAvailable.value = hasClipboardNode();
-  ElMessage.success("节点已复制。");
+  ElMessage.success("鑺傜偣宸插鍒躲€?);
 }
 
-/** 剪切当前节点。 */
+/** 鍓垏褰撳墠鑺傜偣銆?*/
 function handleCutNode(): void {
   recordBeforeEdit();
   const result = cutNode(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId);
@@ -534,7 +541,7 @@ function handleCutNode(): void {
   setValidationResult(validateCurrentProject(result.project));
 }
 
-/** 粘贴节点到当前节点之后。 */
+/** 绮樿创鑺傜偣鍒板綋鍓嶈妭鐐逛箣鍚庛€?*/
 function handlePasteNode(): void {
   recordBeforeEdit();
   const result = pasteNodeAfter(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId);
@@ -545,21 +552,21 @@ function handlePasteNode(): void {
   setValidationResult(validateCurrentProject(result.project));
 }
 
-/** 上移当前节点。 */
+/** 涓婄Щ褰撳墠鑺傜偣銆?*/
 function handleMoveNodeUp(): void {
   if (!projectStore.selectedNodeId) return;
   applyProject(moveNodeUp(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId));
   selectNode(projectStore.selectedNodeId);
 }
 
-/** 下移当前节点。 */
+/** 涓嬬Щ褰撳墠鑺傜偣銆?*/
 function handleMoveNodeDown(): void {
   if (!projectStore.selectedNodeId) return;
   applyProject(moveNodeDown(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId));
   selectNode(projectStore.selectedNodeId);
 }
 
-/** 删除当前节点。 */
+/** 鍒犻櫎褰撳墠鑺傜偣銆?*/
 function handleDeleteNode(): void {
   if (!projectStore.selectedNodeId) return;
   const deletedNodeId = projectStore.selectedNodeId;
@@ -568,13 +575,13 @@ function handleDeleteNode(): void {
   selectNode(selectSafeNodeAfterDelete(nextProject, projectStore.selectedScriptId, deletedNodeId));
 }
 
-/** 点击导入项目按钮。 */
+/** 鐐瑰嚮瀵煎叆椤圭洰鎸夐挳銆?*/
 async function handleImportProject(): Promise<void> {
-  if (!(await confirmDiscardIfDirty("导入项目"))) return;
+  if (!(await confirmDiscardIfDirty("瀵煎叆椤圭洰"))) return;
   fileInputRef.value?.click();
 }
 
-/** 处理导入项目文件。 */
+/** 澶勭悊瀵煎叆椤圭洰鏂囦欢銆?*/
 async function handleImportFile(event: Event): Promise<void> {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -596,22 +603,22 @@ async function handleImportFile(event: Event): Promise<void> {
   previewPanelRef.value?.restart();
 
   if (result.validationResult.valid) {
-    ElMessage.success("项目导入成功。");
+    ElMessage.success("椤圭洰瀵煎叆鎴愬姛銆?);
   } else {
-    ElMessage.warning("项目已导入，但存在校验问题。");
+    ElMessage.warning("椤圭洰宸插鍏ワ紝浣嗗瓨鍦ㄦ牎楠岄棶棰樸€?);
   }
 }
 
-/** 导出当前项目 JSON。 */
+/** 瀵煎嚭褰撳墠椤圭洰 JSON銆?*/
 async function handleExportProject(): Promise<void> {
   const validation = validateCurrentProject(projectStore.project);
   setValidationResult(validation);
 
   if (!validation.valid) {
     try {
-      await ElMessageBox.confirm("当前项目存在校验问题，仍然导出 JSON 吗？", "导出提醒", {
-        confirmButtonText: "仍然导出",
-        cancelButtonText: "取消",
+      await ElMessageBox.confirm("褰撳墠椤圭洰瀛樺湪鏍￠獙闂锛屼粛鐒跺鍑?JSON 鍚楋紵", "瀵煎嚭鎻愰啋", {
+        confirmButtonText: "浠嶇劧瀵煎嚭",
+        cancelButtonText: "鍙栨秷",
         type: "warning"
       });
     } catch {
@@ -621,86 +628,86 @@ async function handleExportProject(): Promise<void> {
 
   downloadProjectJson(projectStore.project, createProjectExportFileName(projectStore.project));
   setDirty(false);
-  ElMessage.success("项目 JSON 已导出。");
+  ElMessage.success("椤圭洰 JSON 宸插鍑恒€?);
 }
 
-/** 重置为 demo 项目。 */
+/** 閲嶇疆涓?demo 椤圭洰銆?*/
 async function handleResetDemo(): Promise<void> {
-  if (!(await confirmDiscardIfDirty("重置为 demo 项目"))) return;
+  if (!(await confirmDiscardIfDirty("閲嶇疆涓?demo 椤圭洰"))) return;
   loadProjectIntoEditor(loadDemoProject(), false);
   desktopProjectRoot.value = null;
-  ElMessage.success("已重置为 demo 项目。");
+  ElMessage.success("宸查噸缃负 demo 椤圭洰銆?);
 }
 
-/** 加载 Showcase Demo 项目。 */
+/** 鍔犺浇 Showcase Demo 椤圭洰銆?*/
 async function handleLoadShowcase(): Promise<void> {
-  if (!(await confirmDiscardIfDirty("加载 Showcase Demo"))) return;
+  if (!(await confirmDiscardIfDirty("鍔犺浇 Showcase Demo"))) return;
   loadProjectIntoEditor(loadShowcaseProject(), false);
   desktopProjectRoot.value = null;
   setActiveView("script");
-  ElMessage.success("已加载 Showcase Demo。");
+  ElMessage.success("宸插姞杞?Showcase Demo銆?);
 }
 
-/** 从顶部菜单或快捷入口重新开始预览。 */
+/** 浠庨《閮ㄨ彍鍗曟垨蹇嵎鍏ュ彛閲嶆柊寮€濮嬮瑙堛€?*/
 function handleRestartPreview(): void {
   previewPanelRef.value?.restart();
 }
 
-/** 新建桌面本地工程。 */
+/** 鏂板缓妗岄潰鏈湴宸ョ▼銆?*/
 async function handleCreateDesktopProject(): Promise<void> {
-  if (!(await confirmDiscardIfDirty("新建本地工程"))) return;
+  if (!(await confirmDiscardIfDirty("鏂板缓鏈湴宸ョ▼"))) return;
   const result = await createDesktopProjectDirectory();
   if (!result.ok || !result.data) {
-    ElMessage.error(result.message ?? "新建本地工程失败。");
+    ElMessage.error(result.message ?? "鏂板缓鏈湴宸ョ▼澶辫触銆?);
     return;
   }
   desktopProjectRoot.value = result.data.rootPath;
   loadProjectIntoEditor(result.data.project, false);
-  ElMessage.success("本地工程已新建。");
+  ElMessage.success("鏈湴宸ョ▼宸叉柊寤恒€?);
 }
 
-/** 打开桌面本地工程。 */
+/** 鎵撳紑妗岄潰鏈湴宸ョ▼銆?*/
 async function handleOpenDesktopProject(): Promise<void> {
-  if (!(await confirmDiscardIfDirty("打开本地工程"))) return;
+  if (!(await confirmDiscardIfDirty("鎵撳紑鏈湴宸ョ▼"))) return;
   const result = await openDesktopProjectDirectory();
   if (!result.ok || !result.data) {
-    ElMessage.error(result.message ?? "打开本地工程失败。");
+    ElMessage.error(result.message ?? "鎵撳紑鏈湴宸ョ▼澶辫触銆?);
     return;
   }
   desktopProjectRoot.value = result.data.rootPath;
   loadProjectIntoEditor(result.data.project, false);
-  ElMessage.success("本地工程已打开。");
+  ElMessage.success("鏈湴宸ョ▼宸叉墦寮€銆?);
 }
 
-/** 保存当前项目到桌面本地工程目录。 */
+/** 淇濆瓨褰撳墠椤圭洰鍒版闈㈡湰鍦板伐绋嬬洰褰曘€?*/
 async function handleSaveDesktopProject(): Promise<void> {
   const result = await saveDesktopProject(projectStore.project);
   if (!result.ok) {
-    ElMessage.error(result.message ?? "保存本地工程失败。");
+    ElMessage.error(result.message ?? "淇濆瓨鏈湴宸ョ▼澶辫触銆?);
     return;
   }
   setDirty(false);
-  ElMessage.success("本地工程已保存。");
+  ElMessage.success("鏈湴宸ョ▼宸蹭繚瀛樸€?);
 }
 
-/** 导出桌面完整 Web 游戏包。 */
+/** 瀵煎嚭妗岄潰瀹屾暣 Web 娓告垙鍖呫€?*/
 async function handleExportDesktopWebGame(): Promise<void> {
   const result = await exportDesktopWebGame(projectStore.project);
   if (!result.ok || !result.data) {
-    ElMessage.error(result.message ?? "导出完整 Web 游戏包失败。");
+    ElMessage.error(result.message ?? "瀵煎嚭瀹屾暣 Web 娓告垙鍖呭け璐ャ€?);
     return;
   }
-  ElMessage.success(`Web 游戏包已导出：${result.data.export_dir}`);
+  ElMessage.success(`Web 娓告垙鍖呭凡瀵煎嚭锛?{result.data.export_dir}`);
 }
 
-/** 在桌面模式导入素材文件并登记为素材元数据。 */
+/** 鍦ㄦ闈㈡ā寮忓鍏ョ礌鏉愭枃浠跺苟鐧昏涓虹礌鏉愬厓鏁版嵁銆?*/
 async function handleImportAssetFile(assetType: AssetType): Promise<void> {
   const result = await importDesktopAssetFile(assetType);
   if (!result.ok || !result.data) {
-    ElMessage.error(result.message ?? "导入素材失败。");
+    ElMessage.error(result.message ?? "瀵煎叆绱犳潗澶辫触銆?);
     return;
   }
-  const fileName = result.data.relative_path.split("/").at(-1) ?? "导入素材";
+  const fileName = result.data.relative_path.split("/").at(-1) ?? "瀵煎叆绱犳潗";
   const asset = {
     ...createEmptyAsset(assetType),
     name: fileName.replace(/\.[^.]+$/, ""),
@@ -709,10 +716,10 @@ async function handleImportAssetFile(assetType: AssetType): Promise<void> {
   applyProject(addAsset(projectStore.project, asset));
   setWorkspaceSelection({ kind: "asset", id: asset.id });
   setInspectorTab("assets");
-  ElMessage.success("素材已复制到工程 assets 并登记。");
+  ElMessage.success("绱犳潗宸插鍒跺埌宸ョ▼ assets 骞剁櫥璁般€?);
 }
 
-/** 定位校验问题到脚本和节点。 */
+/** 瀹氫綅鏍￠獙闂鍒拌剼鏈拰鑺傜偣銆?*/
 function handleLocateValidationIssue(issue: ValidationIssue): void {
   if (issue.scriptId && projectStore.project.scripts.some((script) => script.id === issue.scriptId)) {
     selectScript(issue.scriptId);
@@ -721,11 +728,11 @@ function handleLocateValidationIssue(issue: ValidationIssue): void {
   if (issue.nodeId) selectNode(issue.nodeId);
 }
 
-/** 定位节点或标签跳转目标。 */
+/** 瀹氫綅鑺傜偣鎴栨爣绛捐烦杞洰鏍囥€?*/
 function handleLocateTarget(target: NodeTarget): void {
   const nodeId = resolveTargetNodeId(projectStore.project, target);
   if (!nodeId) {
-    ElMessage.warning("目标不存在，无法定位。");
+    ElMessage.warning("鐩爣涓嶅瓨鍦紝鏃犳硶瀹氫綅銆?);
     return;
   }
   selectScript(target.scriptId);
@@ -733,12 +740,12 @@ function handleLocateTarget(target: NodeTarget): void {
   setActiveView("script");
 }
 
-/** 聚焦节点搜索框。 */
+/** 鑱氱劍鑺傜偣鎼滅储妗嗐€?*/
 function focusNodeSearch(): void {
   document.querySelector<HTMLInputElement>("#node-search-input")?.focus();
 }
 
-/** 保存快捷键入口。 */
+/** 淇濆瓨蹇嵎閿叆鍙ｃ€?*/
 function handleShortcutSave(): void {
   if (desktopMode) {
     void handleSaveDesktopProject();
@@ -747,7 +754,7 @@ function handleShortcutSave(): void {
   }
 }
 
-/** 编辑器快捷键监听器。 */
+/** 缂栬緫鍣ㄥ揩鎹烽敭鐩戝惉鍣ㄣ€?*/
 const shortcutHandler = createEditorShortcutHandler({
   save: handleShortcutSave,
   undo: handleUndo,
@@ -772,7 +779,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <EditorWorkbench>
+  <EditorWorkbench ref="workbenchRef">
     <template #menu>
       <MainMenuBar
         :desktop-mode="desktopMode"
@@ -803,15 +810,11 @@ onBeforeUnmount(() => {
         @delete-character="handleDeleteCharacterFromTree"
         @create-variable="handleCreateVariable"
         @delete-variable="handleDeleteVariableFromTree"
-      >
-        <template #preview>
-          <AssetPreviewPane :asset="focusedAsset" :assets="projectStore.project.assets.items" />
-        </template>
-      </ResourceExplorer>
+      />
     </template>
 
     <template #center>
-      <CenterStage>
+      <CenterStage ref="centerStageRef">
         <template #tabs>
           <StageTabs :model-value="layoutStore.stageTab" @update:model-value="setStageTab" />
         </template>
@@ -889,7 +892,7 @@ onBeforeUnmount(() => {
           />
           <div v-else class="inspector-empty-state">
             <strong>{{ inspectorSelectionLabel }}</strong>
-            <span>该工作区的编辑表单位于中央下方。校验摘要已移动到底部状态栏。</span>
+            <span>璇ュ伐浣滃尯鐨勭紪杈戣〃鍗曚綅浜庝腑澶笅鏂广€傛牎楠屾憳瑕佸凡绉诲姩鍒板簳閮ㄧ姸鎬佹爮銆?/span>
           </div>
         </template>
         <template #assets>

@@ -49,12 +49,17 @@ watch(
       loading="lazy"
       @error="failed = true"
     />
-    <div v-else-if="canPreviewAudio" class="asset-preview-audio-card" :title="props.asset?.path" aria-label="音频资源">
-      <svg class="asset-preview-audio-icon" viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M22 39h7l10 8V17L29 25h-7z" />
-        <path d="M44 26c2.2 3.2 2.2 8.8 0 12" />
-        <path d="M49 21c5.2 6.6 5.2 15.4 0 22" />
-      </svg>
+    <div v-else-if="canPreviewAudio && previewUrl" class="asset-preview-audio-card" :title="props.asset?.path" aria-label="音频资源">
+      <audio
+        class="asset-preview-audio-player"
+        controls
+        preload="metadata"
+        :src="previewUrl"
+        @error="failed = true"
+      />
+    </div>
+    <div v-else-if="canPreviewAudio" class="asset-preview-audio-card asset-preview-audio-card--no-source" :title="props.asset?.path" aria-label="音频资源">
+      <span class="asset-preview-audio-fallback">无可用音频路径</span>
     </div>
     <span v-else class="asset-preview-empty">无预览</span>
   </div>
@@ -71,7 +76,8 @@ watch(
 }
 
 .asset-preview--wide {
-  height: 64px;
+  width: 100%;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -97,8 +103,9 @@ watch(
 
 .asset-preview--wide .asset-preview-image {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .asset-preview--portrait .asset-preview-image {
@@ -119,16 +126,23 @@ watch(
   width: 100%;
   height: 100%;
   color: #3ddc84;
+  background: transparent;
+  overflow: hidden;
 }
 
-.asset-preview-audio-icon {
-  width: 30px;
-  height: 30px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 3;
+.asset-preview-audio-player {
+  width: 100%;
+  height: 20px;
+  max-width: 100%;
+}
+
+.asset-preview-audio-card--no-source {
+  padding: 0 6px;
+}
+
+.asset-preview-audio-fallback {
+  color: #98a2b3;
+  font-size: 11px;
 }
 
 .asset-preview-empty {
