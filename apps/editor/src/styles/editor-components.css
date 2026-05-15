@@ -55,9 +55,14 @@
   min-width: 0;
   height: 24px;
   padding: 0 6px;
+  border: 0;
   border-radius: 0;
   color: #cbd3df;
+  background: transparent;
+  font: inherit;
   text-align: left;
+  cursor: pointer;
+  appearance: none;
 }
 
 .resource-tree-root:hover,
@@ -72,13 +77,8 @@
   background: linear-gradient(90deg, #2f64ad, #375f98);
 }
 
-.resource-tree-folder .el-icon,
-.resource-tree-root .el-icon {
-  color: #e3c56b;
-}
-
-.resource-tree-item .el-icon {
-  color: #e3c56b;
+.resource-tree-icon {
+  color: #dfc56d;
 }
 
 .resource-tree-group {
@@ -124,6 +124,58 @@
 
 .resource-tree-item.active .resource-tree-item-main small {
   color: rgba(255, 255, 255, 0.7);
+}
+
+.resource-tree-group--scripts .resource-tree-icon,
+.resource-tree-item--scripts .resource-tree-icon,
+.resource-tree-icon--folder {
+  color: #e6c46a;
+}
+
+.resource-tree-group--characters .resource-tree-icon,
+.resource-tree-item--characters .resource-tree-icon {
+  color: #e1bd73;
+}
+
+.resource-tree-group--backgrounds .resource-tree-icon,
+.resource-tree-item--backgrounds .resource-tree-icon,
+.resource-tree-group--cg .resource-tree-icon,
+.resource-tree-item--cg .resource-tree-icon,
+.resource-tree-group--ui .resource-tree-icon,
+.resource-tree-item--ui .resource-tree-icon {
+  color: #e8cb73;
+}
+
+.resource-tree-group--music .resource-tree-icon,
+.resource-tree-item--music .resource-tree-icon,
+.resource-tree-group--sound .resource-tree-icon,
+.resource-tree-item--sound .resource-tree-icon {
+  color: #45a2f6;
+}
+
+.resource-tree-group--video .resource-tree-icon,
+.resource-tree-item--video .resource-tree-icon {
+  color: #67c7e8;
+}
+
+.resource-tree-group--font .resource-tree-icon,
+.resource-tree-item--font .resource-tree-icon {
+  color: #e68ac8;
+}
+
+.resource-tree-group--props .resource-tree-icon,
+.resource-tree-item--props .resource-tree-icon {
+  color: #e4bf68;
+}
+
+.resource-tree-group--animations .resource-tree-icon,
+.resource-tree-item--animations .resource-tree-icon {
+  color: #c79cf2;
+}
+
+.resource-tree-group--variables .resource-tree-icon,
+.resource-tree-item--variables .resource-tree-icon {
+  color: #e46c79;
 }
 
 .resource-section {

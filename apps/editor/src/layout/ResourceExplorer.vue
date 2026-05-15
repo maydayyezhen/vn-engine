@@ -319,14 +319,14 @@ onBeforeUnmount(() => {
       <div class="resource-tree">
         <button class="resource-tree-root" @click="openSection('scripts')">
           <span class="tree-caret">⌄</span>
-          <el-icon><Folder /></el-icon>
+          <el-icon class="resource-tree-icon resource-tree-icon--folder"><Folder /></el-icon>
           <span>{{ projectTitle }}</span>
         </button>
 
-        <div v-for="folder in resourceFolders" :key="folder.key" class="resource-tree-group">
+        <div v-for="folder in resourceFolders" :key="folder.key" class="resource-tree-group" :class="`resource-tree-group--${folder.key}`">
           <button class="resource-tree-folder" :class="{ active: folder.section === 'assets' ? activeView === 'assets' : folder.section === activeView }" @click="handleFolderClick(folder)">
             <span class="tree-caret">{{ folder.expanded ? "⌄" : "›" }}</span>
-            <el-icon><component :is="folder.icon" /></el-icon>
+            <el-icon class="resource-tree-icon"><component :is="folder.icon" /></el-icon>
             <span>{{ folder.label }}</span>
           </button>
 
@@ -335,12 +335,12 @@ onBeforeUnmount(() => {
               v-for="item in folder.items"
               :key="`${folder.key}-${item.id}`"
               class="resource-tree-item"
-              :class="{ active: item.scriptId === selectedScriptId }"
+              :class="[`resource-tree-item--${folder.key}`, { active: item.scriptId === selectedScriptId }]"
               @click="handleItemClick(item)"
               @contextmenu.prevent="openScriptContextMenu($event, item)"
             >
               <span class="tree-indent"></span>
-              <el-icon>
+              <el-icon class="resource-tree-icon">
                 <Document v-if="item.section === 'scripts'" />
                 <User v-else-if="item.section === 'characters'" />
                 <Picture v-else-if="folder.key === 'backgrounds' || folder.key === 'cg'" />
