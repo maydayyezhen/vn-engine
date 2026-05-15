@@ -1,46 +1,71 @@
-# Showcase 真实素材手动下载说明
+# Showcase 素材替换说明
 
-当前脚本不会绕过 itch.io 或 Kenney 的下载限制；如果无法稳定自动下载，会保留本地生成占位素材，保证项目可运行。要替换为真实素材，请手动下载以下来源中少量文件，并重命名到对应路径。
+当前仓库已经内置真实/半真实 Showcase 素材：
 
-## 背景
+- 背景：Potat0Master 的 School Mini Pack 1 WebP。
+- 角色：Xiael 的 Tia Sprite 透明 PNG 部件，本项目组合成 4 个表情。
+- BGM：OpenGameArt CC0 MP3。
+- 音效：Kenney UI Audio CC0 OGG。
+- 语音：本地生成占位音频，没有调用 TTS API。
+- 道具：本地生成 SVG 占位图，等待后续 PropLayer。
 
-- 页面：https://potat0master.itch.io/free-visual-novel-backgrounds-school-mini-pack-1
-- 页面：https://potat0master.itch.io/free-visual-novel-backgrounds-mini-pack-1
-- 作者：Potat0Master
-- 建议选择 3 到 5 张背景，重命名为：
-  - `examples/showcase-game/assets/background/station_evening.svg`
-  - `examples/showcase-game/assets/background/classroom_day.svg`
-  - `examples/showcase-game/assets/background/hallway_day.svg`
-  - `examples/showcase-game/assets/background/seaside_night.svg`
+如需替换为其他真实素材，请保持路径和 `project.vnproj.json` 中的资源路径一致。
 
-如果真实文件是 PNG 或 WebP，请同步修改 `project.vnproj.json` 中的路径，并复制到 `apps/player/public/showcase-assets/background/`。
+## 背景替换
 
-## 角色
+推荐来源：
 
-- 页面：https://potat0master.itch.io/free-characters-for-visual-novels-set-a01
-- 作者：Potat0Master
-- 建议选择一个角色的 normal、smile、sad、surprised 四张透明立绘，放到：
-  - `examples/showcase-game/assets/character/heroine/`
-  - `apps/player/public/showcase-assets/character/heroine/`
+- https://potat0master.itch.io/free-visual-novel-backgrounds-school-mini-pack-1
+- https://potat0master.itch.io/free-visual-novel-backgrounds-mini-pack-1
 
-## BGM
+当前文件：
 
-- 页面：https://potat0master.itch.io/free-background-music-for-visual-novels-bgm-pack-1
-- 作者：Potat0Master
-- 建议选择 1 到 2 首，放到：
-  - `examples/showcase-game/assets/audio/bgm/`
-  - `apps/player/public/showcase-assets/audio/bgm/`
+- `assets/background/station_evening.webp`
+- `assets/background/classroom_day.webp`
+- `assets/background/hallway_day.webp`
+- `assets/background/seaside_night.webp`
 
-## 音效
+替换后同步复制到：
 
-- 页面：https://kenney.nl/assets/category:Audio
-- 页面：https://kenney.nl/assets/digital-audio
-- 作者：Kenney
-- 许可：CC0
-- 建议选择点击、翻页、提示类少量音效，放到：
-  - `examples/showcase-game/assets/audio/sound/`
-  - `apps/player/public/showcase-assets/audio/sound/`
+- `apps/player/public/showcase-assets/background/`
 
-## 语音
+## 角色替换
 
-本轮不接 TTS API。语音默认由本地脚本生成占位 WAV。
+当前角色来源：
+
+- https://xiael.itch.io/tia-sprite
+
+当前文件：
+
+- `assets/character/heroine/normal.png`
+- `assets/character/heroine/smile.png`
+- `assets/character/heroine/sad.png`
+- `assets/character/heroine/surprised.png`
+
+替换时建议使用透明 PNG 或 WebP，并更新 `project.vnproj.json` 中对应 `AssetItem.path`。
+
+## BGM 和音效替换
+
+当前 BGM 来源：
+
+- https://opengameart.org/content/cco-mystical-music
+- https://opengameart.org/content/nighttime-solitude
+
+当前音效来源：
+
+- https://kenney.nl/assets/ui-audio
+
+替换后同步复制到：
+
+- `apps/player/public/showcase-assets/audio/bgm/`
+- `apps/player/public/showcase-assets/audio/sound/`
+
+## 同步命令
+
+修改 `examples/showcase-game/assets/` 后执行：
+
+```bash
+pnpm prepare:showcase-assets
+```
+
+该命令会把 Showcase 素材同步到 `apps/player/public/showcase-assets/`。

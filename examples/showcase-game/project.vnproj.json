@@ -29,57 +29,57 @@
         "id": "bg-station-evening",
         "name": "黄昏无人站",
         "type": "background",
-        "path": "/showcase-assets/background/station_evening.svg",
-        "description": "Showcase占位背景，可替换为Potat0Master真实素材。"
+        "path": "/showcase-assets/background/station_evening.webp",
+        "description": "Potat0Master School Mini Pack 1: smp_front_evening1.webp."
       },
       {
         "id": "bg-classroom-day",
         "name": "白日教室",
         "type": "background",
-        "path": "/showcase-assets/background/classroom_day.svg",
-        "description": "Showcase占位背景，可替换为Potat0Master真实素材。"
+        "path": "/showcase-assets/background/classroom_day.webp",
+        "description": "Potat0Master School Mini Pack 1: smp_classroom1_day1.webp."
       },
       {
         "id": "bg-hallway-day",
         "name": "白日走廊",
         "type": "background",
-        "path": "/showcase-assets/background/hallway_day.svg",
-        "description": "Showcase占位背景，可替换为Potat0Master真实素材。"
+        "path": "/showcase-assets/background/hallway_day.webp",
+        "description": "Potat0Master School Mini Pack 1: smp_hallway11_day1.webp."
       },
       {
         "id": "bg-seaside-night",
         "name": "夜色海边",
         "type": "background",
-        "path": "/showcase-assets/background/seaside_night.svg",
-        "description": "Showcase占位背景，可替换为Potat0Master真实素材。"
+        "path": "/showcase-assets/background/seaside_night.webp",
+        "description": "Potat0Master School Mini Pack 1: smp_roof_night1.webp."
       },
       {
         "id": "heroine-normal",
         "name": "潮见澪 普通",
         "type": "character",
-        "path": "/showcase-assets/character/heroine/normal.svg",
-        "description": "项目脚本生成的透明占位立绘。"
+        "path": "/showcase-assets/character/heroine/normal.png",
+        "description": "Xiael Tia Sprite parts assembled locally from transparent PNG layers."
       },
       {
         "id": "heroine-smile",
         "name": "潮见澪 微笑",
         "type": "character",
-        "path": "/showcase-assets/character/heroine/smile.svg",
-        "description": "项目脚本生成的透明占位立绘。"
+        "path": "/showcase-assets/character/heroine/smile.png",
+        "description": "Xiael Tia Sprite parts assembled locally from transparent PNG layers."
       },
       {
         "id": "heroine-sad",
         "name": "潮见澪 难过",
         "type": "character",
-        "path": "/showcase-assets/character/heroine/sad.svg",
-        "description": "项目脚本生成的透明占位立绘。"
+        "path": "/showcase-assets/character/heroine/sad.png",
+        "description": "Xiael Tia Sprite parts assembled locally from transparent PNG layers."
       },
       {
         "id": "heroine-surprised",
         "name": "潮见澪 惊讶",
         "type": "character",
-        "path": "/showcase-assets/character/heroine/surprised.svg",
-        "description": "项目脚本生成的透明占位立绘。"
+        "path": "/showcase-assets/character/heroine/surprised.png",
+        "description": "Xiael Tia Sprite parts assembled locally from transparent PNG layers."
       },
       {
         "id": "prop-old-letter",
@@ -99,36 +99,36 @@
         "id": "bgm-showcase-theme",
         "name": "潮汐主题BGM",
         "type": "bgm",
-        "path": "/showcase-assets/audio/bgm/showcase_theme.wav",
-        "description": "项目脚本生成的可复现占位BGM。"
+        "path": "/showcase-assets/audio/bgm/showcase_theme.mp3",
+        "description": "OpenGameArt CC0: mystical place.mp3 by PolygonDan."
       },
       {
         "id": "bgm-memory-theme",
         "name": "回忆主题BGM",
         "type": "bgm",
-        "path": "/showcase-assets/audio/bgm/memory_theme.wav",
-        "description": "项目脚本生成的可复现占位BGM。"
+        "path": "/showcase-assets/audio/bgm/memory_theme.mp3",
+        "description": "OpenGameArt CC0: Nighttime Solitude by celestialghost8."
       },
       {
         "id": "sound-click",
         "name": "点击提示音",
         "type": "sound",
-        "path": "/showcase-assets/audio/sound/click.wav",
-        "description": "项目脚本生成的占位音效。"
+        "path": "/showcase-assets/audio/sound/click.ogg",
+        "description": "Kenney UI Audio CC0: click1.ogg."
       },
       {
         "id": "sound-page",
         "name": "翻页声",
         "type": "sound",
-        "path": "/showcase-assets/audio/sound/page.wav",
-        "description": "项目脚本生成的占位音效。"
+        "path": "/showcase-assets/audio/sound/page.ogg",
+        "description": "Kenney UI Audio CC0: switch9.ogg."
       },
       {
         "id": "sound-flash",
         "name": "闪回声",
         "type": "sound",
-        "path": "/showcase-assets/audio/sound/flash.wav",
-        "description": "项目脚本生成的占位音效。"
+        "path": "/showcase-assets/audio/sound/flash.ogg",
+        "description": "Kenney UI Audio CC0: switch33.ogg."
       },
       {
         "id": "voice-heroine-001",

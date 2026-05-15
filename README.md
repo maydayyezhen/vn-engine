@@ -209,4 +209,4 @@ pnpm build
 pnpm export:showcase-web
 ```
 
-导出目录为 `dist/export/showcase-web-game/`。当前仓库内置的是可运行的本地占位素材；真实素材替换说明见 `examples/showcase-game/MANUAL_DOWNLOAD.md`，素材来源与许可记录见 `examples/showcase-game/CREDITS.md`。
+导出目录为 `dist/export/showcase-web-game/`。当前仓库内置 Showcase 所需的真实/半真实素材：Potat0Master 背景、Xiael 透明角色部件组合、OpenGameArt BGM、Kenney 音效；语音和道具仍为本地技术占位。素材替换说明见 `examples/showcase-game/MANUAL_DOWNLOAD.md`，来源记录见 `examples/showcase-game/CREDITS.md`。

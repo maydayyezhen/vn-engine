@@ -1,29 +1,58 @@
 # 无人站的潮汐信 Showcase Demo
 
-这是用于验证 vn-engine 当前完整链路的 3 到 5 分钟展示工程。它覆盖背景、透明角色立绘、多表情、BGM、音效、语音占位、变量分支、Label 跳转、PlayAnimationNode、存档读档和 Web 导出。
+这是一个 3 到 5 分钟的视觉小说展示工程，用于验证当前引擎的实际制作效果。
 
-## 准备素材
+## 已覆盖能力
 
-```bash
-pnpm prepare:showcase-assets
-```
+- 真实背景资源。
+- 透明角色立绘和多表情切换。
+- BGM 与音效播放。
+- 语音占位资源。
+- Scene / ShowCharacter / HideCharacter / Dialogue / Narration。
+- Choice / SetVariable / Condition / Label / Jump。
+- PlayAnimationNode 动画模块。
+- 存档读档、自动播放、Web 导出包。
 
-脚本会生成可运行的本地占位素材，并把浏览器可访问副本复制到 `apps/player/public/showcase-assets/`。真实免费素材请按 `MANUAL_DOWNLOAD.md` 手动下载并替换同名文件。
+## 素材状态
+
+当前主展示素材已替换为真实/半真实素材：
+
+- 背景：Potat0Master School Mini Pack 1。
+- 角色：Xiael Tia Sprite 透明 PNG 部件组合。
+- BGM：OpenGameArt CC0 音乐。
+- 音效：Kenney UI Audio CC0。
+- 语音：本地生成技术占位。
+- 道具：本地生成 SVG 占位，等待后续 PropLayer。
+
+完整来源见 `CREDITS.md`。
 
 ## 运行
 
 ```bash
+pnpm prepare:showcase-assets
 pnpm dev:player:showcase
 ```
 
 打开：
 
-```text
+```txt
 http://localhost:5173/?project=showcase
 ```
 
-编辑器中可用“加载 Showcase Demo”入口载入。
+## 导出 Web 包
 
-## 当前限制
+```bash
+pnpm export:showcase-web
+```
 
-当前没有正式 PropLayer，旧信和录音带以 `image` 素材登记，剧本用旁白和屏幕动画表现物品展示。后续可在 PropLayer 中完善真实道具层。
+导出目录：
+
+```txt
+dist/export/showcase-web-game/
+```
+
+用静态服务器运行：
+
+```bash
+npx serve dist/export/showcase-web-game
+```
