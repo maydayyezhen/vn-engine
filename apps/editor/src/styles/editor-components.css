@@ -136,8 +136,10 @@
 
 .asset-preview-tile {
   display: grid;
+  grid-template-rows: 64px auto;
   gap: 3px;
   min-width: 0;
+  overflow: hidden;
   padding: 4px;
   border: 1px solid transparent;
   border-radius: 5px;

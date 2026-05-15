@@ -49,14 +49,13 @@ watch(
       loading="lazy"
       @error="failed = true"
     />
-    <div v-else-if="canPreviewAudio" class="asset-preview-audio-card" :title="props.asset?.path">
+    <div v-else-if="canPreviewAudio" class="asset-preview-audio-card" :title="props.asset?.path" aria-label="音频资源">
       <svg class="asset-preview-audio-icon" viewBox="0 0 64 64" aria-hidden="true">
         <rect x="8" y="10" width="48" height="44" rx="8" />
         <path d="M22 39h7l10 8V17L29 25h-7z" />
         <path d="M44 26c2.2 3.2 2.2 8.8 0 12" />
         <path d="M49 21c5.2 6.6 5.2 15.4 0 22" />
       </svg>
-      <span>{{ props.asset?.type?.toUpperCase() }}</span>
     </div>
     <span v-else class="asset-preview-empty">无预览</span>
   </div>
@@ -67,18 +66,25 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   min-width: 0;
+  overflow: hidden;
 }
 
 .asset-preview--wide {
-  min-height: 64px;
+  height: 64px;
+  min-height: 0;
 }
 
 .asset-preview--portrait {
-  min-height: 92px;
+  height: 92px;
+  min-height: 0;
 }
 
 .asset-preview-image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   border: 1px solid #dcdfe6;
   border-radius: 4px;
@@ -86,40 +92,33 @@ watch(
 }
 
 .asset-preview--wide .asset-preview-image {
-  width: 112px;
-  height: 64px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .asset-preview--portrait .asset-preview-image {
-  width: 72px;
-  height: 92px;
+  width: auto;
+  height: 100%;
 }
 
 .asset-preview-audio-card {
-  display: grid;
-  place-items: center;
-  gap: 4px;
-  width: 64px;
-  height: 52px;
-  border: 1px solid #2d394b;
-  border-radius: 6px;
-  color: #8d9aab;
-  background: #101722;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #3ddc84;
 }
 
 .asset-preview-audio-icon {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 3;
-}
-
-.asset-preview-audio-card span {
-  font-size: 9px;
-  font-weight: 700;
 }
 
 .asset-preview-empty {
