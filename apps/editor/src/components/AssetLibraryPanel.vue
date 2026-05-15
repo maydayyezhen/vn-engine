@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AssetItem, AssetType, VNProject } from "@vn-engine/vn-schema";
+import AssetPreview from "./AssetPreview.vue";
 import { addAsset, createEmptyAsset, deleteAsset, updateAsset } from "../services/assetEditService";
 
 /** 素材库面板属性。 */
@@ -81,6 +82,11 @@ function handleImportAsset(command: string | number | object): void {
     />
 
     <el-table :data="project.assets.items" height="100%">
+      <el-table-column label="预览" width="210">
+        <template #default="{ row }">
+          <AssetPreview :asset="row" />
+        </template>
+      </el-table-column>
       <el-table-column label="id" min-width="170">
         <template #default="{ row }">
           <el-input :model-value="row.id" size="small" @update:model-value="(value: string) => handleUpdateAsset(row.id, { id: value })" />
