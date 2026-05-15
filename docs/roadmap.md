@@ -1,5 +1,16 @@
 # 路线图
 
+## 第十四轮返修状态：动作序列 MVP 已收敛
+
+状态：已完成返修。
+
+- `ActionSequenceNode` 当前作为 MVP 使用，主验收动作类型为 `wait`、`scene`、`showCharacter`、`hideCharacter`、`moveCharacter`、`camera`、`playAudio`、`stopAudio`。
+- `vn-core` 新增 `completeActionSequence()`，动作等待期间 `next()` 不会推进，避免点击、自动播放或快进绕过演出。
+- 存档通过 `getSaveState()` 保存稳定状态，不保存 `pendingActions` 或动作执行中间态。
+- `vn-renderer-pixi` 对同一动作序列做播放 key 去重，避免重复 render 反复触发完成回调。
+- `parallel` 与 `changeExpression` 仅保留旧 JSON 兼容；编辑器默认不再新增，nested parallel 会被校验拦截。
+- 当前不是复杂关键帧时间轴、曲线编辑器或节点图编辑器。
+
 ## 第9阶段补充：Tauri 本地工程读写
 
 状态：已完成基础闭环。

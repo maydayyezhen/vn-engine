@@ -45,7 +45,16 @@ export class VNRuntime {
   /** 推进到下一个剧情节点。 */
   next(): RuntimeSnapshot {
     if (this.state.isEnded || this.state.isWaitingChoice) return this.getSnapshot();
+    if (this.state.isWaitingForActionCompletion) return this.getSnapshot();
+    this.state.currentNodeIndex += 1;
+    return this.processCurrentNode();
+  }
+
+  /** 动作序列播放完成后由 player 调用，确保 renderer 不直接推进剧情。 */
+  completeActionSequence(): RuntimeSnapshot {
+    if (!this.state.isWaitingForActionCompletion) return this.getSnapshot();
     this.state.isWaitingForActionCompletion = false;
+    this.state.pendingActions = [];
     this.state.currentNodeIndex += 1;
     return this.processCurrentNode();
   }
@@ -95,6 +104,11 @@ export class VNRuntime {
     return this.cloneState(this.state);
   }
 
+  /** 获取用于存档的稳定状态，不保存动作执行中的 pendingActions。 */
+  getSaveState(): RuntimeState {
+    return this.createStableSaveState(this.state);
+  }
+
   /** 获取最近运行时调试日志。 */
   getDebugLog(): RuntimeDebugEvent[] {
     return this.state.debugLog.map((event) => ({ ...event }));
@@ -102,9 +116,22 @@ export class VNRuntime {
 
   /** 从保存状态恢复运行时。 */
   loadState(state: RuntimeState): RuntimeSnapshot {
-    this.state = this.cloneState(state);
+    this.state = this.createStableSaveState(state);
     this.variables.load(state.variables);
     return this.processCurrentNode();
+  }
+
+  /** 将动作等待中的状态转换成可保存、可恢复的静态状态。 */
+  private createStableSaveState(source: RuntimeState): RuntimeState {
+    const state = this.cloneState(source);
+    if (state.isWaitingForActionCompletion) {
+      state.currentNodeIndex += 1;
+      const script = findScript(this.project, state.currentScriptId);
+      state.currentNodeId = script ? findNodeByIndex(script, state.currentNodeIndex)?.id ?? null : null;
+    }
+    state.isWaitingForActionCompletion = false;
+    state.pendingActions = [];
+    return state;
   }
 
   /** 创建初始运行状态。 */

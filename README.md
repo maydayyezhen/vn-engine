@@ -1,5 +1,13 @@
 # vn-engine
 
+## 第十四轮返修：动作序列 MVP
+
+当前第十四轮已收敛为动作序列 MVP。`ActionSequenceNode` 的主验收范围仅包含 `wait`、`scene`、`showCharacter`、`hideCharacter`、`moveCharacter`、`camera`、`playAudio`、`stopAudio`。
+
+`vn-core` 在遇到 `waitForCompletion=true` 的动作序列时会输出 `pendingActions` 并进入 `isWaitingForActionCompletion=true`，此时 `next()` 不会绕过等待；渲染器完成动作后由播放器调用 `VNRuntime.completeActionSequence()` 继续剧情。存档使用 `getSaveState()`，不会保存动作执行中间态，也不会在读档后重复播放旧动作。
+
+`parallel` 和 `changeExpression` 仅保留旧 JSON 兼容：编辑器默认不再新增这些动作，`validateProject` 会阻止 nested parallel。当前仍不是复杂关键帧时间轴、曲线编辑器或节点图编辑器。
+
 ## 第十轮更新：Tauri 桌面工程读写
 
 当前已接入 `apps/desktop` Tauri 桌面壳。桌面版加载同一个 `apps/editor` 界面，并提供新建工程、打开工程、保存工程、复制导入素材、导出完整 Web 游戏包等本地能力。

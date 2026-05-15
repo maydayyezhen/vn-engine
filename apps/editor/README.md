@@ -1,5 +1,11 @@
 # apps/editor
 
+## 动作序列 MVP 编辑范围
+
+编辑器当前只默认新增动作序列 MVP 类型：`wait`、`scene`、`showCharacter`、`hideCharacter`、`moveCharacter`、`camera`、`playAudio`、`stopAudio`。动作卡片会显示简短摘要，资源选择显示名称和 id。
+
+`parallel` 与 `changeExpression` 只用于旧项目兼容，不再作为默认新增入口；nested parallel 会由校验提示。当前仍不是复杂关键帧时间轴、曲线编辑器或节点图编辑器。
+
 ## Action Sequence Editing
 
 第十四轮新增 `ActionSequenceNode` 最小编辑闭环。节点工具栏可以新增动作序列节点，

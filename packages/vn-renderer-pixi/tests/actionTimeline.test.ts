@@ -34,4 +34,12 @@ describe("action timeline helpers", () => {
     await expect(promise).resolves.toBeUndefined();
     vi.useRealTimers();
   });
+  it("ActionPlayer stop 会释放当前等待，避免悬挂 promise", async () => {
+    vi.useFakeTimers();
+    const player = new ActionPlayer();
+    const promise = player.play([action("a", "wait", 1000)]);
+    player.stop();
+    await expect(promise).resolves.toBeUndefined();
+    vi.useRealTimers();
+  });
 });

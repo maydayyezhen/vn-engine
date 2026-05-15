@@ -50,6 +50,7 @@ export class AutoPlayController {
       this.stop();
       return;
     }
+    if (snapshot.isWaitingForActionCompletion) return;
     this.timer = setTimeout(() => {
       this.onNext();
     }, this.delayMs);

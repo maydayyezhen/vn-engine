@@ -1,5 +1,13 @@
 # @vn-engine/vn-renderer-pixi
 
+## 动作序列 MVP 返修说明
+
+`PixiVNRenderer` 当前只负责播放 `RuntimeSnapshot.pendingActions`，并通过 `onActionSequenceComplete` 通知上层。它不会持有 `VNRuntime`，也不会直接调用 `next()` 或 `choose()`。
+
+渲染器会用 `scriptId/currentNodeId/pendingActions` 生成动作序列 key；同一个 key 重复 render 不会重新启动动作，也不会重复触发完成回调。新的动作序列到来时会停止旧的 `ActionPlayer`。`ActionPlayer.stop()` 和 `destroy()` 会释放等待中的 promise，避免悬挂。
+
+当前主验收范围是顺序 MVP 动作：`wait`、`scene`、`showCharacter`、`hideCharacter`、`moveCharacter`、`camera`、`playAudio`、`stopAudio`。`parallel` 仅保留兼容，不代表已经完成复杂关键帧时间轴。
+
 ## Action Sequence Rendering
 
 第十四轮新增动作序列播放支撑。`PixiVNRenderer` 会读取

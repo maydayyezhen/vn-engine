@@ -153,7 +153,7 @@ describe("VNRuntime", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
     expect(runtime.start().currentNodeId).toBe("action-sequence-intro");
     expect(runtime.getSnapshot().isWaitingForActionCompletion).toBe(true);
-    expect(runtime.next().currentNodeId).toBe("narration-intro");
+    expect(runtime.completeActionSequence().currentNodeId).toBe("narration-intro");
     expect(runtime.next().currentNodeId).toBe("dialogue-greeting");
     expect(runtime.next().type).toBe("choices");
     expect(runtime.choose("stay").currentNodeId).toBe("ending-a");
@@ -166,7 +166,7 @@ describe("VNRuntime", () => {
   it("demo 的离开分支可以完整抵达结束状态", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
     runtime.start();
-    runtime.next();
+    runtime.completeActionSequence();
     runtime.next();
     runtime.next();
     expect(runtime.choose("leave").currentNodeId).toBe("ending-b");
@@ -178,7 +178,7 @@ describe("VNRuntime", () => {
   it("getState 和 loadState 可以恢复脚本、节点、变量、背景、角色、音频状态", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
     runtime.start();
-    runtime.next();
+    runtime.completeActionSequence();
     runtime.next();
     runtime.next();
     const choiceSnapshot = runtime.choose("stay");
@@ -207,7 +207,8 @@ describe("VNRuntime", () => {
 
   it("loadState 后 getSnapshot 可以恢复当前对话文本和画面状态", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
-    const beforeSave = runtime.start();
+    runtime.start();
+    const beforeSave = runtime.completeActionSequence();
     const state = runtime.getState();
 
     const restored = new VNRuntime(createDemoProjectFromScriptFile());
@@ -248,7 +249,7 @@ describe("VNRuntime", () => {
   it("HideCharacterNode 会生成退场 pendingEffects", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
     runtime.start();
-    runtime.next();
+    runtime.completeActionSequence();
     runtime.next();
     runtime.next();
     runtime.choose("stay");
@@ -264,7 +265,7 @@ describe("VNRuntime", () => {
   it("CameraNode 会更新镜头状态并可被 getState/loadState 恢复", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
     runtime.start();
-    runtime.next();
+    runtime.completeActionSequence();
     runtime.next();
     const choices = runtime.next();
     expect(choices.camera.zoom).toBe(1.04);
@@ -378,12 +379,14 @@ describe("VNRuntime", () => {
     expect(choiceRuntime.choose("go").currentNodeId).toBe("text");
   });
 
-  it("ActionSequenceNode 会应用 scene、showCharacter、moveCharacter、changeExpression、camera 和 audio 动作", () => {
+  it("ActionSequenceNode 会进入动作等待态并应用 MVP 动作最终状态", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
     const snapshot = runtime.start();
     expect(snapshot.type).toBe("action");
     expect(snapshot.isWaitingForActionCompletion).toBe(true);
     expect(snapshot.pendingActions.map((action) => action.actionType)).toContain("wait");
+    expect(snapshot.pendingActions.map((action) => action.actionType)).not.toContain("parallel");
+    expect(snapshot.pendingActions.map((action) => action.actionType)).not.toContain("changeExpression");
     expect(snapshot.backgroundAssetId).toBe("bg-classroom");
     expect(snapshot.characters[0]).toMatchObject({
       characterId: "lincheng",
@@ -396,20 +399,58 @@ describe("VNRuntime", () => {
     expect(snapshot.debugLog.some((event) => event.type === "action")).toBe(true);
   });
 
-  it("ActionSequenceNode 完成后 next 会进入下一个可展示节点", () => {
+  it("动作等待期间 next 不会绕过等待，completeActionSequence 只推进一次", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
-    runtime.start();
-    const snapshot = runtime.next();
-    expect(snapshot.currentNodeId).toBe("narration-intro");
+    const waiting = runtime.start();
+    expect(waiting.currentNodeId).toBe("action-sequence-intro");
+
+    const stillWaiting = runtime.next();
+    expect(stillWaiting.currentNodeId).toBe("action-sequence-intro");
+    expect(stillWaiting.isWaitingForActionCompletion).toBe(true);
+
+    const completed = runtime.completeActionSequence();
+    expect(completed.currentNodeId).toBe("narration-intro");
+    expect(completed.isWaitingForActionCompletion).toBe(false);
+    expect(completed.pendingActions).toHaveLength(0);
+
+    const repeated = runtime.completeActionSequence();
+    expect(repeated.currentNodeId).toBe("narration-intro");
   });
 
-  it("getState/loadState 可以恢复动作序列后的静态状态", () => {
+  it("waitForCompletion=false 的动作序列会自动继续到下一个可展示节点", () => {
+    const project = createDemoProjectFromScriptFile();
+    const sequence = project.scripts[0].nodes.find((node) => node.id === "action-sequence-intro");
+    if (sequence?.type === "actionSequence") sequence.waitForCompletion = false;
+    const runtime = new VNRuntime(project);
+    const snapshot = runtime.start();
+    expect(snapshot.currentNodeId).toBe("narration-intro");
+    expect(snapshot.isWaitingForActionCompletion).toBe(false);
+  });
+
+  it("getSaveState/loadState 不会恢复到动作执行中间态", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
     runtime.start();
     const restored = new VNRuntime(createDemoProjectFromScriptFile());
-    const snapshot = restored.loadState(runtime.getState());
+    const saveState = runtime.getSaveState();
+    expect(saveState.isWaitingForActionCompletion).toBe(false);
+    expect(saveState.pendingActions).toHaveLength(0);
+    const snapshot = restored.loadState(saveState);
+    expect(snapshot.currentNodeId).toBe("narration-intro");
+    expect(snapshot.isWaitingForActionCompletion).toBe(false);
+    expect(snapshot.pendingActions).toHaveLength(0);
     expect(snapshot.characters[0]?.expression).toBe("smile");
     expect(snapshot.camera.zoom).toBe(1.03);
     expect(snapshot.audio.voice).toBe("voice-lincheng-001");
+  });
+
+  it("loadState 会防御性清理旧的动作等待状态", () => {
+    const runtime = new VNRuntime(createDemoProjectFromScriptFile());
+    runtime.start();
+    const dirtyState = runtime.getState();
+    const restored = new VNRuntime(createDemoProjectFromScriptFile());
+    const snapshot = restored.loadState(dirtyState);
+    expect(snapshot.currentNodeId).toBe("narration-intro");
+    expect(snapshot.isWaitingForActionCompletion).toBe(false);
+    expect(snapshot.pendingActions).toHaveLength(0);
   });
 });

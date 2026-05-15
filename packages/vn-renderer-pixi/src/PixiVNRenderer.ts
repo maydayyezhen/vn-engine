@@ -37,6 +37,10 @@ export class PixiVNRenderer {
   private cameraAnimationToken = 0;
   /** 动作序列播放协调器。 */
   private readonly actionPlayer = new ActionPlayer();
+  /** 当前正在播放的动作序列 key，用于避免同一快照重复启动。 */
+  private activeActionSequenceKey: string | null = null;
+  /** 已完成但 runtime 尚未推进前的动作序列 key，用于避免重复完成回调。 */
+  private completedActionSequenceKey: string | null = null;
 
   /** 创建 PixiJS 视觉小说渲染器。 */
   constructor(private readonly options: PixiVNRendererOptions = {}) {
@@ -92,11 +96,37 @@ export class PixiVNRenderer {
       this.dialogueLayer.render(snapshot, project, this.size);
       this.choiceLayer.render(snapshot.type === "choices" ? snapshot.choices : [], this.size);
     }
-    if (snapshot.pendingActions?.length) {
-      void this.actionPlayer.play(snapshot.pendingActions).then(() => {
-        this.options.onActionSequenceComplete?.();
-      });
+    this.playPendingActions(snapshot);
+  }
+
+  /** 根据 pendingActions 播放动作序列，并保证同一快照只触发一次完成回调。 */
+  private playPendingActions(snapshot: RuntimeSnapshot): void {
+    if (!snapshot.pendingActions?.length) {
+      if (this.activeActionSequenceKey) this.actionPlayer.stop();
+      this.activeActionSequenceKey = null;
+      this.completedActionSequenceKey = null;
+      return;
     }
+
+    const key = this.createActionSequenceKey(snapshot);
+    if (key === this.activeActionSequenceKey || key === this.completedActionSequenceKey) return;
+
+    this.completedActionSequenceKey = null;
+    this.activeActionSequenceKey = key;
+    void this.actionPlayer.play(snapshot.pendingActions).then(() => {
+      if (this.activeActionSequenceKey !== key) return;
+      this.activeActionSequenceKey = null;
+      this.completedActionSequenceKey = key;
+      this.options.onActionSequenceComplete?.();
+    });
+  }
+
+  /** 创建稳定动作序列 key。 */
+  private createActionSequenceKey(snapshot: RuntimeSnapshot): string {
+    const actionsKey = snapshot.pendingActions
+      .map((action) => `${action.parallelGroupId ?? ""}:${action.actionId}:${action.actionType}:${action.durationMs}`)
+      .join("|");
+    return `${snapshot.currentScriptId}:${snapshot.currentNodeId ?? ""}:${actionsKey}`;
   }
 
   /** 调整舞台尺寸。 */
@@ -118,6 +148,8 @@ export class PixiVNRenderer {
 
   destroy(): void {
     this.actionPlayer.destroy();
+    this.activeActionSequenceKey = null;
+    this.completedActionSequenceKey = null;
     this.assetLoader.clear();
     this.root.removeChildren();
     this.app?.destroy(true, { children: true, texture: false });

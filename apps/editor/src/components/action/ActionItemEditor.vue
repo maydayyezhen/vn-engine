@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { StoryAudioChannel, VNAction, VNActionType, VNEasing, VNProject } from "@vn-engine/vn-schema";
+import { computed } from "vue";
 import { getAudioOptions, getBackgroundOptions, getCharacterOptions, getExpressionOptions } from "../../services/resourceLookupService";
 
 /** 组件属性。 */
@@ -29,7 +30,7 @@ const emit = defineEmits<{
 }>();
 
 /** 支持的动作类型。 */
-const actionTypes: VNActionType[] = ["wait", "scene", "showCharacter", "hideCharacter", "moveCharacter", "changeExpression", "camera", "playAudio", "stopAudio", "parallel"];
+const actionTypes: VNActionType[] = ["wait", "scene", "showCharacter", "hideCharacter", "moveCharacter", "camera", "playAudio", "stopAudio"];
 /** 支持的缓动类型。 */
 const easings: VNEasing[] = ["linear", "easeIn", "easeOut", "easeInOut"];
 /** 支持的音频通道。 */
@@ -39,6 +40,37 @@ const audioChannels: StoryAudioChannel[] = ["bgm", "sound", "voice"];
 function patch(patchValue: Partial<VNAction>): void {
   emit("updateAction", props.action.id, patchValue);
 }
+
+/** 按 id 生成素材摘要。 */
+function assetLabel(assetId?: string): string {
+  if (!assetId) return "未选择";
+  const asset = props.project.assets.items.find((item) => item.id === assetId);
+  return asset ? `${asset.name} (${asset.id})` : assetId;
+}
+
+/** 按 id 生成角色摘要。 */
+function characterLabel(characterId?: string): string {
+  if (!characterId) return "未选择";
+  const character = props.project.characters.find((item) => item.id === characterId);
+  return character ? `${character.displayName || character.name} (${character.id})` : characterId;
+}
+
+/** 生成动作卡片的简短摘要。 */
+function summarizeAction(action: VNAction): string {
+  if (action.type === "wait") return `等待 ${action.durationMs ?? 500}ms`;
+  if (action.type === "scene") return `切换背景 ${assetLabel(action.backgroundAssetId)}`;
+  if (action.type === "showCharacter") return `显示角色 ${characterLabel(action.characterId)} ${action.expression ?? "默认表情"} ${action.position ?? "center"}`;
+  if (action.type === "hideCharacter") return `隐藏角色 ${characterLabel(action.characterId)}`;
+  if (action.type === "moveCharacter") return `移动角色 ${characterLabel(action.characterId)} ${action.position ?? "center"}`;
+  if (action.type === "changeExpression") return `切换表情 ${characterLabel(action.characterId)} ${action.expression}`;
+  if (action.type === "camera") return `镜头 zoom ${action.zoom ?? 1}`;
+  if (action.type === "playAudio") return `播放音频 ${action.channel} ${assetLabel(action.assetId)}`;
+  if (action.type === "stopAudio") return `停止音频 ${action.channel ?? "全部"}`;
+  return `旧版并行动作 ${action.actions.length} 项`;
+}
+
+/** 当前动作摘要。 */
+const actionSummary = computed(() => summarizeAction(props.action));
 </script>
 
 <template>
@@ -46,6 +78,7 @@ function patch(patchValue: Partial<VNAction>): void {
     <template #header>
       <div class="action-item-header">
         <strong>{{ action.type }}</strong>
+        <span class="muted">{{ actionSummary }}</span>
         <span class="muted">{{ action.id }}</span>
         <el-button-group>
           <el-button size="small" @click="$emit('moveUp', action.id)">上移</el-button>
@@ -202,7 +235,7 @@ function patch(patchValue: Partial<VNAction>): void {
         <el-divider>并行动作</el-divider>
         <div class="inline-fields">
           <el-select placeholder="新增子动作" @change="(value: VNActionType) => $emit('addParallelChild', action.id, value)">
-            <el-option v-for="type in actionTypes.filter((item) => item !== 'parallel')" :key="type" :label="type" :value="type" />
+            <el-option v-for="type in actionTypes" :key="type" :label="type" :value="type" />
           </el-select>
         </div>
         <ActionItemEditor

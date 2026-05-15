@@ -242,7 +242,8 @@ function validateAction(project: VNProject, action: VNAction, actionIds: Set<str
   }
   if (action.type === "parallel") {
     if (!Array.isArray(action.actions) || action.actions.length === 0) errors.push(createActionIssue("error", "parallel 动作不能为空。", scriptId, nodeId, action.id));
-    if (depth >= 3) warnings.push(createActionIssue("warning", "parallel 动作嵌套较深，后续维护成本可能较高。", scriptId, nodeId, action.id));
+    if (depth > 0) errors.push(createActionIssue("error", "MVP 暂不支持 nested parallel 动作。", scriptId, nodeId, action.id));
+    if (depth >= 1) warnings.push(createActionIssue("warning", "parallel 仅用于旧项目兼容，不作为动作序列 MVP 核心能力。", scriptId, nodeId, action.id));
     for (const child of action.actions ?? []) validateAction(project, child, actionIds, errors, warnings, scriptId, nodeId, depth + 1);
   }
 }

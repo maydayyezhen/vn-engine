@@ -25,7 +25,7 @@ const emit = defineEmits<{
 }>();
 
 /** 动作类型选项。 */
-const actionTypes: VNActionType[] = ["wait", "scene", "showCharacter", "hideCharacter", "moveCharacter", "changeExpression", "camera", "playAudio", "stopAudio", "parallel"];
+const actionTypes: VNActionType[] = ["wait", "scene", "showCharacter", "hideCharacter", "moveCharacter", "camera", "playAudio", "stopAudio"];
 
 /** 更新动作列表。 */
 function updateActions(actions: VNAction[]): void {
@@ -65,14 +65,14 @@ function handleAddParallelChild(actionId: string, type: VNActionType): void {
 
 <template>
   <div class="action-sequence-editor">
-    <el-form-item label="name">
+    <el-form-item label="序列名称">
       <el-input :model-value="node.name" @update:model-value="(value: string) => $emit('updateNode', { name: value })" />
     </el-form-item>
     <div class="inline-fields">
-      <el-form-item label="waitForCompletion">
+      <el-form-item label="等待动作完成">
         <el-switch :model-value="node.waitForCompletion ?? true" @update:model-value="(value: boolean) => $emit('updateNode', { waitForCompletion: value })" />
       </el-form-item>
-      <el-form-item label="autoNext">
+      <el-form-item label="自动继续剧情">
         <el-switch :model-value="node.autoNext ?? true" @update:model-value="(value: boolean) => $emit('updateNode', { autoNext: value })" />
       </el-form-item>
     </div>

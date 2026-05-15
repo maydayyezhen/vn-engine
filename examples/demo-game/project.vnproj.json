@@ -130,7 +130,7 @@
               "id": "action-show-lincheng",
               "type": "showCharacter",
               "characterId": "lincheng",
-              "expression": "normal",
+              "expression": "smile",
               "position": "left",
               "scale": 1,
               "opacity": 1,
@@ -147,43 +147,27 @@
               "easing": "linear"
             },
             {
-              "id": "action-parallel-focus",
-              "type": "parallel",
+              "id": "action-move-lincheng",
+              "type": "moveCharacter",
+              "characterId": "lincheng",
+              "position": "center",
+              "scale": 1.05,
+              "opacity": 1,
+              "zIndex": 2,
+              "flipX": false,
               "durationMs": 500,
-              "easing": "easeInOut",
-              "actions": [
-                {
-                  "id": "action-move-lincheng",
-                  "type": "moveCharacter",
-                  "characterId": "lincheng",
-                  "position": "center",
-                  "scale": 1.05,
-                  "opacity": 1,
-                  "zIndex": 2,
-                  "flipX": false,
-                  "durationMs": 500,
-                  "easing": "easeInOut"
-                },
-                {
-                  "id": "action-camera-focus",
-                  "type": "camera",
-                  "zoom": 1.03,
-                  "offsetX": 0,
-                  "offsetY": 0,
-                  "shake": false,
-                  "shakeIntensity": 0,
-                  "durationMs": 500,
-                  "easing": "easeOut"
-                }
-              ]
+              "easing": "easeInOut"
             },
             {
-              "id": "action-change-smile",
-              "type": "changeExpression",
-              "characterId": "lincheng",
-              "expression": "smile",
-              "durationMs": 200,
-              "easing": "linear"
+              "id": "action-camera-focus",
+              "type": "camera",
+              "zoom": 1.03,
+              "offsetX": 0,
+              "offsetY": 0,
+              "shake": false,
+              "shakeIntensity": 0,
+              "durationMs": 500,
+              "easing": "easeOut"
             },
             {
               "id": "action-play-voice",

@@ -34,4 +34,14 @@ describe("AutoPlayController", () => {
     expect(onNext).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
+
+  it("遇到动作等待状态时不会安排普通 next", () => {
+    vi.useFakeTimers();
+    const onNext = vi.fn();
+    const controller = new AutoPlayController({ delayMs: 500, onNext });
+    controller.start({ ...createTestSnapshot(), type: "action", isWaitingForActionCompletion: true });
+    vi.advanceTimersByTime(1000);
+    expect(onNext).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
 });

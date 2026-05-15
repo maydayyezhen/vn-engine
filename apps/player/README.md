@@ -1,5 +1,11 @@
 # apps/player
 
+## 动作序列 MVP 播放规则
+
+播放器当前按动作序列 MVP 工作：遇到 `snapshot.isWaitingForActionCompletion=true` 时禁用普通推进，等待 `PixiVNRenderer` 的完成回调，然后调用 `VNRuntime.completeActionSequence()`。自动播放和快进已读也不会绕过这个等待状态。
+
+存档使用 `VNRuntime.getSaveState()`，只保存动作完成后的稳定画面状态，不保存 `pendingActions` 或执行中间态。当前主验收动作是 `wait`、`scene`、`showCharacter`、`hideCharacter`、`moveCharacter`、`camera`、`playAudio`、`stopAudio`；复杂 parallel、changeExpression 独立动作和关键帧时间轴暂缓。
+
 ## Action Sequence Playback
 
 第十四轮播放器支持 `ActionSequenceNode`。播放器继续由 `vn-core` 推进剧情；

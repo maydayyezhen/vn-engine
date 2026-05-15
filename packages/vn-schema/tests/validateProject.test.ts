@@ -241,12 +241,13 @@ describe("validateProject action sequence fields", () => {
     expect(validateProject(project).errors.some((error) => error.actionId === show?.id)).toBe(true);
   });
 
-  it("changeExpression 引用不存在表情会报错", () => {
+  it("changeExpression 旧数据引用不存在表情会报错", () => {
     const project = createProject();
     const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
-    const change = sequence?.type === "actionSequence" ? sequence.actions.find((action) => action.type === "changeExpression") : undefined;
-    if (change?.type === "changeExpression") change.expression = "missing-expression";
-    expect(validateProject(project).errors.some((error) => error.actionId === change?.id)).toBe(true);
+    if (sequence?.type === "actionSequence") {
+      sequence.actions.push({ id: "legacy-change", type: "changeExpression", characterId: "lincheng", expression: "missing-expression" });
+    }
+    expect(validateProject(project).errors.some((error) => error.actionId === "legacy-change")).toBe(true);
   });
 
   it("playAudio 引用不存在音频会报错", () => {
@@ -260,9 +261,21 @@ describe("validateProject action sequence fields", () => {
   it("parallel 空子动作会报错", () => {
     const project = createProject();
     const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
-    const parallel = sequence?.type === "actionSequence" ? sequence.actions.find((action) => action.type === "parallel") : undefined;
-    if (parallel?.type === "parallel") parallel.actions = [];
-    expect(validateProject(project).errors.some((error) => error.actionId === parallel?.id)).toBe(true);
+    if (sequence?.type === "actionSequence") sequence.actions.push({ id: "legacy-parallel-empty", type: "parallel", actions: [] });
+    expect(validateProject(project).errors.some((error) => error.actionId === "legacy-parallel-empty")).toBe(true);
+  });
+
+  it("nested parallel 会作为 MVP 非支持能力报错", () => {
+    const project = createProject();
+    const sequence = project.scripts[0].nodes.find((node) => node.type === "actionSequence");
+    if (sequence?.type === "actionSequence") {
+      sequence.actions.push({
+        id: "legacy-parallel",
+        type: "parallel",
+        actions: [{ id: "nested-parallel", type: "parallel", actions: [{ id: "nested-wait", type: "wait", durationMs: 10 }] }]
+      });
+    }
+    expect(validateProject(project).errors.some((error) => error.actionId === "nested-parallel")).toBe(true);
   });
 
   it("custom 位置缺少 x/y 会给 warning", () => {

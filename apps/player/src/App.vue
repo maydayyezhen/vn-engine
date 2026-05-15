@@ -94,7 +94,7 @@ function next(): void {
 function handleActionSequenceComplete(): void {
   if (gameMode.value !== "playing") return;
   if (!snapshot.value.isWaitingForActionCompletion) return;
-  snapshot.value = runtime.value.next();
+  snapshot.value = runtime.value.completeActionSequence();
 }
 
 /** 选择选项。 */
@@ -165,7 +165,7 @@ function closeChildPanel(): void {
 /** 保存到指定槽位。 */
 function saveToSlot(slotId: string): void {
   if (gameMode.value !== "playing") return;
-  playerSaves.saveCurrent(slotId, snapshot.value, runtime.value.getState());
+  playerSaves.saveCurrent(slotId, snapshot.value, runtime.value.getSaveState());
   closeChildPanel();
 }
 
@@ -209,6 +209,7 @@ function skipReadNodes(): void {
   if (!playerSettings.settings.value.skipReadEnabled || gameMode.value !== "playing") return;
   let count = 0;
   while (skipRead.canSkip(snapshot.value) && count < 100) {
+    if (snapshot.value.isWaitingForActionCompletion) return;
     snapshot.value = runtime.value.next();
     count += 1;
   }
