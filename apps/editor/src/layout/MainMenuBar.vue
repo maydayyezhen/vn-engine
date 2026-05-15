@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { FolderOpened, Guide, Help, Operation, Promotion, Tools, View } from "@element-plus/icons-vue";
 import type { EditorView } from "../stores/editorStore";
 
 /** 顶部菜单命令。 */
@@ -51,7 +52,7 @@ function handleCommand(command: string | number | object): void {
   <nav class="main-menu-bar" aria-label="主菜单">
     <div class="menu-brand">VN Engine Editor</div>
     <el-dropdown trigger="click" @command="handleCommand">
-      <button class="menu-button">项目(P)</button>
+      <button class="menu-button"><el-icon><FolderOpened /></el-icon>项目(P)</button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item :disabled="!desktopMode" command="createDesktopProject">新建本地工程</el-dropdown-item>
@@ -65,7 +66,7 @@ function handleCommand(command: string | number | object): void {
       </template>
     </el-dropdown>
     <el-dropdown trigger="click" @command="handleCommand">
-      <button class="menu-button">编辑(E)</button>
+      <button class="menu-button"><el-icon><Operation /></el-icon>编辑(E)</button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="undo">撤销</el-dropdown-item>
@@ -74,7 +75,7 @@ function handleCommand(command: string | number | object): void {
       </template>
     </el-dropdown>
     <el-dropdown trigger="click" @command="handleCommand">
-      <button class="menu-button">视图(V)</button>
+      <button class="menu-button"><el-icon><View /></el-icon>视图(V)</button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="openScript">剧本编辑</el-dropdown-item>
@@ -86,7 +87,7 @@ function handleCommand(command: string | number | object): void {
       </template>
     </el-dropdown>
     <el-dropdown trigger="click" @command="handleCommand">
-      <button class="menu-button">预览(R)</button>
+      <button class="menu-button"><el-icon><Guide /></el-icon>预览(R)</button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="restartPreview">重新开始预览</el-dropdown-item>
@@ -94,7 +95,7 @@ function handleCommand(command: string | number | object): void {
       </template>
     </el-dropdown>
     <el-dropdown trigger="click" @command="handleCommand">
-      <button class="menu-button">构建(B)</button>
+      <button class="menu-button"><el-icon><Tools /></el-icon>构建(B)</button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="exportWeb">打开 Web 导出面板</el-dropdown-item>
@@ -103,7 +104,7 @@ function handleCommand(command: string | number | object): void {
       </template>
     </el-dropdown>
     <el-dropdown trigger="click" @command="handleCommand">
-      <button class="menu-button">导出(E)</button>
+      <button class="menu-button"><el-icon><Promotion /></el-icon>导出(E)</button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="exportProject">导出项目 JSON</el-dropdown-item>
@@ -111,6 +112,6 @@ function handleCommand(command: string | number | object): void {
         </el-dropdown-menu>
       </template>
     </el-dropdown>
-    <button class="menu-button menu-button--muted">帮助(H)</button>
+    <button class="menu-button menu-button--muted"><el-icon><Help /></el-icon>帮助(H)</button>
   </nav>
 </template>

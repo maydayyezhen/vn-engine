@@ -12,6 +12,36 @@
   --el-mask-color: rgba(0, 0, 0, 0.6);
 }
 
+.editor-workbench,
+.editor-workbench * {
+  scrollbar-color: #3a4960 #101722;
+  scrollbar-width: thin;
+}
+
+.editor-workbench ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.editor-workbench ::-webkit-scrollbar-track {
+  background: #101722;
+  border-radius: 999px;
+}
+
+.editor-workbench ::-webkit-scrollbar-thumb {
+  border: 2px solid #101722;
+  border-radius: 999px;
+  background: #3a4960;
+}
+
+.editor-workbench ::-webkit-scrollbar-thumb:hover {
+  background: #52647e;
+}
+
+.editor-workbench ::-webkit-scrollbar-corner {
+  background: #101722;
+}
+
 .editor-workbench .el-button,
 .editor-workbench .el-input,
 .editor-workbench .el-select,

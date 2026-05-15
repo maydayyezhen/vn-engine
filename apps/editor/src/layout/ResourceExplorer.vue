@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { VNProject } from "@vn-engine/vn-schema";
+import { Box, Collection, Connection, DataLine, Document, Folder, Headset, Picture, User } from "@element-plus/icons-vue";
 import type { EditorView } from "../stores/editorStore";
 
 /** 资源管理器区段。 */
@@ -83,7 +84,8 @@ function openSection(section: ExplorerSection): void {
 
       <div class="resource-section">
         <button class="resource-section-title" :class="{ active: activeView === 'script' }" @click="openSection('scripts')">
-          脚本 <span>{{ project.scripts.length }}</span>
+          <span class="resource-title-label"><el-icon><Document /></el-icon>脚本</span>
+          <span>{{ project.scripts.length }}</span>
         </button>
         <div class="script-list">
           <div
@@ -113,28 +115,31 @@ function openSection(section: ExplorerSection): void {
 
       <div class="resource-section">
         <button class="resource-section-title" :class="{ active: activeView === 'assets' }" @click="openSection('assets')">
-          素材库 <span>{{ project.assets.items.length }}</span>
+          <span class="resource-title-label"><el-icon><Folder /></el-icon>素材库</span>
+          <span>{{ project.assets.items.length }}</span>
         </button>
         <div class="resource-category-grid">
-          <button @click="openSection('assets')">背景 <span>{{ assetCounts.background }}</span></button>
-          <button @click="openSection('assets')">CG/图片 <span>{{ assetCounts.image }}</span></button>
-          <button @click="openSection('assets')">音乐/音效 <span>{{ assetCounts.audio }}</span></button>
-          <button @click="openSection('assets')">物品 <span>{{ assetCounts.prop }}</span></button>
+          <button @click="openSection('assets')"><span class="resource-title-label"><el-icon><Picture /></el-icon>背景</span><span>{{ assetCounts.background }}</span></button>
+          <button @click="openSection('assets')"><span class="resource-title-label"><el-icon><Collection /></el-icon>CG/图片</span><span>{{ assetCounts.image }}</span></button>
+          <button @click="openSection('assets')"><span class="resource-title-label"><el-icon><Headset /></el-icon>音乐/音效</span><span>{{ assetCounts.audio }}</span></button>
+          <button @click="openSection('assets')"><span class="resource-title-label"><el-icon><Box /></el-icon>物品</span><span>{{ assetCounts.prop }}</span></button>
         </div>
       </div>
 
       <div class="resource-section">
         <button class="resource-section-title" :class="{ active: activeView === 'characters' }" @click="openSection('characters')">
-          角色 <span>{{ project.characters.length }}</span>
+          <span class="resource-title-label"><el-icon><User /></el-icon>角色</span>
+          <span>{{ project.characters.length }}</span>
         </button>
         <button class="resource-section-title" :class="{ active: activeView === 'variables' }" @click="openSection('variables')">
-          变量 <span>{{ project.variables?.length ?? 0 }}</span>
+          <span class="resource-title-label"><el-icon><DataLine /></el-icon>变量</span>
+          <span>{{ project.variables?.length ?? 0 }}</span>
         </button>
         <button class="resource-section-title" @click="openSection('animations')">
-          动画模块
+          <span class="resource-title-label"><el-icon><Connection /></el-icon>动画模块</span>
         </button>
         <button class="resource-section-title" :class="{ active: activeView === 'export' }" @click="openSection('export')">
-          导出 / 构建
+          <span class="resource-title-label"><el-icon><Folder /></el-icon>导出 / 构建</span>
         </button>
       </div>
     </div>

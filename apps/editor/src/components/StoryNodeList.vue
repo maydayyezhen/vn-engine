@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { ArrowDown, ArrowUp, CopyDocument, Delete, DocumentAdd, Plus, RefreshLeft, RefreshRight, Scissor } from "@element-plus/icons-vue";
 import type { StoryNode } from "@vn-engine/vn-schema";
 import { getNodeSummary } from "../services/scriptEditService";
 import type { NodeFilterType } from "../services/nodeSearchService";
@@ -70,6 +72,16 @@ const emit = defineEmits<{
 /** 新增节点命令。 */
 type AddNodeCommand = "dialogue" | "narration" | "camera" | "actionSequence" | "playAnimation" | "showProp" | "hideProp" | "label";
 
+/** 右键菜单状态。 */
+const contextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0
+});
+
+/** 当前右键菜单是否允许操作选中节点。 */
+const canOperateSelectedNode = computed(() => Boolean(props.selectedNodeId));
+
 /** 返回节点行样式名。 */
 function getRowClassName({ row }: { row: StoryNode }): string {
   return row.id === props.selectedNodeId ? "selected-node-row" : "";
@@ -78,6 +90,33 @@ function getRowClassName({ row }: { row: StoryNode }): string {
 /** 点击节点行。 */
 function handleRowClick(row: StoryNode): void {
   emit("selectNode", row.id);
+}
+
+/** 右键打开节点操作菜单。 */
+function handleRowContextMenu(row: StoryNode, _column: unknown, event: MouseEvent): void {
+  event.preventDefault();
+  emit("selectNode", row.id);
+  contextMenu.value = {
+    visible: true,
+    x: event.clientX,
+    y: event.clientY
+  };
+}
+
+/** 关闭右键菜单。 */
+function closeContextMenu(): void {
+  contextMenu.value.visible = false;
+}
+
+/** 执行右键菜单命令。 */
+function runContextCommand(command: "duplicate" | "cut" | "paste" | "moveUp" | "moveDown" | "delete"): void {
+  if (command === "duplicate") emit("duplicateNode");
+  if (command === "cut") emit("cutNode");
+  if (command === "paste") emit("pasteNode");
+  if (command === "moveUp") emit("moveNodeUp");
+  if (command === "moveDown") emit("moveNodeDown");
+  if (command === "delete") emit("deleteNode");
+  closeContextMenu();
 }
 
 /** 处理新增节点下拉命令。 */
@@ -92,6 +131,16 @@ function handleAddNodeCommand(command: string | number | object): void {
   if (value === "hideProp") emit("addHideProp");
   if (value === "label") emit("addLabel");
 }
+
+onMounted(() => {
+  window.addEventListener("click", closeContextMenu);
+  window.addEventListener("scroll", closeContextMenu, true);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("click", closeContextMenu);
+  window.removeEventListener("scroll", closeContextMenu, true);
+});
 </script>
 
 <template>
@@ -101,11 +150,11 @@ function handleAddNodeCommand(command: string | number | object): void {
         <span>脚本指令表</span>
         <div class="node-toolbar">
           <el-button-group>
-            <el-button size="small" :disabled="!canUndo" @click="$emit('undo')">撤销</el-button>
-            <el-button size="small" :disabled="!canRedo" @click="$emit('redo')">重做</el-button>
+            <el-button size="small" :icon="RefreshLeft" :disabled="!canUndo" @click="$emit('undo')">撤销</el-button>
+            <el-button size="small" :icon="RefreshRight" :disabled="!canRedo" @click="$emit('redo')">重做</el-button>
           </el-button-group>
           <el-dropdown trigger="click" @command="handleAddNodeCommand">
-            <el-button size="small" type="primary">新增节点</el-button>
+            <el-button size="small" type="primary" :icon="Plus">新增节点</el-button>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="dialogue">对话</el-dropdown-item>
@@ -119,14 +168,6 @@ function handleAddNodeCommand(command: string | number | object): void {
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-          <el-button-group>
-            <el-button size="small" :disabled="!selectedNodeId" @click="$emit('duplicateNode')">复制</el-button>
-            <el-button size="small" :disabled="!selectedNodeId" @click="$emit('cutNode')">剪切</el-button>
-            <el-button size="small" :disabled="!canPaste" @click="$emit('pasteNode')">粘贴</el-button>
-            <el-button size="small" :disabled="!canMoveUp" @click="$emit('moveNodeUp')">上移</el-button>
-            <el-button size="small" :disabled="!canMoveDown" @click="$emit('moveNodeDown')">下移</el-button>
-            <el-button size="small" type="danger" :disabled="!selectedNodeId" @click="$emit('deleteNode')">删除</el-button>
-          </el-button-group>
         </div>
       </div>
       <div class="node-filter-bar">
@@ -163,6 +204,7 @@ function handleAddNodeCommand(command: string | number | object): void {
       highlight-current-row
       :row-class-name="getRowClassName"
       @row-click="handleRowClick"
+      @row-contextmenu="handleRowContextMenu"
     >
       <el-table-column label="#" width="60">
         <template #default="{ $index }">{{ $index + 1 }}</template>
@@ -175,5 +217,22 @@ function handleAddNodeCommand(command: string | number | object): void {
         </template>
       </el-table-column>
     </el-table>
+
+    <teleport to="body">
+      <div
+        v-if="contextMenu.visible"
+        class="node-context-menu"
+        :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
+        @click.stop
+        @contextmenu.prevent
+      >
+        <button :disabled="!canOperateSelectedNode" @click="runContextCommand('duplicate')"><el-icon><CopyDocument /></el-icon>复制节点</button>
+        <button :disabled="!canOperateSelectedNode" @click="runContextCommand('cut')"><el-icon><Scissor /></el-icon>剪切节点</button>
+        <button :disabled="!canPaste" @click="runContextCommand('paste')"><el-icon><DocumentAdd /></el-icon>粘贴到后方</button>
+        <button :disabled="!canMoveUp" @click="runContextCommand('moveUp')"><el-icon><ArrowUp /></el-icon>上移</button>
+        <button :disabled="!canMoveDown" @click="runContextCommand('moveDown')"><el-icon><ArrowDown /></el-icon>下移</button>
+        <button class="danger" :disabled="!canOperateSelectedNode" @click="runContextCommand('delete')"><el-icon><Delete /></el-icon>删除节点</button>
+      </div>
+    </teleport>
   </el-card>
 </template>
