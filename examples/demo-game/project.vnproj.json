@@ -136,8 +136,8 @@
               "opacity": 1,
               "zIndex": 1,
               "flipX": false,
-              "enterEffect": "fadeIn",
-              "durationMs": 300,
+              "enterEffect": "slideInLeft",
+              "durationMs": 700,
               "easing": "easeOut"
             },
             {

@@ -240,8 +240,8 @@ describe("VNRuntime", () => {
       opacity: 1,
       zIndex: 2,
       flipX: false,
-      enterEffect: "fadeIn",
-      transitionDurationMs: 200
+      enterEffect: "slideInLeft",
+      transitionDurationMs: 500
     });
   });
 

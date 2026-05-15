@@ -66,10 +66,11 @@ export class CharacterLayer {
     if (effect === "fadeIn") sprite.alpha = 0;
     if (effect === "slideInLeft") sprite.x = -size.width * 0.1;
     if (effect === "slideInRight") sprite.x = size.width * 1.1;
+    const startX = sprite.x;
 
     this.animate(layout.durationMs, token, (progress) => {
       if (effect === "fadeIn") sprite.alpha = targetAlpha * progress;
-      if (effect === "slideInLeft" || effect === "slideInRight") sprite.x = sprite.x + (targetX - sprite.x) * progress;
+      if (effect === "slideInLeft" || effect === "slideInRight") sprite.x = startX + (targetX - startX) * progress;
       if (effect === "fadeOut") sprite.alpha = targetAlpha * (1 - progress);
       if (effect === "slideOutLeft") sprite.x = targetX - size.width * progress;
       if (effect === "slideOutRight") sprite.x = targetX + size.width * progress;

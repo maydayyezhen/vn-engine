@@ -279,9 +279,9 @@ export class VNRuntime {
   }
 
   /** 切换已显示角色的表情。 */
-  private changeCharacterExpression(characterId: string, expression: string, durationMs: number): void {
+  private changeCharacterExpression(characterId: string, expression: string, _durationMs: number): void {
     this.state.characters = this.state.characters.map((character) =>
-      character.characterId === characterId ? { ...character, expression, transitionDurationMs: durationMs } : character
+      character.characterId === characterId ? { ...character, expression } : character
     );
   }
 
