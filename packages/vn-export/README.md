@@ -1,5 +1,16 @@
 # @vn-engine/vn-export
 
+## Showcase 导出验证
+
+根目录脚本 `pnpm verify:showcase-export` 会验证 `dist/export/showcase-web-game/` 是否是可被静态服务器访问的 Web 游戏包。验证范围包括：
+
+- `index.html`、`game/project.bundle.json`、`game/export-manifest.json`。
+- 构建后的 `assets/` 目录。
+- manifest 中抽样的背景、角色、prop、BGM、音效和语音素材。
+- manifest 中不得包含本地绝对路径、外部逃逸路径或 `../`。
+
+该脚本只使用 Node 内置模块启动临时本地服务器，不依赖全局 `serve` 或 `http-server`。
+
 ## 桌面导出配合
 
 `createProjectAssetExportPlan(project)` 会根据项目素材库生成纯逻辑复制计划，包含工程内源路径和 Web 导出包内目标路径。真实文件复制由 `apps/desktop` 的 Tauri 命令或 Node 脚本完成，`vn-export` 不直接读取本地文件系统。

@@ -1,5 +1,14 @@
 # 路线图
 
+## 第18轮：技术债清理与 Showcase 稳定性基线
+
+状态：进行技术债收敛和验收基线建立。
+
+- 清理项目代码中可控的 PixiJS v8 deprecation warning 来源。
+- 新增 `pnpm verify:showcase-export`，自动用本地静态服务器验证 Showcase Web 导出包关键文件和素材路径。
+- 补充 `docs/current-feature-baseline.md`，区分稳定能力、实验能力和已知问题。
+- 本轮不新增引擎系统，不接 AI API，不做 UI/UX 整体重构。
+
 ## 第十四轮返修状态：动作序列 MVP 已收敛
 
 状态：已完成返修。

@@ -1,5 +1,15 @@
 # @vn-engine/vn-renderer-pixi
 
+## PixiJS v8 兼容说明
+
+第18轮已清理当前项目代码中可控的 PixiJS v8 deprecation warning 来源：
+
+- `PropLayer` 使用 `label` 标记 display object，不再使用已弃用的 `Container.name`。
+- 占位纹理创建逻辑使用 `Container` 承载背景图形和文本，不再把 `Graphics` 当作子节点容器使用。
+- 占位纹理生成使用 `renderer.generateTexture({ target })`，不再使用旧的直接传入 display object 写法。
+
+如果后续控制台仍出现 PixiJS warning，需要继续定位是项目代码残留、Pixi 内部兼容提示，还是第三方库提示；不得为了压 warning 破坏图层顺序或剧情推进边界。
+
 ## 动作序列 MVP 返修说明
 
 `PixiVNRenderer` 当前只负责播放 `RuntimeSnapshot.pendingActions`，并通过 `onActionSequenceComplete` 通知上层。它不会持有 `VNRuntime`，也不会直接调用 `next()` 或 `choose()`。

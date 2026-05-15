@@ -1,11 +1,13 @@
-import { Graphics, Renderer, Text, Texture } from "pixi.js";
+import { Container, Graphics, Renderer, Text, Texture } from "pixi.js";
 
 /** 创建用于缺失资源的占位纹理。 */
 export function createPlaceholderTexture(renderer: Renderer, label: string, width: number, height: number, color = 0x2e4f6f): Texture {
-  const root = new Graphics();
-  root.roundRect(0, 0, width, height, 14);
-  root.fill({ color, alpha: 1 });
-  root.stroke({ color: 0xffffff, alpha: 0.35, width: 2 });
+  const root = new Container();
+  const background = new Graphics();
+  background.roundRect(0, 0, width, height, 14);
+  background.fill({ color, alpha: 1 });
+  background.stroke({ color: 0xffffff, alpha: 0.35, width: 2 });
+  root.addChild(background);
 
   const text = new Text({
     text: label,
@@ -23,7 +25,7 @@ export function createPlaceholderTexture(renderer: Renderer, label: string, widt
   text.position.set(width / 2, height / 2);
   root.addChild(text);
 
-  const texture = renderer.generateTexture(root);
+  const texture = renderer.generateTexture({ target: root });
   root.destroy({ children: true });
   return texture;
 }

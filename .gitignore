@@ -6,7 +6,13 @@ dist/
 .env.*
 !.env.example
 dev-*.log
+*.log
 export-server.log
 export-server.err.log
+scripts/phone-to-codex-history.jsonl
+scripts/phone-to-codex-server.mjs
+scripts/send-to-focused-window.ps1
+scripts/sync-codex-reply.mjs
+docs/codex-phone-bridge-prompt.md
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/

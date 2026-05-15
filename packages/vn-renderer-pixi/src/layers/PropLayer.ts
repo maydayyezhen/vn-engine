@@ -35,14 +35,14 @@ export class PropLayer {
 
     for (const prop of sortedProps) {
       let sprite = previousSprites.get(prop.propId);
-      if (!sprite || sprite.name !== prop.assetId) {
+      if (!sprite || sprite.label !== prop.assetId) {
         sprite?.destroy({ children: true });
         const texture = await this.loader.loadTexture(prop.path);
         sprite = texture
           ? new Sprite(texture)
           : new Sprite(createPlaceholderTexture(this.renderer, `${prop.name}\n${prop.assetId}`, 240, 160, 0x6f5a86));
         sprite.anchor.set(0.5);
-        sprite.name = prop.assetId;
+        sprite.label = prop.assetId;
       }
 
       sprite.position.set(prop.x, prop.y);

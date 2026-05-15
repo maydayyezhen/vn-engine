@@ -1,5 +1,19 @@
 # vn-engine
 
+## 第18轮：Showcase 稳定性基线
+
+当前新增了 Showcase Web 导出包自动验收脚本：
+
+```bash
+pnpm build
+pnpm export:showcase-web
+pnpm verify:showcase-export
+```
+
+`verify:showcase-export` 会临时启动本地静态服务器，检查 `dist/export/showcase-web-game/` 中的 `index.html`、`game/project.bundle.json`、`game/export-manifest.json`、构建后的 `assets/` 目录和 Showcase 依赖素材是否能以 HTTP 200 访问，并校验 manifest 中没有本地绝对路径或 `../` 逃逸路径。
+
+当前功能基线见 `docs/current-feature-baseline.md`。本项目仍未进行 UI/UX 整体重构，也未接入 AI 素材生成 API、MiniMax、APIKey 管理或正式插件安全系统。
+
 ## 第十四轮返修：动作序列 MVP
 
 当前第十四轮已收敛为动作序列 MVP。`ActionSequenceNode` 的主验收范围仅包含 `wait`、`scene`、`showCharacter`、`hideCharacter`、`moveCharacter`、`camera`、`playAudio`、`stopAudio`。
