@@ -102,6 +102,24 @@ function createCharacterEffectProject(): VNProject {
   };
 }
 
+function createBackgroundEffectProject(): VNProject {
+  const project = createProject();
+  return {
+    ...project,
+    scripts: [
+      {
+        id: "start",
+        name: "background-effects",
+        nodes: [
+          { id: "scene-first", type: "scene", backgroundAssetId: "classroom", transition: "fade", transitionDurationMs: 600 },
+          { id: "dialogue-first", type: "dialogue", characterId: "lin", text: "first" },
+          { id: "narration-next", type: "narration", text: "next" }
+        ]
+      }
+    ]
+  };
+}
+
 describe("VNRuntime", () => {
   it("从起始脚本第一个可展示节点开始", () => {
     const runtime = new VNRuntime(createProject());
@@ -252,10 +270,13 @@ describe("VNRuntime", () => {
   it("SceneNode 会更新背景转场状态", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
     const snapshot = runtime.start();
-    expect(snapshot.background).toMatchObject({
-      assetId: "bg-classroom",
+    expect(snapshot.background).toMatchObject({ assetId: "bg-classroom" });
+    expect(snapshot.background?.transition).toBeUndefined();
+    expect(snapshot.pendingEffects[0]).toMatchObject({
+      type: "backgroundTransition",
+      backgroundAssetId: "bg-classroom",
       transition: "fade",
-      transitionDurationMs: 300
+      transitionDurationMs: 600
     });
   });
 
@@ -271,7 +292,7 @@ describe("VNRuntime", () => {
     });
     expect(snapshot.characters[0].enterEffect).toBeUndefined();
     expect(snapshot.characters[0].transitionDurationMs).toBeUndefined();
-    expect(snapshot.pendingEffects[0]).toMatchObject({
+    expect(snapshot.pendingEffects.find((effect) => effect.type === "showCharacter")).toMatchObject({
       type: "showCharacter",
       characterId: "lincheng",
       enterEffect: "slideInLeft",
@@ -517,5 +538,17 @@ describe("VNRuntime", () => {
     expect(snapshot.characters[0]).toMatchObject({ characterId: "lin", position: "left" });
     expect(snapshot.pendingEffects).toHaveLength(0);
     expect(snapshot.characters[0].enterEffect).toBeUndefined();
+  });
+
+  it("DialogueNode 和 NarrationNode 不会重复携带背景转场 pendingEffects", () => {
+    const runtime = new VNRuntime(createBackgroundEffectProject());
+    const first = runtime.start();
+    expect(first.pendingEffects[0]).toMatchObject({ type: "backgroundTransition", backgroundAssetId: "classroom", transition: "fade" });
+
+    const next = runtime.next();
+    expect(next.currentNodeId).toBe("narration-next");
+    expect(next.background).toMatchObject({ assetId: "classroom" });
+    expect(next.background?.transition).toBeUndefined();
+    expect(next.pendingEffects.some((effect) => effect.type === "backgroundTransition")).toBe(false);
   });
 });

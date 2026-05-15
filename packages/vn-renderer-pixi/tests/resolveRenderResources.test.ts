@@ -112,6 +112,48 @@ describe("presentation layout helpers", () => {
   });
 });
 
+describe("one-shot background effects", () => {
+  it("普通背景静态状态不会携带转场动画", () => {
+    const project = createProject();
+    const snapshot = {
+      ...createStartedSnapshot(),
+      pendingEffects: [],
+      background: {
+        assetId: "bg-classroom",
+        transition: "fade" as const,
+        transitionDurationMs: 600
+      }
+    };
+    const background = resolveBackgroundResource(project, snapshot);
+    expect(background.transition).toBe("none");
+    expect(background.effectId).toBeUndefined();
+  });
+
+  it("pendingEffects 中的一次性背景转场会驱动背景动画", () => {
+    const project = createProject();
+    const snapshot = {
+      ...createStartedSnapshot(),
+      pendingEffects: [
+        {
+          id: "effect-bg-1",
+          type: "backgroundTransition" as const,
+          backgroundAssetId: "bg-classroom",
+          transition: "fade" as const,
+          transitionDurationMs: 600
+        }
+      ],
+      background: { assetId: "bg-classroom" }
+    };
+    const background = resolveBackgroundResource(project, snapshot);
+    expect(background).toMatchObject({
+      effectId: "effect-bg-1",
+      assetId: "bg-classroom",
+      transition: "fade",
+      transitionDurationMs: 600
+    });
+  });
+});
+
 describe("one-shot character effects", () => {
   it("普通角色静态状态不会携带入场动画", () => {
     const project = createProject();

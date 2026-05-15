@@ -11,6 +11,10 @@ export class BackgroundLayer {
 
   /** 当前动画编号，用于让旧动画失效。 */
   private animationToken = 0;
+  /** 当前静态背景渲染键，用于避免普通对话刷新时重建背景。 */
+  private currentRenderKey = "";
+  /** 已消费的一次性背景转场效果 id。 */
+  private readonly consumedEffectIds = new Set<string>();
 
   /** 创建背景层。 */
   constructor(
@@ -22,6 +26,11 @@ export class BackgroundLayer {
 
   /** 根据当前背景资源渲染背景。 */
   async render(resource: ResolvedBackgroundResource, size: VNRenderSize): Promise<void> {
+    const renderKey = `${size.width}x${size.height}:${resource.assetId ?? ""}:${resource.path ?? ""}:${resource.name}`;
+    const hasFreshEffect = Boolean(resource.effectId && !this.consumedEffectIds.has(resource.effectId));
+    const shouldTransition = hasFreshEffect && resource.transition !== "none" && resource.transitionDurationMs > 0;
+    if (this.currentRenderKey === renderKey && !shouldTransition) return;
+
     this.animationToken += 1;
     this.container.removeChildren().forEach((child) => child.destroy({ children: true }));
     const content = new Container();
@@ -46,13 +55,16 @@ export class BackgroundLayer {
     }
 
     this.container.addChild(content);
+    this.currentRenderKey = renderKey;
     this.applyTransition(content, resource, size, this.animationToken);
   }
 
   /** 应用基础背景转场。 */
   private applyTransition(content: Container, resource: ResolvedBackgroundResource, size: VNRenderSize, token: number): void {
+    if (resource.effectId && this.consumedEffectIds.has(resource.effectId)) return;
     const transition = normalizeTransition(resource.transition, resource.transitionDurationMs);
     if (transition.type === "none" || transition.durationMs <= 0) return;
+    if (resource.effectId) this.consumedEffectIds.add(resource.effectId);
 
     if (transition.type === "fade") content.alpha = 0;
     if (transition.type === "slideLeft") content.x = size.width;

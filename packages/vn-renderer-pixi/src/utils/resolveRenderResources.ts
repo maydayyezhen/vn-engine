@@ -11,14 +11,18 @@ function findAsset(project: VNProject, assetId: string | undefined): AssetItem |
 /** 解析当前背景资源。 */
 export function resolveBackgroundResource(project: VNProject, snapshot: RuntimeSnapshot): ResolvedBackgroundResource {
   const asset = findAsset(project, snapshot.backgroundAssetId);
+  const transitionEffect = [...(snapshot.pendingEffects ?? [])]
+    .reverse()
+    .find((effect) => effect.type === "backgroundTransition" && effect.backgroundAssetId === snapshot.backgroundAssetId);
   return {
+    effectId: transitionEffect?.id,
     assetId: snapshot.backgroundAssetId,
     name: asset?.name ?? snapshot.backgroundAssetId ?? "未设置背景",
     path: asset?.path,
     asset,
     exists: Boolean(asset),
-    transition: snapshot.background?.transition ?? "none",
-    transitionDurationMs: snapshot.background?.transitionDurationMs ?? 300
+    transition: transitionEffect?.transition ?? "none",
+    transitionDurationMs: transitionEffect?.transitionDurationMs ?? 300
   };
 }
 

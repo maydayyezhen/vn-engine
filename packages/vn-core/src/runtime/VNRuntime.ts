@@ -4,7 +4,7 @@ import { ConditionEvaluator } from "../condition/ConditionEvaluator";
 import { findNodeByIndex, findNodeIndex, findScript } from "../utils/runtimeLookup";
 import { resolveRuntimeTarget } from "../utils/targetResolver";
 import { VariableStore } from "../variable/VariableStore";
-import type { RuntimeActionEffect, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeState } from "./RuntimeState";
+import type { RuntimeActionEffect, RuntimeBackgroundState, RuntimeCameraState, RuntimeCharacterDisplay, RuntimeDebugEvent, RuntimeState } from "./RuntimeState";
 import type { RuntimeSnapshot } from "./RuntimeSnapshot";
 
 /** 最小视觉小说运行时解释器。 */
@@ -54,9 +54,12 @@ export class VNRuntime {
   completeActionSequence(): RuntimeSnapshot {
     if (!this.state.isWaitingForActionCompletion) return this.getSnapshot();
     this.state.isWaitingForActionCompletion = false;
+    this.state.pendingEffects = [];
     this.state.pendingActions = [];
     this.state.currentNodeIndex += 1;
-    return this.processCurrentNode();
+    const snapshot = this.processCurrentNode();
+    this.snapshot = { ...snapshot, pendingEffects: [] };
+    return this.getSnapshot();
   }
 
   /** 选择当前选项节点中的某个选项。 */
@@ -206,12 +209,7 @@ export class VNRuntime {
     if (action.type !== "parallel") this.state.pendingActions.push(this.createRuntimeActionEffect(action, parallelGroupId));
     if (action.type === "wait") return;
     if (action.type === "scene") {
-      this.state.backgroundAssetId = action.backgroundAssetId;
-      this.state.background = {
-        assetId: action.backgroundAssetId,
-        transition: action.transition ?? "none",
-        transitionDurationMs: action.durationMs ?? 300
-      };
+      this.setBackground(action.backgroundAssetId, action.transition ?? "none", action.durationMs ?? 300);
       return;
     }
     if (action.type === "showCharacter") {
@@ -336,12 +334,7 @@ export class VNRuntime {
     }
     if (node.type === "setVariable") this.applySetVariable(node);
     if (node.type === "scene") {
-      this.state.backgroundAssetId = node.backgroundAssetId;
-      this.state.background = {
-        assetId: node.backgroundAssetId,
-        transition: node.transition ?? "none",
-        transitionDurationMs: node.transitionDurationMs ?? 300
-      };
+      this.setBackground(node.backgroundAssetId, node.transition ?? "none", node.transitionDurationMs ?? 300);
     }
     if (node.type === "showCharacter") this.showCharacter(node);
     if (node.type === "hideCharacter") this.hideCharacter(node.characterId, node.exitEffect ?? "none", node.transitionDurationMs ?? 300);
@@ -424,6 +417,21 @@ export class VNRuntime {
         createdAt: new Date().toISOString()
       }
     ].slice(-100);
+  }
+
+  /** 设置背景静态状态，并把转场作为一次性效果交给渲染器。 */
+  private setBackground(backgroundAssetId: string, transition: RuntimeBackgroundState["transition"], transitionDurationMs: number): void {
+    this.state.backgroundAssetId = backgroundAssetId;
+    this.state.background = { assetId: backgroundAssetId };
+    if (transition && transition !== "none") {
+      this.state.pendingEffects.push({
+        id: this.createRuntimeEffectId("backgroundTransition", backgroundAssetId),
+        type: "backgroundTransition",
+        backgroundAssetId,
+        transition,
+        transitionDurationMs
+      });
+    }
   }
 
   /** 显示或更新角色状态。 */

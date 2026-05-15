@@ -37,6 +37,8 @@ export interface PixiVNRenderOptions {
 
 /** 解析后的背景资源。 */
 export interface ResolvedBackgroundResource {
+  /** 一次性背景转场效果 id。 */
+  effectId?: string;
   /** 背景素材 id。 */
   assetId?: string;
   /** 背景显示名称。 */

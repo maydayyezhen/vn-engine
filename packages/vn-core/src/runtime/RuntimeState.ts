@@ -5,9 +5,9 @@ export interface RuntimeBackgroundState {
   /** 背景素材 id。 */
   assetId: string;
   /** 背景切换转场类型。 */
-  transition: TransitionType;
+  transition?: TransitionType;
   /** 背景切换转场时长，单位毫秒。 */
-  transitionDurationMs: number;
+  transitionDurationMs?: number;
 }
 
 /** 当前镜头状态。 */
@@ -30,9 +30,13 @@ export interface RuntimeCameraState {
 export interface RuntimeEffect {
   /** 演出效果类型。 */
   id: string;
-  type: "showCharacter" | "hideCharacter";
+  type: "backgroundTransition" | "showCharacter" | "hideCharacter";
+  /** 背景素材 id。 */
+  backgroundAssetId?: string;
+  /** 背景切换转场。 */
+  transition?: TransitionType;
   /** 目标角色 id。 */
-  characterId: string;
+  characterId?: string;
   /** 角色退场效果。 */
   enterEffect?: CharacterEnterEffect;
   exitEffect?: CharacterExitEffect;
