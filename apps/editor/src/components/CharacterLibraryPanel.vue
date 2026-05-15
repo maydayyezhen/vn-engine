@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Character, CharacterExpression, VNProject } from "@vn-engine/vn-schema";
+import type { AssetItem, Character, CharacterExpression, VNProject } from "@vn-engine/vn-schema";
+import AssetPreview from "./AssetPreview.vue";
 import {
   addCharacter,
   addCharacterExpression,
@@ -10,6 +11,7 @@ import {
   updateCharacter,
   updateCharacterExpression
 } from "../services/characterEditService";
+import { findAssetById } from "../services/resourceLookupService";
 
 /** 组件属性。 */
 const props = defineProps<{
@@ -24,8 +26,13 @@ const emit = defineEmits<{
 }>();
 
 /** 角色图片素材列表。 */
-function characterAssets() {
+function characterAssets(): AssetItem[] {
   return props.project.assets.items.filter((asset) => asset.type === "character" || asset.type === "image");
+}
+
+/** 获取表情绑定的素材。 */
+function expressionAsset(assetId: string | undefined): AssetItem | undefined {
+  return findAssetById(props.project, assetId);
 }
 
 /** 新增角色。 */
@@ -94,8 +101,19 @@ function handleDeleteExpression(characterId: string, expressionId: string): void
             <el-button size="small" @click="handleAddExpression(character.id)">新增表情</el-button>
           </div>
           <div v-for="expression in character.expressions ?? []" :key="expression.id" class="expression-row">
-            <el-input :model-value="expression.id" size="small" placeholder="表情 id" @update:model-value="(value: string) => handleUpdateExpression(character.id, expression.id, { id: value })" />
-            <el-input :model-value="expression.name" size="small" placeholder="表情名" @update:model-value="(value: string) => handleUpdateExpression(character.id, expression.id, { name: value })" />
+            <AssetPreview :asset="expressionAsset(expression.assetId)" variant="portrait" />
+            <el-input
+              :model-value="expression.id"
+              size="small"
+              placeholder="表情 id"
+              @update:model-value="(value: string) => handleUpdateExpression(character.id, expression.id, { id: value })"
+            />
+            <el-input
+              :model-value="expression.name"
+              size="small"
+              placeholder="表情名"
+              @update:model-value="(value: string) => handleUpdateExpression(character.id, expression.id, { name: value })"
+            />
             <el-select :model-value="expression.assetId" size="small" @update:model-value="(value: string) => handleUpdateExpression(character.id, expression.id, { assetId: value })">
               <el-option v-for="asset in characterAssets()" :key="asset.id" :label="`${asset.name} (${asset.id})`" :value="asset.id" />
             </el-select>

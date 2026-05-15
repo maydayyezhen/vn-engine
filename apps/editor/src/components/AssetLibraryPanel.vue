@@ -1,7 +1,21 @@
 <script setup lang="ts">
+import { computed, ref } from "vue";
 import type { AssetItem, AssetType, VNProject } from "@vn-engine/vn-schema";
 import AssetPreview from "./AssetPreview.vue";
 import { addAsset, createEmptyAsset, deleteAsset, updateAsset } from "../services/assetEditService";
+
+/** 素材分类键。 */
+type AssetCategoryKey = "background" | "character" | "prop" | "audio" | "other" | "all";
+
+/** 素材分类配置。 */
+interface AssetCategory {
+  /** 分类键。 */
+  key: AssetCategoryKey;
+  /** 分类显示名称。 */
+  label: string;
+  /** 分类包含的素材类型。 */
+  types?: AssetType[];
+}
 
 /** 素材库面板属性。 */
 const props = defineProps<{
@@ -25,9 +39,46 @@ const assetTypes: AssetType[] = ["background", "character", "prop", "bgm", "soun
 /** 桌面端文件导入按钮对应的素材类型。 */
 const desktopImportTypes: AssetType[] = ["background", "character", "prop", "bgm", "sound", "voice"];
 
+/** 素材分类列表。 */
+const assetCategories: AssetCategory[] = [
+  { key: "background", label: "背景", types: ["background"] },
+  { key: "character", label: "角色立绘", types: ["character"] },
+  { key: "prop", label: "物品", types: ["prop"] },
+  { key: "audio", label: "音频", types: ["bgm", "sound", "sfx", "voice"] },
+  { key: "other", label: "图片/其他", types: ["image", "other"] },
+  { key: "all", label: "全部" }
+];
+
+/** 当前选中的素材分类。 */
+const activeCategory = ref<AssetCategoryKey>("background");
+
+/** 当前分类下展示的素材。 */
+const filteredAssets = computed(() => {
+  const category = assetCategories.find((item) => item.key === activeCategory.value);
+  if (!category?.types) return props.project.assets.items;
+  return props.project.assets.items.filter((asset) => category.types?.includes(asset.type));
+});
+
+/** 获取分类素材数量。 */
+function getCategoryCount(category: AssetCategory): number {
+  if (!category.types) return props.project.assets.items.length;
+  return props.project.assets.items.filter((asset) => category.types?.includes(asset.type)).length;
+}
+
+/** 根据素材类型得到默认分类。 */
+function getCategoryByAssetType(type: AssetType): AssetCategoryKey {
+  if (type === "background") return "background";
+  if (type === "character") return "character";
+  if (type === "prop") return "prop";
+  if (["bgm", "sound", "sfx", "voice"].includes(type)) return "audio";
+  return "other";
+}
+
 /** 新增素材元数据。 */
 function handleAddAsset(command: string | number | object): void {
-  emit("projectChange", addAsset(props.project, createEmptyAsset(command as AssetType)));
+  const assetType = command as AssetType;
+  activeCategory.value = getCategoryByAssetType(assetType);
+  emit("projectChange", addAsset(props.project, createEmptyAsset(assetType)));
 }
 
 /** 更新素材元数据。 */
@@ -42,7 +93,9 @@ function handleDeleteAsset(assetId: string): void {
 
 /** 请求桌面端导入素材文件。 */
 function handleImportAsset(command: string | number | object): void {
-  emit("importAssetFile", command as AssetType);
+  const assetType = command as AssetType;
+  activeCategory.value = getCategoryByAssetType(assetType);
+  emit("importAssetFile", assetType);
 }
 </script>
 
@@ -75,16 +128,24 @@ function handleImportAsset(command: string | number | object): void {
     <el-alert
       v-if="!desktopMode"
       class="asset-mode-alert"
-      title="Web模式只能维护素材元数据；桌面版会把本地文件复制到工程 assets 目录并写入相对路径。"
+      title="Web 模式只能维护素材元数据；桌面版会把本地文件复制到工程 assets 目录并写入相对路径。"
       type="info"
       :closable="false"
       show-icon
     />
 
-    <el-table :data="project.assets.items" height="100%">
-      <el-table-column label="预览" width="210">
+    <el-tabs v-model="activeCategory" class="asset-category-tabs">
+      <el-tab-pane v-for="category in assetCategories" :key="category.key" :name="category.key">
+        <template #label>
+          <span>{{ category.label }} <small>{{ getCategoryCount(category) }}</small></span>
+        </template>
+      </el-tab-pane>
+    </el-tabs>
+
+    <el-table :data="filteredAssets" height="100%" empty-text="当前分类没有素材">
+      <el-table-column label="预览" width="150">
         <template #default="{ row }">
-          <AssetPreview :asset="row" />
+          <AssetPreview :asset="row" :variant="row.type === 'character' ? 'portrait' : 'wide'" />
         </template>
       </el-table-column>
       <el-table-column label="id" min-width="170">

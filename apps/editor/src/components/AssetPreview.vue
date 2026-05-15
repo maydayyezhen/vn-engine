@@ -3,17 +3,36 @@ import { computed, ref, watch } from "vue";
 import type { AssetItem } from "@vn-engine/vn-schema";
 import { isAudioPreviewAsset, isImagePreviewAsset, resolveAssetPreviewUrl } from "../services/assetPreviewService";
 
-const props = defineProps<{
-  asset: AssetItem;
-}>();
+/** 素材预览组件属性。 */
+const props = withDefaults(
+  defineProps<{
+    /** 需要预览的素材；为空时显示无预览。 */
+    asset?: AssetItem;
+    /** 预览尺寸变体。 */
+    variant?: "wide" | "portrait" | "audio";
+  }>(),
+  {
+    variant: "wide"
+  }
+);
 
+/** 当前资源是否加载失败。 */
 const failed = ref(false);
-const previewUrl = computed(() => resolveAssetPreviewUrl(props.asset.path));
-const canPreviewImage = computed(() => isImagePreviewAsset(props.asset));
-const canPreviewAudio = computed(() => isAudioPreviewAsset(props.asset));
+
+/** 浏览器可访问的预览地址。 */
+const previewUrl = computed(() => resolveAssetPreviewUrl(props.asset?.path));
+
+/** 当前素材是否可以作为图片预览。 */
+const canPreviewImage = computed(() => !!props.asset && isImagePreviewAsset(props.asset));
+
+/** 当前素材是否可以作为音频预览。 */
+const canPreviewAudio = computed(() => !!props.asset && isAudioPreviewAsset(props.asset));
+
+/** 图片替代文本。 */
+const previewAlt = computed(() => props.asset?.name || props.asset?.id || "素材预览");
 
 watch(
-  () => props.asset.path,
+  () => props.asset?.path,
   () => {
     failed.value = false;
   }
@@ -21,12 +40,12 @@ watch(
 </script>
 
 <template>
-  <div class="asset-preview">
+  <div class="asset-preview" :class="`asset-preview--${variant}`">
     <img
       v-if="canPreviewImage && previewUrl && !failed"
       class="asset-preview-image"
       :src="previewUrl"
-      :alt="asset.name || asset.id"
+      :alt="previewAlt"
       loading="lazy"
       @error="failed = true"
     />
@@ -45,17 +64,32 @@ watch(
 <style scoped>
 .asset-preview {
   display: flex;
-  min-height: 56px;
   align-items: center;
 }
 
+.asset-preview--wide {
+  min-height: 64px;
+}
+
+.asset-preview--portrait {
+  min-height: 92px;
+}
+
 .asset-preview-image {
-  width: 112px;
-  height: 64px;
   object-fit: contain;
   border: 1px solid #dcdfe6;
   border-radius: 4px;
   background: #f5f7fa;
+}
+
+.asset-preview--wide .asset-preview-image {
+  width: 112px;
+  height: 64px;
+}
+
+.asset-preview--portrait .asset-preview-image {
+  width: 72px;
+  height: 92px;
 }
 
 .asset-preview-audio {
