@@ -18,7 +18,7 @@ defineProps<{
     </div>
     <div class="asset-preview-grid">
       <div v-for="item in assets" :key="item.id" class="asset-preview-tile" :class="{ active: item.id === asset?.id }">
-        <AssetPreview :asset="item" :variant="item.type === 'character' ? 'portrait' : 'wide'" />
+        <AssetPreview :asset="item" variant="thumbnail" />
         <span :title="item.name">{{ item.name }}</span>
       </div>
     </div>

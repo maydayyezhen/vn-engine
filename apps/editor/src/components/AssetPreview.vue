@@ -9,7 +9,7 @@ const props = withDefaults(
     /** 需要预览的素材；为空时显示无预览。 */
     asset?: AssetItem;
     /** 预览尺寸变体。 */
-    variant?: "wide" | "portrait" | "audio";
+    variant?: "wide" | "portrait" | "audio" | "thumbnail";
   }>(),
   {
     variant: "wide"
@@ -81,6 +81,11 @@ watch(
   min-height: 0;
 }
 
+.asset-preview--thumbnail {
+  height: 62px;
+  min-height: 0;
+}
+
 .asset-preview-image {
   display: block;
   max-width: 100%;
@@ -100,6 +105,12 @@ watch(
 .asset-preview--portrait .asset-preview-image {
   width: auto;
   height: 100%;
+}
+
+.asset-preview--thumbnail .asset-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .asset-preview-audio-card {
