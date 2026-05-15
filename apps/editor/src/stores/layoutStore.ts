@@ -6,6 +6,9 @@ export type StageTab = "preview" | "flow" | "portrait" | "ui";
 /** 中央下方工作区当前激活的页签。 */
 export type ScriptDockTab = "script" | "branch" | "timeline" | "animation";
 
+/** 右侧检查器当前激活的页签。 */
+export type InspectorTab = "properties" | "characters";
+
 /** 编辑器布局状态。 */
 export interface LayoutStoreState {
   /** 场景预览区当前页签。 */
@@ -16,6 +19,8 @@ export interface LayoutStoreState {
   explorerCollapsed: boolean;
   /** 右侧检查器是否折叠。 */
   inspectorCollapsed: boolean;
+  /** 右侧检查器当前页签。 */
+  inspectorTab: InspectorTab;
   /** 画面预览缩放比例。 */
   previewZoom: number;
 }
@@ -26,6 +31,7 @@ export const layoutStore = reactive<LayoutStoreState>({
   scriptDockTab: "script",
   explorerCollapsed: false,
   inspectorCollapsed: false,
+  inspectorTab: "properties",
   previewZoom: 1
 });
 
@@ -37,6 +43,11 @@ export function setStageTab(stageTab: StageTab): void {
 /** 切换中央下方工作区页签。 */
 export function setScriptDockTab(scriptDockTab: ScriptDockTab): void {
   layoutStore.scriptDockTab = scriptDockTab;
+}
+
+/** 切换右侧检查器页签。 */
+export function setInspectorTab(inspectorTab: InspectorTab): void {
+  layoutStore.inspectorTab = inspectorTab;
 }
 
 /** 设置画面预览缩放比例。 */

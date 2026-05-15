@@ -478,6 +478,71 @@
   white-space: nowrap;
 }
 
+.inspector-tabs {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 3px;
+  border-bottom: 1px solid var(--editor-border);
+  background: var(--editor-bg-panel);
+}
+
+.inspector-tabs button {
+  height: 22px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--editor-text-muted);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.inspector-tabs button:hover {
+  color: var(--editor-text);
+  background: var(--editor-bg-panel-soft);
+}
+
+.inspector-tabs button.active {
+  color: #ffffff;
+  background: var(--editor-accent);
+}
+
+.right-inspector-panel .character-library-panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.right-inspector-panel .character-list {
+  gap: 8px;
+  padding-right: 0;
+}
+
+.right-inspector-panel .character-card {
+  border-radius: 6px;
+}
+
+.right-inspector-panel .character-grid,
+.right-inspector-panel .expression-row {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.right-inspector-panel .expression-row .asset-preview {
+  justify-self: start;
+  width: 72px;
+}
+
+.right-inspector-panel .character-description {
+  margin: 6px 0;
+}
+
+.right-inspector-panel .expression-header {
+  margin: 8px 0 6px;
+}
+
 .story-node-header {
   align-items: flex-start;
 }

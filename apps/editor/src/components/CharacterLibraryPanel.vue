@@ -13,19 +13,19 @@ import {
 } from "../services/characterEditService";
 import { findAssetById } from "../services/resourceLookupService";
 
-/** 组件属性。 */
+/** 角色管理面板属性。 */
 const props = defineProps<{
   /** 当前工程。 */
   project: VNProject;
 }>();
 
-/** 组件事件。 */
+/** 角色管理面板事件。 */
 const emit = defineEmits<{
   /** 工程发生变化。 */
   projectChange: [project: VNProject];
 }>();
 
-/** 角色图片素材列表。 */
+/** 获取可绑定到角色表情的素材。 */
 function characterAssets(): AssetItem[] {
   return props.project.assets.items.filter((asset) => asset.type === "character" || asset.type === "image");
 }
@@ -50,24 +50,24 @@ function handleDeleteCharacter(characterId: string): void {
   emit("projectChange", deleteCharacter(props.project, characterId));
 }
 
-/** 新增表情。 */
+/** 新增角色表情。 */
 function handleAddExpression(characterId: string): void {
   emit("projectChange", addCharacterExpression(props.project, characterId, createEmptyExpression(characterAssets()[0]?.id ?? "")));
 }
 
-/** 更新表情。 */
+/** 更新角色表情。 */
 function handleUpdateExpression(characterId: string, expressionId: string, patch: Partial<CharacterExpression>): void {
   emit("projectChange", updateCharacterExpression(props.project, characterId, expressionId, patch));
 }
 
-/** 删除表情。 */
+/** 删除角色表情。 */
 function handleDeleteExpression(characterId: string, expressionId: string): void {
   emit("projectChange", deleteCharacterExpression(props.project, characterId, expressionId));
 }
 </script>
 
 <template>
-  <el-card class="panel-card" shadow="never">
+  <el-card class="panel-card character-library-panel" shadow="never">
     <template #header>
       <div class="panel-header">
         <span>角色管理</span>

@@ -30,7 +30,7 @@ import {
 } from "../desktop/desktopProjectBridge";
 import { isDesktopRuntime } from "../desktop/isDesktopRuntime";
 import { editorStore, setActiveView, setDirty, setValidationResult, type EditorView } from "../stores/editorStore";
-import { layoutStore, setPreviewZoom, setScriptDockTab, setStageTab } from "../stores/layoutStore";
+import { layoutStore, setInspectorTab, setPreviewZoom, setScriptDockTab, setStageTab } from "../stores/layoutStore";
 import { currentNode, currentScript, projectStore, replaceProject, selectNode, selectScript, setProject } from "../stores/projectStore";
 import { setResourceSearchQuery, workspaceStore } from "../stores/workspaceStore";
 import { canRedo, canUndo, popRedo, popUndo, pushHistory, resetHistory } from "../stores/historyStore";
@@ -173,12 +173,14 @@ async function confirmDiscardIfDirty(actionName: string): Promise<boolean> {
 function handleChangeView(view: EditorView): void {
   setActiveView(view);
   if (view !== "script") setScriptDockTab("script");
+  setInspectorTab(view === "characters" ? "characters" : "properties");
 }
 
 /** 打开动画模块工作区。 */
 function handleOpenAnimations(): void {
   setActiveView("script");
   setScriptDockTab("animation");
+  setInspectorTab("properties");
 }
 
 /** 处理顶部菜单命令。 */
@@ -734,11 +736,10 @@ onBeforeUnmount(() => {
                 @project-change="applyProject"
                 @import-asset-file="handleImportAssetFile"
               />
-              <CharacterLibraryPanel
-                v-else-if="editorStore.activeView === 'characters'"
-                :project="projectStore.project"
-                @project-change="applyProject"
-              />
+              <div v-else-if="editorStore.activeView === 'characters'" class="dock-placeholder">
+                <strong>角色管理</strong>
+                <span>角色管理已移到右侧属性面板。</span>
+              </div>
               <VariableLibraryPanel
                 v-else-if="editorStore.activeView === 'variables'"
                 :project="projectStore.project"
@@ -752,7 +753,12 @@ onBeforeUnmount(() => {
     </template>
 
     <template #inspector>
-      <RightInspector :selection-label="inspectorSelectionLabel">
+      <RightInspector
+        :selection-label="inspectorSelectionLabel"
+        :active-tab="layoutStore.inspectorTab"
+        :show-character-tab="editorStore.activeView === 'characters'"
+        @update-active-tab="setInspectorTab"
+      >
         <template #properties>
           <NodePropertyPanel
             v-if="editorStore.activeView === 'script'"
@@ -766,6 +772,12 @@ onBeforeUnmount(() => {
             <strong>{{ inspectorSelectionLabel }}</strong>
             <span>该工作区的编辑表单位于中央下方。校验摘要已移动到底部状态栏。</span>
           </div>
+        </template>
+        <template #characters>
+          <CharacterLibraryPanel
+            :project="projectStore.project"
+            @project-change="applyProject"
+          />
         </template>
       </RightInspector>
     </template>
