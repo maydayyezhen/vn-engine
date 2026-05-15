@@ -51,7 +51,6 @@ watch(
     />
     <div v-else-if="canPreviewAudio" class="asset-preview-audio-card" :title="props.asset?.path" aria-label="音频资源">
       <svg class="asset-preview-audio-icon" viewBox="0 0 64 64" aria-hidden="true">
-        <rect x="8" y="10" width="48" height="44" rx="8" />
         <path d="M22 39h7l10 8V17L29 25h-7z" />
         <path d="M44 26c2.2 3.2 2.2 8.8 0 12" />
         <path d="M49 21c5.2 6.6 5.2 15.4 0 22" />
