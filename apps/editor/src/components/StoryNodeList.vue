@@ -67,6 +67,9 @@ const emit = defineEmits<{
   updateFilterType: [value: NodeFilterType];
 }>();
 
+/** 新增节点命令。 */
+type AddNodeCommand = "dialogue" | "narration" | "camera" | "actionSequence" | "playAnimation" | "showProp" | "hideProp" | "label";
+
 /** 返回节点行样式名。 */
 function getRowClassName({ row }: { row: StoryNode }): string {
   return row.id === props.selectedNodeId ? "selected-node-row" : "";
@@ -76,31 +79,55 @@ function getRowClassName({ row }: { row: StoryNode }): string {
 function handleRowClick(row: StoryNode): void {
   emit("selectNode", row.id);
 }
+
+/** 处理新增节点下拉命令。 */
+function handleAddNodeCommand(command: string | number | object): void {
+  const value = command as AddNodeCommand;
+  if (value === "dialogue") emit("addDialogue");
+  if (value === "narration") emit("addNarration");
+  if (value === "camera") emit("addCamera");
+  if (value === "actionSequence") emit("addActionSequence");
+  if (value === "playAnimation") emit("addPlayAnimation");
+  if (value === "showProp") emit("addShowProp");
+  if (value === "hideProp") emit("addHideProp");
+  if (value === "label") emit("addLabel");
+}
 </script>
 
 <template>
-  <el-card class="panel-card" shadow="never">
+  <el-card class="panel-card story-node-list-card" shadow="never">
     <template #header>
-      <div class="panel-header">
-        <span>剧本节点</span>
-        <el-button-group>
-          <el-button size="small" :disabled="!canUndo" @click="$emit('undo')">撤销</el-button>
-          <el-button size="small" :disabled="!canRedo" @click="$emit('redo')">重做</el-button>
-          <el-button size="small" type="primary" @click="$emit('addDialogue')">新增对话</el-button>
-          <el-button size="small" @click="$emit('addNarration')">新增旁白</el-button>
-          <el-button size="small" @click="$emit('addCamera')">新增镜头</el-button>
-          <el-button size="small" @click="$emit('addActionSequence')">新增动作序列</el-button>
-          <el-button size="small" @click="$emit('addPlayAnimation')">新增动画</el-button>
-          <el-button size="small" @click="$emit('addShowProp')">新增物品显示</el-button>
-          <el-button size="small" @click="$emit('addHideProp')">新增物品隐藏</el-button>
-          <el-button size="small" @click="$emit('addLabel')">新增标签</el-button>
-          <el-button size="small" :disabled="!selectedNodeId" @click="$emit('duplicateNode')">复制</el-button>
-          <el-button size="small" :disabled="!selectedNodeId" @click="$emit('cutNode')">剪切</el-button>
-          <el-button size="small" :disabled="!canPaste" @click="$emit('pasteNode')">粘贴</el-button>
-          <el-button size="small" :disabled="!canMoveUp" @click="$emit('moveNodeUp')">上移</el-button>
-          <el-button size="small" :disabled="!canMoveDown" @click="$emit('moveNodeDown')">下移</el-button>
-          <el-button size="small" type="danger" :disabled="!selectedNodeId" @click="$emit('deleteNode')">删除</el-button>
-        </el-button-group>
+      <div class="panel-header story-node-header">
+        <span>脚本指令表</span>
+        <div class="node-toolbar">
+          <el-button-group>
+            <el-button size="small" :disabled="!canUndo" @click="$emit('undo')">撤销</el-button>
+            <el-button size="small" :disabled="!canRedo" @click="$emit('redo')">重做</el-button>
+          </el-button-group>
+          <el-dropdown trigger="click" @command="handleAddNodeCommand">
+            <el-button size="small" type="primary">新增节点</el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="dialogue">对话</el-dropdown-item>
+                <el-dropdown-item command="narration">旁白</el-dropdown-item>
+                <el-dropdown-item command="camera">镜头</el-dropdown-item>
+                <el-dropdown-item command="actionSequence">动作序列</el-dropdown-item>
+                <el-dropdown-item command="playAnimation">代码动画</el-dropdown-item>
+                <el-dropdown-item command="showProp">显示物品</el-dropdown-item>
+                <el-dropdown-item command="hideProp">隐藏物品</el-dropdown-item>
+                <el-dropdown-item command="label">标签</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <el-button-group>
+            <el-button size="small" :disabled="!selectedNodeId" @click="$emit('duplicateNode')">复制</el-button>
+            <el-button size="small" :disabled="!selectedNodeId" @click="$emit('cutNode')">剪切</el-button>
+            <el-button size="small" :disabled="!canPaste" @click="$emit('pasteNode')">粘贴</el-button>
+            <el-button size="small" :disabled="!canMoveUp" @click="$emit('moveNodeUp')">上移</el-button>
+            <el-button size="small" :disabled="!canMoveDown" @click="$emit('moveNodeDown')">下移</el-button>
+            <el-button size="small" type="danger" :disabled="!selectedNodeId" @click="$emit('deleteNode')">删除</el-button>
+          </el-button-group>
+        </div>
       </div>
       <div class="node-filter-bar">
         <el-input
@@ -137,9 +164,12 @@ function handleRowClick(row: StoryNode): void {
       :row-class-name="getRowClassName"
       @row-click="handleRowClick"
     >
-      <el-table-column prop="type" label="类型" width="130" />
-      <el-table-column prop="id" label="节点 id" min-width="180" />
-      <el-table-column label="摘要" min-width="220">
+      <el-table-column label="#" width="60">
+        <template #default="{ $index }">{{ $index + 1 }}</template>
+      </el-table-column>
+      <el-table-column prop="type" label="指令" width="140" />
+      <el-table-column prop="id" label="节点 id" min-width="190" />
+      <el-table-column label="内容摘要" min-width="260">
         <template #default="{ row }">
           {{ getNodeSummary(row) }}
         </template>

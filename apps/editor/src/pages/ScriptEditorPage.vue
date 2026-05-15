@@ -1,17 +1,27 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import type { AssetType, NodeTarget, ValidationIssue, VNProject } from "@vn-engine/vn-schema";
+import type { AssetItem, AssetType, NodeTarget, ValidationIssue, VNProject } from "@vn-engine/vn-schema";
 import AssetLibraryPanel from "../components/AssetLibraryPanel.vue";
 import CharacterLibraryPanel from "../components/CharacterLibraryPanel.vue";
 import NodePropertyPanel from "../components/NodePropertyPanel.vue";
 import PreviewPanel from "../components/PreviewPanel.vue";
-import ProjectToolbar from "../components/ProjectToolbar.vue";
-import ProjectTree from "../components/ProjectTree.vue";
 import StoryNodeList from "../components/StoryNodeList.vue";
 import ValidationPanel from "../components/ValidationPanel.vue";
 import VariableLibraryPanel from "../components/VariableLibraryPanel.vue";
 import WebExportPanel from "../components/WebExportPanel.vue";
+import AnimationWorkspace from "../workspaces/AnimationWorkspace.vue";
+import AssetPreviewPane from "../layout/AssetPreviewPane.vue";
+import CenterStage from "../layout/CenterStage.vue";
+import EditorWorkbench from "../layout/EditorWorkbench.vue";
+import MainMenuBar from "../layout/MainMenuBar.vue";
+import MainToolBar from "../layout/MainToolBar.vue";
+import ResourceExplorer from "../layout/ResourceExplorer.vue";
+import RightInspector from "../layout/RightInspector.vue";
+import ScriptDock from "../layout/ScriptDock.vue";
+import StageTabs from "../layout/StageTabs.vue";
+import StatusBar from "../layout/StatusBar.vue";
+import VisualStagePanel from "../layout/VisualStagePanel.vue";
 import { importDesktopAssetFile } from "../desktop/desktopAssetBridge";
 import { exportDesktopWebGame } from "../desktop/desktopExportBridge";
 import {
@@ -22,7 +32,9 @@ import {
 } from "../desktop/desktopProjectBridge";
 import { isDesktopRuntime } from "../desktop/isDesktopRuntime";
 import { editorStore, setActiveView, setDirty, setValidationResult, type EditorView } from "../stores/editorStore";
+import { layoutStore, setInspectorTab, setPreviewZoom, setScriptDockTab, setStageTab } from "../stores/layoutStore";
 import { currentNode, currentScript, projectStore, replaceProject, selectNode, selectScript, setProject } from "../stores/projectStore";
+import { setResourceSearchQuery, workspaceStore } from "../stores/workspaceStore";
 import { canRedo, canUndo, popRedo, popUndo, pushHistory, resetHistory } from "../stores/historyStore";
 import { addAsset, createEmptyAsset } from "../services/assetEditService";
 import { loadDemoProject, loadShowcaseProject } from "../services/projectLoadService";
@@ -57,6 +69,7 @@ import {
 } from "../services/scriptManageService";
 import { createEditorShortcutHandler } from "../services/editorShortcutService";
 import { resolveTargetNodeId } from "../services/targetSelectService";
+import { findAssetById, findCharacterById, findCharacterExpression } from "../services/resourceLookupService";
 
 /** 预览面板组件实例。 */
 const previewPanelRef = ref<InstanceType<typeof PreviewPanel> | null>(null);
@@ -81,6 +94,36 @@ const filteredNodes = computed(() => filterNodes(projectStore.project, currentSc
 const selectedNodeCanMoveUp = computed(() => canMoveNodeUp(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId));
 /** 当前节点是否可下移。 */
 const selectedNodeCanMoveDown = computed(() => canMoveNodeDown(projectStore.project, projectStore.selectedScriptId, projectStore.selectedNodeId));
+
+/** 当前选中对象在检查器中的说明。 */
+const inspectorSelectionLabel = computed(() => {
+  if (editorStore.activeView === "script") return currentNode.value ? `${currentNode.value.type} / ${currentNode.value.id}` : "未选择节点";
+  if (editorStore.activeView === "assets") return "素材库";
+  if (editorStore.activeView === "characters") return "角色管理";
+  if (editorStore.activeView === "variables") return "变量管理";
+  return "导出 / 构建";
+});
+
+/** 当前节点或工作区关联的素材，用于左下角快速预览。 */
+const focusedAsset = computed<AssetItem | undefined>(() => {
+  const node = currentNode.value;
+  if (!node) return projectStore.project.assets.items[0];
+  if (node.type === "scene") return findAssetById(projectStore.project, node.backgroundAssetId);
+  if (node.type === "showProp") return findAssetById(projectStore.project, node.assetId);
+  if (node.type === "playAudio") return findAssetById(projectStore.project, node.assetId);
+  if (node.type === "showCharacter") {
+    const directAsset = node.assetId ? findAssetById(projectStore.project, node.assetId) : undefined;
+    if (directAsset) return directAsset;
+    const expression = findCharacterExpression(projectStore.project, node.characterId, node.expression);
+    return findAssetById(projectStore.project, expression?.assetId);
+  }
+  if (node.type === "dialogue") {
+    const character = findCharacterById(projectStore.project, node.characterId);
+    const expression = character?.expressions?.[0];
+    return findAssetById(projectStore.project, expression?.assetId);
+  }
+  return projectStore.project.assets.items[0];
+});
 
 /** 创建当前编辑历史快照。 */
 function createHistorySnapshot() {
@@ -131,6 +174,31 @@ async function confirmDiscardIfDirty(actionName: string): Promise<boolean> {
 /** 切换主视图。 */
 function handleChangeView(view: EditorView): void {
   setActiveView(view);
+  if (view !== "script") setScriptDockTab("script");
+  if (view === "script") setInspectorTab("properties");
+}
+
+/** 打开动画模块工作区。 */
+function handleOpenAnimations(): void {
+  setActiveView("script");
+  setScriptDockTab("animation");
+  setInspectorTab("events");
+}
+
+/** 处理顶部菜单命令。 */
+function handleMenuCommand(command: string): void {
+  if (command === "createDesktopProject") void handleCreateDesktopProject();
+  if (command === "openDesktopProject") void handleOpenDesktopProject();
+  if (command === "save") handleShortcutSave();
+  if (command === "importProject") void handleImportProject();
+  if (command === "exportProject") void handleExportProject();
+  if (command === "loadShowcase") void handleLoadShowcase();
+  if (command === "resetDemo") void handleResetDemo();
+  if (command === "undo") handleUndo();
+  if (command === "redo") handleRedo();
+  if (command === "restartPreview") handleRestartPreview();
+  if (command === "exportWeb") setActiveView("export");
+  if (command === "exportDesktopWebGame") void handleExportDesktopWebGame();
 }
 
 /** 切换脚本。 */
@@ -574,111 +642,177 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="editor-page">
-    <header class="editor-toolbar-panel">
-      <ProjectToolbar
+  <EditorWorkbench>
+    <template #menu>
+      <MainMenuBar
+        :desktop-mode="desktopMode"
+        @command="handleMenuCommand"
+        @change-view="handleChangeView"
+      />
+      <input ref="fileInputRef" class="hidden-file-input" type="file" accept="application/json,.json,.vnproject.json" @change="handleImportFile" />
+    </template>
+
+    <template #toolbar>
+      <MainToolBar
         :project="projectStore.project"
+        :active-view="editorStore.activeView"
+        :dirty="editorStore.dirty"
+        :validation-result="editorStore.validationResult"
+        :desktop-mode="desktopMode"
+        :desktop-root="desktopProjectRoot"
+        :can-undo="canUndo"
+        :can-redo="canRedo"
+        @change-view="handleChangeView"
+        @create-desktop-project="handleCreateDesktopProject"
+        @open-desktop-project="handleOpenDesktopProject"
+        @save="handleShortcutSave"
+        @undo="handleUndo"
+        @redo="handleRedo"
+        @focus-search="focusNodeSearch"
+        @restart-preview="handleRestartPreview"
+        @export-desktop-web-game="handleExportDesktopWebGame"
+      />
+    </template>
+
+    <template #explorer>
+      <ResourceExplorer
+        :project="projectStore.project"
+        :selected-script-id="projectStore.selectedScriptId"
+        :active-view="editorStore.activeView"
+        :search-query="workspaceStore.resourceSearchQuery"
+        @update-search-query="setResourceSearchQuery"
+        @change-view="handleChangeView"
+        @open-animations="handleOpenAnimations"
+        @select-script="handleSelectScript"
+        @create-script="handleCreateScript"
+        @rename-script="handleRenameScript"
+        @delete-script="handleDeleteScript"
+        @set-start-script="handleSetStartScript"
+      >
+        <template #preview>
+          <AssetPreviewPane :asset="focusedAsset" />
+        </template>
+      </ResourceExplorer>
+    </template>
+
+    <template #center>
+      <CenterStage>
+        <template #tabs>
+          <StageTabs :model-value="layoutStore.stageTab" @update:model-value="setStageTab" />
+        </template>
+        <template #visual>
+          <VisualStagePanel
+            :stage-tab="layoutStore.stageTab"
+            :zoom="layoutStore.previewZoom"
+            @update-zoom="setPreviewZoom"
+          >
+            <PreviewPanel ref="previewPanelRef" :project="projectStore.project" />
+          </VisualStagePanel>
+        </template>
+        <template #dock>
+          <ScriptDock
+            :active-view="editorStore.activeView"
+            :active-tab="layoutStore.scriptDockTab"
+            @update-active-tab="setScriptDockTab"
+          >
+            <template #script>
+              <StoryNodeList
+                :nodes="filteredNodes"
+                :selected-node-id="projectStore.selectedNodeId"
+                :search-query="nodeSearchQuery"
+                :filter-type="nodeFilterType"
+                :can-undo="canUndo"
+                :can-redo="canRedo"
+                :can-paste="clipboardAvailable"
+                :can-move-up="selectedNodeCanMoveUp"
+                :can-move-down="selectedNodeCanMoveDown"
+                @select-node="handleSelectNode"
+                @add-dialogue="handleAddDialogue"
+                @add-narration="handleAddNarration"
+                @add-camera="handleAddCamera"
+                @add-action-sequence="handleAddActionSequence"
+                @add-play-animation="handleAddPlayAnimation"
+                @add-show-prop="handleAddShowProp"
+                @add-hide-prop="handleAddHideProp"
+                @add-label="handleAddLabel"
+                @duplicate-node="handleCopyNode"
+                @cut-node="handleCutNode"
+                @paste-node="handlePasteNode"
+                @delete-node="handleDeleteNode"
+                @move-node-up="handleMoveNodeUp"
+                @move-node-down="handleMoveNodeDown"
+                @undo="handleUndo"
+                @redo="handleRedo"
+                @update-search-query="nodeSearchQuery = $event"
+                @update-filter-type="nodeFilterType = $event"
+              />
+            </template>
+
+            <template #animation>
+              <AnimationWorkspace />
+            </template>
+
+            <template #workspace>
+              <AssetLibraryPanel
+                v-if="editorStore.activeView === 'assets'"
+                :project="projectStore.project"
+                :desktop-mode="desktopMode"
+                @project-change="applyProject"
+                @import-asset-file="handleImportAssetFile"
+              />
+              <CharacterLibraryPanel
+                v-else-if="editorStore.activeView === 'characters'"
+                :project="projectStore.project"
+                @project-change="applyProject"
+              />
+              <VariableLibraryPanel
+                v-else-if="editorStore.activeView === 'variables'"
+                :project="projectStore.project"
+                @project-change="applyProject"
+              />
+              <WebExportPanel v-else :project="projectStore.project" />
+            </template>
+          </ScriptDock>
+        </template>
+      </CenterStage>
+    </template>
+
+    <template #inspector>
+      <RightInspector
+        :active-tab="layoutStore.inspectorTab"
+        :selection-label="inspectorSelectionLabel"
+        @update-active-tab="setInspectorTab"
+      >
+        <template #properties>
+          <NodePropertyPanel
+            v-if="editorStore.activeView === 'script'"
+            :project="projectStore.project"
+            :script-id="projectStore.selectedScriptId"
+            :node="currentNode"
+            @project-change="applyProject"
+            @locate-target="handleLocateTarget"
+          />
+          <div v-else class="inspector-empty-state">
+            <strong>{{ inspectorSelectionLabel }}</strong>
+            <span>该工作区的编辑表单位于中央下方。右侧检查器保留校验、事件和当前状态。</span>
+          </div>
+        </template>
+        <template #events>
+          <ValidationPanel :result="editorStore.validationResult" @locate-issue="handleLocateValidationIssue" />
+        </template>
+      </RightInspector>
+    </template>
+
+    <template #statusbar>
+      <StatusBar
+        :project-name="projectStore.project.name"
         :script-id="projectStore.selectedScriptId"
         :node-id="projectStore.selectedNodeId"
         :dirty="editorStore.dirty"
         :validation-result="editorStore.validationResult"
-        :active-view="editorStore.activeView"
         :desktop-mode="desktopMode"
-        :desktop-root="desktopProjectRoot"
-        @change-view="handleChangeView"
-        @import-project="handleImportProject"
-        @export-project="handleExportProject"
-        @reset-demo="handleResetDemo"
-        @load-showcase="handleLoadShowcase"
-        @restart-preview="handleRestartPreview"
-        @create-desktop-project="handleCreateDesktopProject"
-        @open-desktop-project="handleOpenDesktopProject"
-        @save-desktop-project="handleSaveDesktopProject"
-        @export-desktop-web-game="handleExportDesktopWebGame"
+        :preview-zoom="layoutStore.previewZoom"
       />
-      <input ref="fileInputRef" class="hidden-file-input" type="file" accept="application/json,.json,.vnproject.json" @change="handleImportFile" />
-    </header>
-
-    <template v-if="editorStore.activeView === 'script'">
-      <aside class="editor-panel editor-project-panel">
-        <ProjectTree
-          :project="projectStore.project"
-          :selected-script-id="projectStore.selectedScriptId"
-          @select-script="handleSelectScript"
-          @create-script="handleCreateScript"
-          @rename-script="handleRenameScript"
-          @delete-script="handleDeleteScript"
-          @set-start-script="handleSetStartScript"
-        />
-      </aside>
-      <main class="editor-panel editor-node-panel">
-        <StoryNodeList
-          :nodes="filteredNodes"
-          :selected-node-id="projectStore.selectedNodeId"
-          :search-query="nodeSearchQuery"
-          :filter-type="nodeFilterType"
-          :can-undo="canUndo"
-          :can-redo="canRedo"
-          :can-paste="clipboardAvailable"
-          :can-move-up="selectedNodeCanMoveUp"
-          :can-move-down="selectedNodeCanMoveDown"
-          @select-node="handleSelectNode"
-          @add-dialogue="handleAddDialogue"
-          @add-narration="handleAddNarration"
-          @add-camera="handleAddCamera"
-          @add-action-sequence="handleAddActionSequence"
-          @add-play-animation="handleAddPlayAnimation"
-          @add-show-prop="handleAddShowProp"
-          @add-hide-prop="handleAddHideProp"
-          @add-label="handleAddLabel"
-          @duplicate-node="handleCopyNode"
-          @cut-node="handleCutNode"
-          @paste-node="handlePasteNode"
-          @delete-node="handleDeleteNode"
-          @move-node-up="handleMoveNodeUp"
-          @move-node-down="handleMoveNodeDown"
-          @undo="handleUndo"
-          @redo="handleRedo"
-          @update-search-query="nodeSearchQuery = $event"
-          @update-filter-type="nodeFilterType = $event"
-        />
-      </main>
-      <aside class="editor-panel editor-property-panel">
-        <NodePropertyPanel
-          :project="projectStore.project"
-          :script-id="projectStore.selectedScriptId"
-          :node="currentNode"
-          @project-change="applyProject"
-          @locate-target="handleLocateTarget"
-        />
-      </aside>
-      <footer class="editor-panel editor-footer-panel">
-        <div class="footer-grid">
-          <PreviewPanel ref="previewPanelRef" :project="projectStore.project" />
-          <ValidationPanel :result="editorStore.validationResult" @locate-issue="handleLocateValidationIssue" />
-        </div>
-      </footer>
     </template>
-
-    <main v-else-if="editorStore.activeView === 'assets'" class="editor-panel editor-resource-panel">
-      <AssetLibraryPanel
-        :project="projectStore.project"
-        :desktop-mode="desktopMode"
-        @project-change="applyProject"
-        @import-asset-file="handleImportAssetFile"
-      />
-    </main>
-
-    <main v-else-if="editorStore.activeView === 'characters'" class="editor-panel editor-resource-panel">
-      <CharacterLibraryPanel :project="projectStore.project" @project-change="applyProject" />
-    </main>
-
-    <main v-else-if="editorStore.activeView === 'variables'" class="editor-panel editor-resource-panel">
-      <VariableLibraryPanel :project="projectStore.project" @project-change="applyProject" />
-    </main>
-
-    <main v-else class="editor-panel editor-resource-panel">
-      <WebExportPanel :project="projectStore.project" />
-    </main>
-  </div>
+  </EditorWorkbench>
 </template>

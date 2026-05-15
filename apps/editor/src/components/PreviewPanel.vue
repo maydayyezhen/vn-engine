@@ -19,7 +19,7 @@ const snapshot = ref<RuntimeSnapshot | null>(null);
 /** 预览错误信息。 */
 const errorMessage = ref("");
 /** 当前预览模式。 */
-const previewMode = ref<"debug" | "visual">("debug");
+const previewMode = ref<"debug" | "visual">("visual");
 /** PixiJS 画面预览挂载容器。 */
 const visualContainerRef = ref<HTMLDivElement | null>(null);
 /** 编辑器画面预览渲染器。 */

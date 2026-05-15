@@ -1,5 +1,19 @@
 # vn-engine
 
+## 第19轮：编辑器工作台 UI/UX 重构
+
+`apps/editor` 已从功能堆叠页面整理为工作台式 VN 创作工具。当前主界面采用顶部菜单栏和工具栏、左侧资源管理器、中央大尺寸 16:9 场景预览、中央下方脚本/资源工作区、右侧属性检查器和底部状态栏。
+
+主要入口：
+
+- 项目、导入导出、桌面工程和 Web 构建入口在顶部菜单栏与工具栏。
+- 脚本、角色、背景、音频、变量、动画和 prop 物品在左侧资源管理器分类浏览。
+- 画面预览位于中央主工作区，不再作为底部小面板承载。
+- 脚本指令表、素材库、角色库、变量库、动画模块和导出检查位于中央下方工作区。
+- 节点、资源、角色、变量、动画和校验问题通过右侧检查器查看与编辑。
+
+本轮没有修改 `vn-schema`、`vn-core`、`vn-renderer-pixi`、`vn-audio`、`vn-project` 或 `vn-export` 的核心语义，也没有接入 AI 素材生成、MiniMax、APIKey 管理或正式插件安全系统。
+
 ## 第18轮：Showcase 稳定性基线
 
 当前新增了 Showcase Web 导出包自动验收脚本：
@@ -12,7 +26,7 @@ pnpm verify:showcase-export
 
 `verify:showcase-export` 会临时启动本地静态服务器，检查 `dist/export/showcase-web-game/` 中的 `index.html`、`game/project.bundle.json`、`game/export-manifest.json`、构建后的 `assets/` 目录和 Showcase 依赖素材是否能以 HTTP 200 访问，并校验 manifest 中没有本地绝对路径或 `../` 逃逸路径。
 
-当前功能基线见 `docs/current-feature-baseline.md`。本项目仍未进行 UI/UX 整体重构，也未接入 AI 素材生成 API、MiniMax、APIKey 管理或正式插件安全系统。
+当前功能基线见 `docs/current-feature-baseline.md`。第19轮已完成第一版编辑器工作台式 UI/UX 重构；本项目仍未接入 AI 素材生成 API、MiniMax、APIKey 管理或正式插件安全系统。
 
 ## 第十四轮返修：动作序列 MVP
 
