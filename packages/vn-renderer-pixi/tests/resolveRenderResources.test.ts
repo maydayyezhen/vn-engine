@@ -47,6 +47,7 @@ describe("resolveRenderResources", () => {
     const snapshot = {
       ...createStartedSnapshot(),
       backgroundAssetId: "missing-bg",
+      pendingEffects: [],
       characters: [
         {
           characterId: "lincheng",
@@ -107,6 +108,78 @@ describe("presentation layout helpers", () => {
       shake: true,
       shakeIntensity: 8,
       durationMs: 300
+    });
+  });
+});
+
+describe("one-shot character effects", () => {
+  it("普通角色静态状态不会携带入场动画", () => {
+    const project = createProject();
+    const snapshot = {
+      ...createStartedSnapshot(),
+      pendingEffects: [],
+      characters: [
+        {
+          characterId: "lincheng",
+          expression: "smile",
+          position: "center" as const,
+          scale: 1,
+          opacity: 1,
+          zIndex: 0,
+          flipX: false,
+          enterEffect: "slideInLeft" as const,
+          transitionDurationMs: 600
+        }
+      ]
+    };
+    const characters = resolveCharacterResources(project, snapshot);
+    expect(characters[0]?.enterEffect).toBe("none");
+    expect(characters[0]?.effectId).toBeUndefined();
+  });
+
+  it("pendingEffects 中的一次性入场动画会覆盖同角色静态状态", () => {
+    const project = createProject();
+    const snapshot = {
+      ...createStartedSnapshot(),
+      characters: [
+        {
+          characterId: "lincheng",
+          expression: "smile",
+          position: "center" as const,
+          scale: 1,
+          opacity: 1,
+          zIndex: 0,
+          flipX: false
+        }
+      ],
+      pendingEffects: [
+        {
+          id: "effect-enter-1",
+          type: "showCharacter" as const,
+          characterId: "lincheng",
+          enterEffect: "slideInLeft" as const,
+          transitionDurationMs: 600,
+          character: {
+            characterId: "lincheng",
+            expression: "smile",
+            position: "left" as const,
+            scale: 1,
+            opacity: 1,
+            zIndex: 0,
+            flipX: false,
+            enterEffect: "slideInLeft" as const,
+            transitionDurationMs: 600
+          }
+        }
+      ]
+    };
+    const characters = resolveCharacterResources(project, snapshot);
+    expect(characters).toHaveLength(1);
+    expect(characters[0]).toMatchObject({
+      effectId: "effect-enter-1",
+      characterId: "lincheng",
+      enterEffect: "slideInLeft",
+      position: "left"
     });
   });
 });

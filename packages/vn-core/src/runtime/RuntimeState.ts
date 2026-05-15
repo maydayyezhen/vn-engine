@@ -29,11 +29,13 @@ export interface RuntimeCameraState {
 /** 待渲染的一次性演出效果。 */
 export interface RuntimeEffect {
   /** 演出效果类型。 */
-  type: "hideCharacter";
+  id: string;
+  type: "showCharacter" | "hideCharacter";
   /** 目标角色 id。 */
   characterId: string;
   /** 角色退场效果。 */
-  exitEffect: CharacterExitEffect;
+  enterEffect?: CharacterEnterEffect;
+  exitEffect?: CharacterExitEffect;
   /** 退场效果时长，单位毫秒。 */
   transitionDurationMs: number;
   /** 退场前角色显示状态。 */
@@ -79,11 +81,11 @@ export interface RuntimeCharacterDisplay {
   /** 是否水平翻转。 */
   flipX: boolean;
   /** 角色登场效果。 */
-  enterEffect: CharacterEnterEffect;
+  enterEffect?: CharacterEnterEffect;
   /** 角色退场效果，仅用于退场快照。 */
   exitEffect?: CharacterExitEffect;
   /** 演出时长，单位毫秒。 */
-  transitionDurationMs: number;
+  transitionDurationMs?: number;
 }
 
 /** 当前播放的音频状态。 */

@@ -56,6 +56,7 @@ export interface ResolvedBackgroundResource {
 /** 解析后的角色资源。 */
 export interface ResolvedCharacterResource {
   /** 角色 id。 */
+  effectId?: string;
   characterId: string;
   /** 角色显示名称。 */
   characterName: string;
@@ -82,7 +83,7 @@ export interface ResolvedCharacterResource {
   /** 是否水平翻转。 */
   flipX: boolean;
   /** 登场效果。 */
-  enterEffect: CharacterEnterEffect;
+  enterEffect?: CharacterEnterEffect;
   /** 退场效果。 */
   exitEffect?: CharacterExitEffect;
   /** 演出时长，单位毫秒。 */

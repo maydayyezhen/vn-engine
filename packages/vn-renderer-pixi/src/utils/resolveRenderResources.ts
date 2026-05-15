@@ -24,18 +24,22 @@ export function resolveBackgroundResource(project: VNProject, snapshot: RuntimeS
 
 /** 解析当前角色资源列表。 */
 export function resolveCharacterResources(project: VNProject, snapshot: RuntimeSnapshot): ResolvedCharacterResource[] {
-  const displays = [
-    ...snapshot.characters,
-    ...(snapshot.pendingEffects ?? []).flatMap((effect) => (effect.character ? [effect.character] : []))
-  ];
+  const displayMap = new Map<string, { display: RuntimeSnapshot["characters"][number]; effectId?: string }>();
+  for (const display of snapshot.characters) {
+    displayMap.set(display.characterId, { display });
+  }
+  for (const effect of snapshot.pendingEffects ?? []) {
+    if (effect.character) displayMap.set(effect.character.characterId, { display: effect.character, effectId: effect.id });
+  }
 
-  return displays.map((display) => {
+  return [...displayMap.values()].map(({ display, effectId }) => {
     const character = project.characters.find((item) => item.id === display.characterId);
     const expression = character?.expressions?.find((item) => item.id === display.expression);
     const assetId = expression?.assetId ?? display.assetId;
     const asset = findAsset(project, assetId);
 
     return {
+      effectId,
       characterId: display.characterId,
       characterName: character?.displayName || character?.name || display.characterId,
       expressionId: display.expression,
@@ -49,7 +53,7 @@ export function resolveCharacterResources(project: VNProject, snapshot: RuntimeS
       opacity: display.opacity ?? 1,
       zIndex: display.zIndex ?? 0,
       flipX: display.flipX ?? false,
-      enterEffect: display.enterEffect ?? "none",
+      enterEffect: effectId ? display.enterEffect ?? "none" : "none",
       exitEffect: display.exitEffect,
       transitionDurationMs: display.transitionDurationMs ?? 300,
       asset,

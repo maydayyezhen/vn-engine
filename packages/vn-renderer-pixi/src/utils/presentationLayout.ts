@@ -41,7 +41,7 @@ export interface CharacterLayout {
   /** 水平缩放方向。 */
   scaleXSign: 1 | -1;
   /** 登场效果。 */
-  enterEffect: CharacterEnterEffect;
+  enterEffect?: CharacterEnterEffect;
   /** 退场效果。 */
   exitEffect?: CharacterExitEffect;
   /** 演出时长，单位毫秒。 */

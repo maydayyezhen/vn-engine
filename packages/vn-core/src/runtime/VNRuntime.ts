@@ -101,7 +101,7 @@ export class VNRuntime {
 
   /** 获取当前可保存状态。 */
   getState(): RuntimeState {
-    return this.cloneState(this.state);
+    return this.createStableSaveState(this.state);
   }
 
   /** 获取用于存档的稳定状态，不保存动作执行中的 pendingActions。 */
@@ -130,6 +130,7 @@ export class VNRuntime {
       state.currentNodeId = script ? findNodeByIndex(script, state.currentNodeIndex)?.id ?? null : null;
     }
     state.isWaitingForActionCompletion = false;
+    state.pendingEffects = [];
     state.pendingActions = [];
     return state;
   }
@@ -298,11 +299,11 @@ export class VNRuntime {
             scale: action.scale ?? character.scale,
             opacity: action.opacity ?? character.opacity,
             zIndex: action.zIndex ?? character.zIndex,
-            flipX: action.flipX ?? character.flipX,
-            transitionDurationMs: action.durationMs ?? character.transitionDurationMs
+            flipX: action.flipX ?? character.flipX
           }
         : character
     );
+    this.syncPendingEnterCharacter(action.characterId);
   }
 
   /** 切换已显示角色的表情。 */
@@ -310,6 +311,19 @@ export class VNRuntime {
     this.state.characters = this.state.characters.map((character) =>
       character.characterId === characterId ? { ...character, expression } : character
     );
+    this.syncPendingEnterCharacter(characterId);
+  }
+
+  /** 如果同一批自动节点中已有角色入场 effect，则同步为最新静态显示状态。 */
+  private syncPendingEnterCharacter(characterId: string): void {
+    const pendingEnter = this.state.pendingEffects.find((effect) => effect.type === "showCharacter" && effect.characterId === characterId);
+    const display = this.state.characters.find((character) => character.characterId === characterId);
+    if (!pendingEnter || !display) return;
+    pendingEnter.character = {
+      ...display,
+      enterEffect: pendingEnter.enterEffect ?? "none",
+      transitionDurationMs: pendingEnter.transitionDurationMs
+    };
   }
 
   private applyAutoNode(node: StoryNode): void {
@@ -414,8 +428,9 @@ export class VNRuntime {
 
   /** 显示或更新角色状态。 */
   private showCharacter(node: ShowCharacterNode): void {
+    const previous = this.state.characters.find((item) => item.characterId === node.characterId);
     const current = this.state.characters.filter((item) => item.characterId !== node.characterId);
-    current.push({
+    const display: RuntimeCharacterDisplay = {
       characterId: node.characterId,
       assetId: node.assetId,
       expression: node.expression,
@@ -425,11 +440,25 @@ export class VNRuntime {
       scale: node.scale ?? 1,
       opacity: node.opacity ?? 1,
       zIndex: node.zIndex ?? 0,
-      flipX: node.flipX ?? false,
-      enterEffect: node.enterEffect ?? "none",
-      transitionDurationMs: node.transitionDurationMs ?? 300
-    });
+      flipX: node.flipX ?? false
+    };
+    current.push(display);
     this.state.characters = current;
+    this.syncPendingEnterCharacter(node.characterId);
+    if (!previous) {
+      const enterEffect = node.enterEffect ?? "none";
+      if (enterEffect !== "none") {
+        const transitionDurationMs = node.transitionDurationMs ?? 300;
+        this.state.pendingEffects.push({
+          id: this.createRuntimeEffectId("showCharacter", node.characterId),
+          type: "showCharacter",
+          characterId: node.characterId,
+          enterEffect,
+          transitionDurationMs,
+          character: { ...display, enterEffect, transitionDurationMs }
+        });
+      }
+    }
   }
 
   /** 隐藏角色状态。 */
@@ -437,6 +466,7 @@ export class VNRuntime {
     const character = this.state.characters.find((item) => item.characterId === characterId);
     if (character) {
       this.state.pendingEffects.push({
+        id: this.createRuntimeEffectId("hideCharacter", characterId),
         type: "hideCharacter",
         characterId,
         exitEffect: exitEffect ?? "none",
@@ -445,6 +475,11 @@ export class VNRuntime {
       });
     }
     this.state.characters = this.state.characters.filter((item) => item.characterId !== characterId);
+  }
+
+  /** 生成一次性演出效果 id。 */
+  private createRuntimeEffectId(type: string, targetId: string): string {
+    return `${type}_${targetId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
   /** 创建默认镜头状态。 */

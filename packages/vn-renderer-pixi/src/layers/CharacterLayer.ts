@@ -11,6 +11,8 @@ export class CharacterLayer {
 
   /** 当前动画编号，用于让旧动画失效。 */
   private animationToken = 0;
+  /** 已消费的一次性角色演出效果 id。 */
+  private readonly consumedEffectIds = new Set<string>();
 
   /** 创建角色层。 */
   constructor(
@@ -27,6 +29,9 @@ export class CharacterLayer {
     this.container.removeChildren().forEach((child) => child.destroy({ children: true }));
 
     for (const character of sortCharactersByZIndex(characters)) {
+      const alreadyConsumed = Boolean(character.effectId && this.consumedEffectIds.has(character.effectId));
+      if (alreadyConsumed && character.exitEffect) continue;
+      if (character.exitEffect === "none" || (character.exitEffect && (character.transitionDurationMs ?? 300) <= 0)) continue;
       const texture = await this.loader.loadTexture(character.path);
       const sprite = texture
         ? new Sprite(texture)
@@ -39,7 +44,7 @@ export class CharacterLayer {
       sprite.position.set(layout.x, layout.y);
       sprite.alpha = layout.opacity;
       sprite.zIndex = layout.zIndex;
-      this.applyEntrance(sprite, character, size, token);
+      this.applyEntrance(sprite, character, size, token, alreadyConsumed);
       this.container.addChild(sprite);
     }
 
@@ -56,10 +61,12 @@ export class CharacterLayer {
   }
 
   /** 应用基础入场或退场效果。 */
-  private applyEntrance(sprite: Sprite, character: ResolvedCharacterResource, size: VNRenderSize, token: number): void {
+  private applyEntrance(sprite: Sprite, character: ResolvedCharacterResource, size: VNRenderSize, token: number, alreadyConsumed: boolean): void {
     const layout = resolveCharacterLayout(character, size);
+    if (alreadyConsumed) return;
     const effect = character.exitEffect ?? character.enterEffect;
     if (layout.durationMs <= 0 || effect === "none") return;
+    if (character.effectId) this.consumedEffectIds.add(character.effectId);
 
     const targetX = sprite.x;
     const targetAlpha = sprite.alpha;

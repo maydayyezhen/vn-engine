@@ -74,6 +74,34 @@ function createDemoProjectFromScriptFile(): VNProject {
   };
 }
 
+function createCharacterEffectProject(): VNProject {
+  const project = createProject();
+  return {
+    ...project,
+    assets: {
+      items: [
+        ...project.assets.items,
+        { id: "lin-normal", name: "Lin normal", type: "character", path: "assets/lin-normal.png" }
+      ]
+    },
+    characters: [{ id: "lin", name: "Lin", expressions: [{ id: "normal", name: "Normal", assetId: "lin-normal" }] }],
+    scripts: [
+      {
+        id: "start",
+        name: "character-effects",
+        nodes: [
+          { id: "show-first", type: "showCharacter", characterId: "lin", expression: "normal", position: "left", enterEffect: "slideInLeft", transitionDurationMs: 600 },
+          { id: "dialogue-first", type: "dialogue", characterId: "lin", text: "first" },
+          { id: "narration-next", type: "narration", text: "next" },
+          { id: "hide-first", type: "hideCharacter", characterId: "lin", exitEffect: "fadeOut", transitionDurationMs: 400 },
+          { id: "show-second", type: "showCharacter", characterId: "lin", expression: "normal", position: "right", enterEffect: "fadeIn", transitionDurationMs: 300 },
+          { id: "dialogue-second", type: "dialogue", characterId: "lin", text: "second" }
+        ]
+      }
+    ]
+  };
+}
+
 describe("VNRuntime", () => {
   it("从起始脚本第一个可展示节点开始", () => {
     const runtime = new VNRuntime(createProject());
@@ -233,14 +261,19 @@ describe("VNRuntime", () => {
 
   it("ShowCharacterNode 会更新角色演出状态", () => {
     const runtime = new VNRuntime(createDemoProjectFromScriptFile());
-    runtime.start();
-    const snapshot = runtime.next();
+    const snapshot = runtime.start();
     expect(snapshot.characters[0]).toMatchObject({
       position: "center",
       scale: 1.05,
       opacity: 1,
       zIndex: 2,
-      flipX: false,
+      flipX: false
+    });
+    expect(snapshot.characters[0].enterEffect).toBeUndefined();
+    expect(snapshot.characters[0].transitionDurationMs).toBeUndefined();
+    expect(snapshot.pendingEffects[0]).toMatchObject({
+      type: "showCharacter",
+      characterId: "lincheng",
       enterEffect: "slideInLeft",
       transitionDurationMs: 500
     });
@@ -452,5 +485,37 @@ describe("VNRuntime", () => {
     expect(snapshot.currentNodeId).toBe("narration-intro");
     expect(snapshot.isWaitingForActionCompletion).toBe(false);
     expect(snapshot.pendingActions).toHaveLength(0);
+  });
+
+  it("DialogueNode 和 NarrationNode 不会重复携带角色入场 pendingEffects", () => {
+    const runtime = new VNRuntime(createCharacterEffectProject());
+    const first = runtime.start();
+    expect(first.pendingEffects[0]).toMatchObject({ type: "showCharacter", characterId: "lin", enterEffect: "slideInLeft" });
+
+    const nextDialogue = runtime.next();
+    expect(nextDialogue.currentNodeId).toBe("narration-next");
+    expect(nextDialogue.pendingEffects).toHaveLength(0);
+    expect(nextDialogue.characters[0].enterEffect).toBeUndefined();
+  });
+
+  it("HideCharacterNode 后再次 ShowCharacterNode 可以重新生成入场 pendingEffects", () => {
+    const runtime = new VNRuntime(createCharacterEffectProject());
+    runtime.start();
+    runtime.next();
+    const secondShow = runtime.next();
+    expect(secondShow.currentNodeId).toBe("dialogue-second");
+    expect(secondShow.pendingEffects.map((effect) => effect.type)).toEqual(["hideCharacter", "showCharacter"]);
+    expect(secondShow.pendingEffects[1]).toMatchObject({ characterId: "lin", enterEffect: "fadeIn" });
+  });
+
+  it("loadState 恢复已登场角色时不会产生入场 pendingEffects", () => {
+    const runtime = new VNRuntime(createCharacterEffectProject());
+    const first = runtime.start();
+    const restored = new VNRuntime(createCharacterEffectProject());
+    const snapshot = restored.loadState(runtime.getState());
+    expect(first.pendingEffects).toHaveLength(1);
+    expect(snapshot.characters[0]).toMatchObject({ characterId: "lin", position: "left" });
+    expect(snapshot.pendingEffects).toHaveLength(0);
+    expect(snapshot.characters[0].enterEffect).toBeUndefined();
   });
 });
