@@ -59,7 +59,6 @@ pre {
 }
 
 .game-stage {
-  position: relative;
   display: grid;
   place-items: center;
   width: 100%;
@@ -70,83 +69,6 @@ pre {
   border-radius: 8px;
   background: #0b111a;
   overflow: hidden;
-}
-
-.dom-stage-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  color: #ffffff;
-}
-
-.dom-background-label {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  max-width: calc(100% - 20px);
-  padding: 4px 8px;
-  border-radius: 4px;
-  color: #dbe8f8;
-  background: rgba(7, 12, 20, 0.45);
-  font-size: 12px;
-}
-
-.dom-character-row {
-  position: absolute;
-  inset: 16% 8% 28%;
-  display: flex;
-  align-items: end;
-  justify-content: center;
-  gap: 10px;
-}
-
-.dom-character-card {
-  display: grid;
-  place-items: center;
-  width: min(120px, 30vw);
-  min-height: 42%;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  border-radius: 8px;
-  text-align: center;
-  background: rgba(80, 103, 132, 0.72);
-}
-
-.dom-character-card strong,
-.dom-character-card span {
-  display: block;
-}
-
-.dom-character-card span {
-  margin-top: 4px;
-  color: #d5e3f5;
-  font-size: 12px;
-}
-
-.dom-dialogue-box {
-  position: absolute;
-  left: 7%;
-  right: 7%;
-  bottom: 7%;
-  min-height: 26%;
-  padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  border-radius: 10px;
-  background: rgba(10, 16, 25, 0.82);
-}
-
-.dom-dialogue-box strong {
-  display: block;
-  margin-bottom: 6px;
-  color: #f7d27a;
-  font-size: 16px;
-}
-
-.dom-dialogue-box p {
-  margin: 0;
-  font-size: clamp(16px, 4.6vw, 24px);
-  line-height: 1.35;
 }
 
 .pixi-stage-container {

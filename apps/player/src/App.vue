@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
+import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import type { RuntimeSnapshot, VNRuntime } from "@vn-engine/vn-core";
 import { VNRuntime as Runtime } from "@vn-engine/vn-core";
 import type { RuntimeSettings } from "@vn-engine/vn-ui-runtime";
@@ -59,8 +59,6 @@ const autoPlay = useAutoPlay(snapshot, autoPlayDelay, () => next());
 const shellClass = computed(() => ({
   "is-title": gameMode.value === "title"
 }));
-/** 动作序列完成兜底计时器，避免渲染回调丢失时卡在 action snapshot。 */
-let actionCompletionFallbackTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** 应用设置到音频管理器。 */
 function applyAudioSettings(settings: RuntimeSettings): void {
@@ -76,10 +74,9 @@ function startNewGame(): void {
   playerAudio.stopAll();
   runtime.value = new Runtime(project.value);
   runtime.value.start();
+  snapshot.value = runtime.value.getSnapshot();
   gameMode.value = "playing";
   activePanel.value = null;
-  snapshot.value = runtime.value.getSnapshot();
-  scheduleActionCompletionFallback(snapshot.value);
   playerHistory.clear();
   applyAudioSettings(playerSettings.settings.value);
   autoPlay.setEnabled(playerSettings.settings.value.autoPlayEnabled);
@@ -97,34 +94,7 @@ function next(): void {
 function handleActionSequenceComplete(): void {
   if (gameMode.value !== "playing") return;
   if (!snapshot.value.isWaitingForActionCompletion) return;
-  clearActionCompletionFallback();
   snapshot.value = runtime.value.next();
-}
-
-/** 清理动作序列兜底计时器。 */
-function clearActionCompletionFallback(): void {
-  if (!actionCompletionFallbackTimer) return;
-  clearTimeout(actionCompletionFallbackTimer);
-  actionCompletionFallbackTimer = null;
-}
-
-/** 根据 pendingActions 估算兜底等待时长。 */
-function getActionFallbackDelay(value: RuntimeSnapshot): number {
-  const total = (value.pendingActions ?? []).reduce((sum, action) => {
-    const fallbackDuration = action.actionType === "wait" ? 500 : 300;
-    return sum + Math.max(0, action.durationMs ?? fallbackDuration);
-  }, 0);
-  return Math.min(Math.max(total + 800, 1200), 8000);
-}
-
-/** 如果渲染器完成回调丢失，按动作时长兜底推进剧情。 */
-function scheduleActionCompletionFallback(value: RuntimeSnapshot): void {
-  clearActionCompletionFallback();
-  if (gameMode.value !== "playing" || !value.isWaitingForActionCompletion) return;
-  actionCompletionFallbackTimer = setTimeout(() => {
-    if (gameMode.value !== "playing" || !snapshot.value.isWaitingForActionCompletion) return;
-    snapshot.value = runtime.value.next();
-  }, getActionFallbackDelay(value));
 }
 
 /** 选择选项。 */
@@ -250,7 +220,6 @@ watch(
     if (gameMode.value !== "playing") return;
     playerHistory.pushSnapshot(value);
     skipRead.markRead(value);
-    scheduleActionCompletionFallback(value);
   },
   { immediate: false }
 );
@@ -270,20 +239,16 @@ onMounted(async () => {
   snapshot.value = runtime.value.getSnapshot();
   applyAudioSettings(playerSettings.settings.value);
 });
-
-onBeforeUnmount(() => {
-  clearActionCompletionFallback();
-});
 </script>
 
 <template>
   <main class="player-shell" :class="shellClass">
-    <section v-if="gameMode === 'playing'" class="player-main">
+    <section class="player-main">
       <div class="stage-frame" @click="handleStageClick">
         <GameStage
           :project="project"
           :snapshot="snapshot"
-          :ui-hidden="false"
+          :ui-hidden="gameMode === 'title'"
           @choose="choose"
           @action-sequence-complete="handleActionSequenceComplete"
         />
