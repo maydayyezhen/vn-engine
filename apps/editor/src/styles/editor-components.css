@@ -17,6 +17,115 @@
   flex: 0 0 auto;
 }
 
+.resource-tree-pane {
+  display: grid;
+  grid-template-rows: 24px 28px minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.resource-panel-title {
+  padding: 0 2px;
+  border-bottom: 1px solid rgba(58, 73, 96, 0.65);
+}
+
+.resource-search-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 4px 0;
+}
+
+.resource-tree {
+  display: grid;
+  align-content: start;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 0 4px;
+  color: #c7d0dd;
+  font-size: 12px;
+}
+
+.resource-tree-root,
+.resource-tree-folder,
+.resource-tree-item {
+  display: grid;
+  grid-template-columns: 14px 18px minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 0;
+  color: #cbd3df;
+  text-align: left;
+}
+
+.resource-tree-root:hover,
+.resource-tree-folder:hover,
+.resource-tree-item:hover {
+  background: rgba(63, 83, 112, 0.52);
+}
+
+.resource-tree-folder.active,
+.resource-tree-item.active {
+  color: #ffffff;
+  background: linear-gradient(90deg, #2f64ad, #375f98);
+}
+
+.resource-tree-folder .el-icon,
+.resource-tree-root .el-icon {
+  color: #e3c56b;
+}
+
+.resource-tree-item .el-icon {
+  color: #e3c56b;
+}
+
+.resource-tree-group {
+  display: grid;
+  min-width: 0;
+}
+
+.resource-tree-children {
+  display: grid;
+  min-width: 0;
+}
+
+.tree-caret,
+.tree-indent {
+  display: inline-grid;
+  place-items: center;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.resource-tree-item-main {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+
+.resource-tree-item-main > span,
+.resource-tree-root > span:last-child,
+.resource-tree-folder > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resource-tree-item-main small {
+  overflow: hidden;
+  color: #8996a8;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resource-tree-item.active .resource-tree-item-main small {
+  color: rgba(255, 255, 255, 0.7);
+}
+
 .resource-section {
   display: grid;
   gap: 4px;

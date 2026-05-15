@@ -1,11 +1,41 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { VNProject } from "@vn-engine/vn-schema";
-import { Box, Collection, Connection, DataLine, Document, Folder, Headset, Picture, User } from "@element-plus/icons-vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import type { AssetItem, VNProject } from "@vn-engine/vn-schema";
+import { Box, Collection, Connection, DataLine, Document, Folder, Headset, Picture, User, VideoCamera } from "@element-plus/icons-vue";
 import type { EditorView } from "../stores/editorStore";
 
-/** 资源管理器区段。 */
+/** 资源管理器可跳转区段。 */
 type ExplorerSection = "scripts" | "assets" | "characters" | "variables" | "animations" | "export";
+
+/** 资源树文件夹配置。 */
+interface ResourceFolder {
+  /** 文件夹唯一标识。 */
+  key: string;
+  /** 文件夹显示名称。 */
+  label: string;
+  /** 文件夹图标组件。 */
+  icon: unknown;
+  /** 点击文件夹时打开的工作区。 */
+  section?: ExplorerSection;
+  /** 文件夹内显示的项目。 */
+  items?: ResourceTreeItem[];
+  /** 文件夹是否默认展开。 */
+  expanded?: boolean;
+}
+
+/** 资源树叶子项配置。 */
+interface ResourceTreeItem {
+  /** 叶子项唯一标识。 */
+  id: string;
+  /** 叶子项显示名称。 */
+  label: string;
+  /** 叶子项附加说明。 */
+  subtitle?: string;
+  /** 叶子项所属工作区。 */
+  section: ExplorerSection;
+  /** 脚本项对应的脚本 id。 */
+  scriptId?: string;
+}
 
 /** 资源管理器属性。 */
 const props = defineProps<{
@@ -39,21 +69,172 @@ const emit = defineEmits<{
   setStartScript: [scriptId: string];
 }>();
 
-/** 资源分类计数。 */
-const assetCounts = computed(() => ({
-  background: props.project.assets.items.filter((asset) => asset.type === "background").length,
-  character: props.project.assets.items.filter((asset) => asset.type === "character").length,
-  prop: props.project.assets.items.filter((asset) => asset.type === "prop").length,
-  audio: props.project.assets.items.filter((asset) => ["bgm", "sound", "sfx", "voice"].includes(asset.type)).length,
-  image: props.project.assets.items.filter((asset) => ["image", "other"].includes(asset.type)).length
-}));
-
-/** 搜索后的脚本列表。 */
-const filteredScripts = computed(() => {
-  const query = props.searchQuery.trim().toLowerCase();
-  if (!query) return props.project.scripts;
-  return props.project.scripts.filter((script) => `${script.id} ${script.name ?? ""}`.toLowerCase().includes(query));
+/** 脚本右键菜单状态。 */
+const scriptContextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  scriptId: ""
 });
+
+/** 标准化搜索文本。 */
+const normalizedQuery = computed(() => props.searchQuery.trim().toLowerCase());
+
+/** 是否匹配当前搜索。 */
+function matchesQuery(...parts: Array<string | undefined>): boolean {
+  if (!normalizedQuery.value) return true;
+  return parts.join(" ").toLowerCase().includes(normalizedQuery.value);
+}
+
+/** 按类型筛选素材。 */
+function assetsByType(types: string[]): AssetItem[] {
+  return props.project.assets.items.filter((asset) => types.includes(asset.type) && matchesQuery(asset.name, asset.id, asset.path));
+}
+
+/** 搜索后的脚本树叶子项。 */
+const scriptItems = computed<ResourceTreeItem[]>(() =>
+  props.project.scripts
+    .filter((script) => matchesQuery(script.id, script.name))
+    .map((script, index) => ({
+      id: script.id,
+      label: script.name || `第${index + 1}章`,
+      subtitle: script.id === props.project.startScriptId ? `${script.id} · 入口` : script.id,
+      section: "scripts",
+      scriptId: script.id
+    }))
+);
+
+/** 搜索后的角色树叶子项。 */
+const characterItems = computed<ResourceTreeItem[]>(() =>
+  props.project.characters
+    .filter((character) => matchesQuery(character.name, character.displayName, character.id))
+    .map((character) => ({
+      id: character.id,
+      label: character.displayName || character.name || character.id,
+      subtitle: character.id,
+      section: "characters"
+    }))
+);
+
+/** 将素材转换为资源树叶子项。 */
+function assetItems(types: string[], section: ExplorerSection = "assets"): ResourceTreeItem[] {
+  return assetsByType(types).map((asset) => ({
+    id: asset.id,
+    label: asset.name || asset.id,
+    subtitle: asset.id,
+    section
+  }));
+}
+
+/** 资源树分组。 */
+const resourceFolders = computed<ResourceFolder[]>(() => [
+  {
+    key: "scripts",
+    label: "脚本",
+    icon: Folder,
+    section: "scripts",
+    items: scriptItems.value,
+    expanded: true
+  },
+  {
+    key: "characters",
+    label: "角色",
+    icon: User,
+    section: "characters",
+    items: characterItems.value,
+    expanded: true
+  },
+  {
+    key: "backgrounds",
+    label: "背景",
+    icon: Folder,
+    section: "assets",
+    items: assetItems(["background"]),
+    expanded: true
+  },
+  {
+    key: "cg",
+    label: "CG",
+    icon: Folder,
+    section: "assets",
+    items: assetItems(["image", "other"]),
+    expanded: true
+  },
+  {
+    key: "music",
+    label: "音乐",
+    icon: Headset,
+    section: "assets",
+    items: assetItems(["bgm"]),
+    expanded: false
+  },
+  {
+    key: "sound",
+    label: "音效",
+    icon: Headset,
+    section: "assets",
+    items: assetItems(["sound", "sfx", "voice"]),
+    expanded: false
+  },
+  {
+    key: "video",
+    label: "视频",
+    icon: VideoCamera,
+    section: "assets",
+    items: assetItems(["video"]),
+    expanded: false
+  },
+  {
+    key: "ui",
+    label: "界面",
+    icon: Picture,
+    section: "assets",
+    items: assetItems(["ui"]),
+    expanded: false
+  },
+  {
+    key: "font",
+    label: "字体",
+    icon: Collection,
+    section: "assets",
+    items: assetItems(["font"]),
+    expanded: false
+  },
+  {
+    key: "props",
+    label: "物品",
+    icon: Box,
+    section: "assets",
+    items: assetItems(["prop"]),
+    expanded: true
+  },
+  {
+    key: "animations",
+    label: "动画",
+    icon: Connection,
+    section: "animations",
+    items: [],
+    expanded: false
+  },
+  {
+    key: "variables",
+    label: "变量",
+    icon: DataLine,
+    section: "variables",
+    items: (props.project.variables ?? [])
+      .filter((variable) => matchesQuery(variable.name, variable.description))
+      .map((variable) => ({
+        id: variable.name,
+        label: variable.name,
+        subtitle: variable.type,
+        section: "variables"
+      })),
+    expanded: false
+  }
+]);
+
+/** 当前项目根节点显示名称。 */
+const projectTitle = computed(() => props.project.name || props.project.id || "VN Project");
 
 /** 打开资源管理器区段。 */
 function openSection(section: ExplorerSection): void {
@@ -64,85 +245,133 @@ function openSection(section: ExplorerSection): void {
   if (section === "export") emit("changeView", "export");
   if (section === "animations") emit("openAnimations");
 }
+
+/** 点击资源树文件夹。 */
+function handleFolderClick(folder: ResourceFolder): void {
+  if (folder.section) openSection(folder.section);
+}
+
+/** 点击资源树叶子项。 */
+function handleItemClick(item: ResourceTreeItem): void {
+  if (item.scriptId) {
+    emit("selectScript", item.scriptId);
+    return;
+  }
+  openSection(item.section);
+}
+
+/** 打开脚本右键菜单。 */
+function openScriptContextMenu(event: MouseEvent, item: ResourceTreeItem): void {
+  if (!item.scriptId) return;
+  emit("selectScript", item.scriptId);
+  scriptContextMenu.value = {
+    visible: true,
+    x: event.clientX,
+    y: event.clientY,
+    scriptId: item.scriptId
+  };
+}
+
+/** 关闭脚本右键菜单。 */
+function closeScriptContextMenu(): void {
+  scriptContextMenu.value.visible = false;
+}
+
+/** 执行脚本右键菜单命令。 */
+function runScriptContextCommand(command: "rename" | "setStart" | "delete"): void {
+  const scriptId = scriptContextMenu.value.scriptId;
+  if (!scriptId) return;
+  if (command === "rename") emit("renameScript", scriptId);
+  if (command === "setStart") emit("setStartScript", scriptId);
+  if (command === "delete") emit("deleteScript", scriptId);
+  closeScriptContextMenu();
+}
+
+onMounted(() => {
+  window.addEventListener("click", closeScriptContextMenu);
+  window.addEventListener("scroll", closeScriptContextMenu, true);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("click", closeScriptContextMenu);
+  window.removeEventListener("scroll", closeScriptContextMenu, true);
+});
 </script>
 
 <template>
   <section class="resource-explorer">
     <div class="resource-tree-pane">
-      <div class="panel-title-row">
+      <div class="panel-title-row resource-panel-title">
         <strong>资源管理器</strong>
-        <el-button size="small" text @click="$emit('createScript')">新脚本</el-button>
+        <el-button size="small" text title="新建脚本" @click="$emit('createScript')">+</el-button>
       </div>
-      <el-input
-        :model-value="searchQuery"
-        class="resource-search"
-        size="small"
-        clearable
-        placeholder="搜索脚本或资源"
-        @update:model-value="$emit('updateSearchQuery', String($event))"
-      />
+      <div class="resource-search-row">
+        <el-input
+          :model-value="searchQuery"
+          class="resource-search"
+          size="small"
+          clearable
+          placeholder="搜索资源..."
+          @update:model-value="$emit('updateSearchQuery', String($event))"
+        />
+      </div>
 
-      <div class="resource-section">
-        <button class="resource-section-title" :class="{ active: activeView === 'script' }" @click="openSection('scripts')">
-          <span class="resource-title-label"><el-icon><Document /></el-icon>脚本</span>
-          <span>{{ project.scripts.length }}</span>
+      <div class="resource-tree">
+        <button class="resource-tree-root" @click="openSection('scripts')">
+          <span class="tree-caret">⌄</span>
+          <el-icon><Folder /></el-icon>
+          <span>{{ projectTitle }}</span>
         </button>
-        <div class="script-list">
-          <div
-            v-for="script in filteredScripts"
-            :key="script.id"
-            class="script-tree-row"
-            :class="{ active: script.id === selectedScriptId }"
-            @click="$emit('selectScript', script.id)"
-          >
-            <div class="script-tree-main">
-              <strong>{{ script.name || script.id }}</strong>
-              <small>{{ script.id }}<span v-if="script.id === project.startScriptId"> · 入口</span></small>
-            </div>
-            <el-dropdown trigger="click" @click.stop>
-              <button class="row-menu-button">...</button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="$emit('renameScript', script.id)">重命名</el-dropdown-item>
-                  <el-dropdown-item :disabled="script.id === project.startScriptId" @click="$emit('setStartScript', script.id)">设为入口</el-dropdown-item>
-                  <el-dropdown-item :disabled="project.scripts.length <= 1" divided @click="$emit('deleteScript', script.id)">删除</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+
+        <div v-for="folder in resourceFolders" :key="folder.key" class="resource-tree-group">
+          <button class="resource-tree-folder" :class="{ active: folder.section === 'assets' ? activeView === 'assets' : folder.section === activeView }" @click="handleFolderClick(folder)">
+            <span class="tree-caret">{{ folder.expanded ? "⌄" : "›" }}</span>
+            <el-icon><component :is="folder.icon" /></el-icon>
+            <span>{{ folder.label }}</span>
+          </button>
+
+          <div v-if="folder.expanded" class="resource-tree-children">
+            <button
+              v-for="item in folder.items"
+              :key="`${folder.key}-${item.id}`"
+              class="resource-tree-item"
+              :class="{ active: item.scriptId === selectedScriptId }"
+              @click="handleItemClick(item)"
+              @contextmenu.prevent="openScriptContextMenu($event, item)"
+            >
+              <span class="tree-indent"></span>
+              <el-icon>
+                <Document v-if="item.section === 'scripts'" />
+                <User v-else-if="item.section === 'characters'" />
+                <Picture v-else-if="folder.key === 'backgrounds' || folder.key === 'cg'" />
+                <Headset v-else-if="folder.key === 'music' || folder.key === 'sound'" />
+                <Box v-else-if="folder.key === 'props'" />
+                <DataLine v-else-if="item.section === 'variables'" />
+                <Document v-else />
+              </el-icon>
+              <span class="resource-tree-item-main">
+                <span>{{ item.label }}</span>
+                <small v-if="item.subtitle">{{ item.subtitle }}</small>
+              </span>
+            </button>
           </div>
         </div>
       </div>
-
-      <div class="resource-section">
-        <button class="resource-section-title" :class="{ active: activeView === 'assets' }" @click="openSection('assets')">
-          <span class="resource-title-label"><el-icon><Folder /></el-icon>素材库</span>
-          <span>{{ project.assets.items.length }}</span>
-        </button>
-        <div class="resource-category-grid">
-          <button @click="openSection('assets')"><span class="resource-title-label"><el-icon><Picture /></el-icon>背景</span><span>{{ assetCounts.background }}</span></button>
-          <button @click="openSection('assets')"><span class="resource-title-label"><el-icon><Collection /></el-icon>CG/图片</span><span>{{ assetCounts.image }}</span></button>
-          <button @click="openSection('assets')"><span class="resource-title-label"><el-icon><Headset /></el-icon>音乐/音效</span><span>{{ assetCounts.audio }}</span></button>
-          <button @click="openSection('assets')"><span class="resource-title-label"><el-icon><Box /></el-icon>物品</span><span>{{ assetCounts.prop }}</span></button>
-        </div>
-      </div>
-
-      <div class="resource-section">
-        <button class="resource-section-title" :class="{ active: activeView === 'characters' }" @click="openSection('characters')">
-          <span class="resource-title-label"><el-icon><User /></el-icon>角色</span>
-          <span>{{ project.characters.length }}</span>
-        </button>
-        <button class="resource-section-title" :class="{ active: activeView === 'variables' }" @click="openSection('variables')">
-          <span class="resource-title-label"><el-icon><DataLine /></el-icon>变量</span>
-          <span>{{ project.variables?.length ?? 0 }}</span>
-        </button>
-        <button class="resource-section-title" @click="openSection('animations')">
-          <span class="resource-title-label"><el-icon><Connection /></el-icon>动画模块</span>
-        </button>
-        <button class="resource-section-title" :class="{ active: activeView === 'export' }" @click="openSection('export')">
-          <span class="resource-title-label"><el-icon><Folder /></el-icon>导出 / 构建</span>
-        </button>
-      </div>
     </div>
+
+    <teleport to="body">
+      <div
+        v-if="scriptContextMenu.visible"
+        class="node-context-menu"
+        :style="{ left: `${scriptContextMenu.x}px`, top: `${scriptContextMenu.y}px` }"
+        @click.stop
+        @contextmenu.prevent
+      >
+        <button @click="runScriptContextCommand('rename')">重命名脚本</button>
+        <button :disabled="scriptContextMenu.scriptId === project.startScriptId" @click="runScriptContextCommand('setStart')">设为入口脚本</button>
+        <button class="danger" :disabled="project.scripts.length <= 1" @click="runScriptContextCommand('delete')">删除脚本</button>
+      </div>
+    </teleport>
 
     <div class="resource-preview-pane">
       <slot name="preview" />
