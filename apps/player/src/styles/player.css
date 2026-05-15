@@ -204,27 +204,9 @@ pre {
 @media (max-width: 920px) {
   .player-shell {
     grid-template-columns: 1fr;
-    min-height: 100dvh;
-    padding: 8px;
-    overflow-x: hidden;
   }
 
   .pixi-stage-container {
     max-height: none;
-  }
-}
-
-@media (max-width: 560px) {
-  button {
-    width: 100%;
-  }
-
-  .game-stage {
-    border-radius: 6px;
-  }
-
-  .player-controls {
-    align-items: stretch;
-    flex-direction: column;
   }
 }

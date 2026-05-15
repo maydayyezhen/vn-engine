@@ -207,42 +207,6 @@
 }
 
 @media (max-width: 760px) {
-  .runtime-overlay {
-    align-items: start;
-    padding: 12px;
-    overflow: auto;
-  }
-
-  .runtime-toolbar {
-    top: 8px;
-    right: 8px;
-    left: 8px;
-    max-width: none;
-  }
-
-  .menu-card,
-  .panel-card {
-    max-height: calc(100dvh - 24px);
-  }
-
-  .menu-card {
-    padding: 20px;
-  }
-
-  .menu-card h1 {
-    font-size: 30px;
-  }
-
-  .panel-header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .panel-header > div,
-  .slot-actions {
-    flex-direction: column;
-  }
-
   .save-grid {
     grid-template-columns: 1fr;
   }
